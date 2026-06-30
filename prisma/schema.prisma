@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  createdAt     DateTime  @default(now())
+  plan          Plan      @default(FREE)
+  stripeId      String?   @unique
+  projects      Project[]
+  subscription  Subscription?
+  usage         UsageRecord[]
+}
+
+model Project {
+  id          String    @id @default(cuid())
+  name        String
+  pmlSource   String    @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isPublic    Boolean   @default(false)
+  snapshots   Snapshot[]
+}
+
+model Snapshot {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  pmlSource   String    @db.Text
+  label       String?
+  createdAt   DateTime  @default(now())
+}
+
+model Subscription {
+  id                 String     @id @default(cuid())
+  userId             String     @unique
+  user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeSubId        String     @unique
+  stripePriceId      String
+  status             SubStatus  @default(TRIALING)
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean    @default(false)
+}
+
+model UsageRecord {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      UsageType
+  createdAt DateTime  @default(now())
+  metadata  Json?
+}
+
+enum Plan {
+  FREE
+  STARTER
+  PRO
+}
+
+enum SubStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  TRIALING
+}
+
+enum UsageType {
+  AI_CALL
+  EXPORT
+  DIAGRAM_RENDER
+}
