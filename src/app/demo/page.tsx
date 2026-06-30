@@ -4,8 +4,7 @@ import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { ProcessController } from 'pml-core';
 import { WorkspaceState, ProcessDiagnostic } from 'pml-core';
 import { SiteHeader } from '@/components/SiteHeader';
-import { ProcessCanvasView } from '@/components/ProcessCanvasView';
-import { PmlEditorView } from '@/components/PmlEditorView';
+import { ProcessCanvasView, PmlEditorView } from 'pml-core';
 
 const SAMPLE_PML = `@process L3 "Create your process model"
 
