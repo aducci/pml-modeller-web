@@ -81,8 +81,9 @@ export default function DemoPage() {
       <SiteHeader />
       {/* ── Workspace mode tabs ─────────────────────────────── */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 2, height: 36, flexShrink: 0,
+        display: 'flex', alignItems: 'center', gap: 2, height: 38, flexShrink: 0,
         background: '#fff', borderBottom: '1px solid #E5E7EB', padding: '0 16px',
+        marginTop: 0,
       }}>
         <span style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', marginRight: 8 }}>
           Workspace:

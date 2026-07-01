@@ -2,8 +2,8 @@ import Link from 'next/link';
 
 export function SiteHeader({ brandHref = '/' }: { brandHref?: string }) {
   return (
-    <nav className="border-b border-gray-100">
-      <div className="mx-auto max-w-6xl px-6 py-5 flex items-center justify-between">
+    <nav className="border-b border-gray-100" style={{ marginBottom: 6, minHeight: 48 }}>
+      <div className="mx-auto max-w-6xl px-6 flex items-center justify-between" style={{ paddingTop: 14, paddingBottom: 8 }}>
         <Link href={brandHref} className="text-xl font-bold tracking-tight text-teal">
           PML Modeller
         </Link>
