@@ -15,7 +15,7 @@ const addNodeSchema = z.object({
   op: z.literal('add-node'),
   node: z.object({
     id: z.string().min(1).max(100),
-    type: z.enum(['event', 'task', 'decision', 'route', 'subprocess', 'parallel', 'actor']),
+    type: z.enum(['event', 'task', 'decision', 'route', 'subprocess', 'actor']),
     label: z.string().optional(),
     actor: z.string().optional(),
     scope: z.enum(['inScope', 'external']).optional(),

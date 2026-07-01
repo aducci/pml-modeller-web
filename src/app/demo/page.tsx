@@ -2,21 +2,55 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { ProcessController, WorkspaceState, ProcessDiagnostic, ProcessCanvasView, PmlEditorView } from 'pml-core';
-import { SiteHeader } from '@/components/SiteHeader';
+import Link from 'next/link';
+import { PlatformHeader } from '@/components/PlatformHeader';
 import { AiAssistantWorkspace } from '@/components/chat/AiAssistantWorkspace';
 
-const SAMPLE_PML = `@process L3 "Create your process model"
+const SAMPLE_PML = `@process L3 "Online Order Fulfillment" parent=vc-ecommerce version=1.0 status=approved
 
-event start as "customer requires modelling" inbound
-event end as "model generated" outbound
-actor User
-    task res "Responses"
-actor AI
-  task interview as "perform interview"
-actor PMLModeller
-  task render as "render"
-flow
-start -> interview -> res -> render -> end`;
+event order_placed    as "Order Placed"
+event order_fulfilled as "Order Fulfilled"
+event order_cancelled as "Order Cancelled"
+
+actor Customer
+    task(user) place_order as "Place Order"
+
+actor Store
+    task(service) check_inventory as "Check Inventory"
+        description "Real-time stock check across all warehouse locations."
+        rule "Reserve stock for 15 minutes while payment is processed."
+
+    task(service) process_payment as "Process Payment"
+        sla completion_time < 30s
+
+    task(manual) notify_unavailable as "Notify Customer"
+        note "Offer alternatives or back-order option."
+
+    decision stock_check as "Stock Available?":
+        in_stock*  as "In Stock"    > process_payment
+        out_of_stock as "Out of Stock" > notify_unavailable
+
+actor Warehouse
+    task(manual) pick_pack  as "Pick & Pack Order"
+        kpi fulfilment_time < 2h
+    task(service) dispatch   as "Dispatch with Courier"
+        rule "Same-day dispatch if confirmed before 2pm."
+
+decision fulfil as "Fulfil Order" 
+    Fulfilled > dispatch
+    Notdone > pick_pack
+
+flow key
+    order_placed > place_order > check_inventory > stock_check
+
+process_payment > fulfil > dispatch > order_fulfilled
+notify_unavailable > order_cancelled
+
+---context---
+description: "End-to-end order fulfillment from customer purchase to dispatch."
+owners: [ecommerce-platform, warehouse-ops]
+
+`;
 
 export default function DemoPage() {
   const [controller, setController] = useState<ProcessController | null>(null);
@@ -68,7 +102,12 @@ export default function DemoPage() {
   if (!controller || !state) {
     return (
       <div className="h-screen flex flex-col">
-        <SiteHeader />
+        <PlatformHeader
+          section="Interactive demo"
+          badge="Preview"
+          homeHref="/"
+          rightSlot={<Link href="/auth/signin?from=demo" className="text-sm font-medium text-gray-600 hover:text-teal">Sign in to save work</Link>}
+        />
         <div className="flex-1 flex items-center justify-center bg-gray-50">
           <div className="text-gray-400">Loading viewer...</div>
         </div>
@@ -77,50 +116,36 @@ export default function DemoPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      <SiteHeader />
+    <div className="h-screen flex flex-col page-enter">
+      <PlatformHeader
+        section="Interactive demo"
+        badge="Preview"
+        homeHref="/"
+        rightSlot={<Link href="/auth/signin?from=demo" className="text-sm font-medium text-gray-600 hover:text-teal">Sign in to save work</Link>}
+      />
       {/* ── Workspace mode tabs ─────────────────────────────── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 2, height: 38, flexShrink: 0,
-        background: '#fff', borderBottom: '1px solid #E5E7EB', padding: '0 16px',
-        marginTop: 0,
-      }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', marginRight: 8 }}>
-          Workspace:
+      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-4 md:px-6">
+        <span className="mr-2 text-xs font-semibold text-gray-500">
+          Mode:
         </span>
         {(['editor', 'ai-assistant'] as const).map((tabMode) => (
           <button
             key={tabMode}
             onClick={() => setMode(tabMode)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 4,
-              padding: '4px 10px', fontSize: 12, fontWeight: mode === tabMode ? 600 : 400,
-              color: mode === tabMode ? '#6366F1' : '#6B7280',
-              background: mode === tabMode ? '#EEF2FF' : 'transparent',
-              border: '1px solid',
-              borderColor: mode === tabMode ? '#C7D2FE' : 'transparent',
-              borderRadius: 6, cursor: 'pointer',
-              transition: 'all 0.12s',
-            }}
-            onMouseEnter={e => {
-              if (mode !== tabMode) {
-                e.currentTarget.style.color = '#374151';
-                e.currentTarget.style.background = '#F3F4F6';
-              }
-            }}
-            onMouseLeave={e => {
-              if (mode !== tabMode) {
-                e.currentTarget.style.color = '#6B7280';
-                e.currentTarget.style.background = 'transparent';
-              }
-            }}
+            className={`flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs transition-colors ${
+              mode === tabMode
+                ? 'border-teal/30 bg-teal/10 font-semibold text-teal'
+                : 'border-transparent text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+            }`}
           >
-            {tabMode === 'editor' ? '📝' : '🤖'}
-            {tabMode === 'editor' ? 'Editor' : 'AI Assistant'}
+            <span>{tabMode === 'editor' ? 'Editor' : 'AI Assistant'}</span>
           </button>
         ))}
         {state.isDirty && (
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#F59E0B', marginLeft: 12 }} title="Unsaved changes" />
+          <span className="ml-3 inline-flex items-center gap-1 text-[11px] text-amber-700" title="Unsaved changes">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+            Unsaved
+          </span>
         )}
       </div>
 

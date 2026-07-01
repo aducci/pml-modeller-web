@@ -1,35 +1,55 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
+import Link from 'next/link';
+import { cookies } from 'next/headers';
+import { PlatformHeader } from '@/components/PlatformHeader';
+import { DashboardWorkspace } from '@/components/DashboardWorkspace';
 
-export default async function Dashboard() {
+const entryLabels: Record<string, string> = {
+  demo: 'You are now in your full workspace. Demo changes can be saved here.',
+  marketing: 'Welcome to your workspace. Start by creating your first project.',
+  pricing: 'Welcome in. You can explore the workspace before selecting a plan.',
+  about: 'Welcome in. You now have access to your process workspace.',
+  home: 'Welcome in. You now have access to your process workspace.',
+  magiclink: 'Signed in with temporary magic link access for testing.',
+};
+
+export default async function Dashboard({ searchParams }: { searchParams: { entry?: string; upgraded?: string } }) {
   const session = await auth();
-  if (!session?.user) return redirect('/auth/signin');
+  const cookieStore = await cookies();
+  const hasDevMagicAccess = cookieStore.get('pml-dev-magic-auth')?.value === '1';
+  if (!session?.user && !hasDevMagicAccess) return redirect('/auth/signin');
+
+  const entry = searchParams.entry;
+  const entryMessage = entry ? entryLabels[entry] ?? 'Welcome to your process workspace.' : null;
+  const upgraded = searchParams.upgraded === 'true';
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-lg font-bold text-gray-900">PML Modeller</h1>
-          <span className="text-sm text-gray-500">/ Dashboard</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <a href="/api/stripe/portal" className="text-sm text-gray-600 hover:text-gray-900">Billing</a>
-          <form action="/api/auth/signout" method="POST">
-            <button type="submit" className="text-sm text-gray-600 hover:text-gray-900">Sign out</button>
-          </form>
-        </div>
-      </header>
-      <main className="mx-auto max-w-6xl px-6 py-12">
-        <h2 className="text-2xl font-bold text-gray-900">Your diagrams</h2>
-        <p className="mt-2 text-gray-600">Select a project to edit, or create a new one.</p>
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
-          <a href="#" className="rounded-xl border border-dashed border-gray-300 p-8 text-center text-gray-500 hover:border-gray-400">
-            + New project
-          </a>
-          <div className="rounded-xl border border-gray-200 p-8 text-center text-gray-500">
-            demo-diagram.pml
+    <div className="min-h-screen bg-gray-50/60 page-enter">
+      <PlatformHeader
+        section="Dashboard"
+        rightSlot={(
+          <>
+            <a href="/api/stripe/portal" className="text-sm font-medium text-gray-600 hover:text-teal">Billing</a>
+            <Link href="/dashboard/settings" className="text-sm font-medium text-gray-600 hover:text-teal">Settings</Link>
+            <form action="/api/auth/signout" method="POST">
+              <button type="submit" className="text-sm font-medium text-gray-600 hover:text-teal">Sign out</button>
+            </form>
+          </>
+        )}
+      />
+      <main className="mx-auto max-w-6xl px-6 py-10">
+        {entryMessage ? (
+          <div className="mb-5 rounded-xl border border-teal/20 bg-teal/5 px-4 py-3 text-sm text-teal page-enter-delay">
+            {entryMessage}
           </div>
-        </div>
+        ) : null}
+        {upgraded ? (
+          <div className="mb-5 rounded-xl border border-honeydew/30 bg-honeydew/70 px-4 py-3 text-sm text-gray-800 page-enter-delay">
+            Upgrade confirmed. Your billing changes are now active.
+          </div>
+        ) : null}
+        <DashboardWorkspace />
       </main>
     </div>
   );

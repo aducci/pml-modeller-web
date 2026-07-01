@@ -1,79 +1,92 @@
 import Link from 'next/link';
+import { SiteHeader } from '@/components/SiteHeader';
 
 export default function About() {
   return (
     <div className="min-h-screen bg-white">
-      <nav className="border-b border-gray-100">
-        <div className="mx-auto max-w-6xl px-6 py-5 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold tracking-tight text-teal">PML Modeller</Link>
-          <div className="flex gap-6 text-sm font-medium">
-            <Link href="/#features" className="text-gray-600 hover:text-teal transition-colors">Features</Link>
-            <Link href="/about" className="text-teal font-semibold">About</Link>
-            <Link href="/pricing" className="text-gray-600 hover:text-teal transition-colors">Pricing</Link>
-            <Link href="/auth/signin" className="text-gray-600 hover:text-teal transition-colors">Sign in</Link>
-          </div>
-        </div>
-      </nav>
+      <SiteHeader />
 
-      <main className="mx-auto max-w-6xl px-6 py-24">
-        <div className="grid gap-16 lg:grid-cols-2 items-start">
+      <main className="mx-auto max-w-6xl px-6 py-20">
+        <div className="grid gap-14 lg:grid-cols-2 items-start">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900">
-              We're making process modelling feel like writing.
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal">About PML Modeller</p>
+            <h1 className="mt-4 text-4xl md:text-5xl font-bold tracking-tight text-gray-900">
+              We built the process modeller we wanted to use ourselves
             </h1>
             <p className="mt-6 text-lg leading-8 text-gray-600">
-              PML Modeller was created by a team that got tired of fighting diagramming tools. We wanted something that let us think in text, move fast, and still produce diagrams people could actually read.
+              Most process knowledge still lives in slide decks, docs, and inbox threads. We wanted a workflow where process design is as fast as writing and as reliable as versioned code.
             </p>
             <p className="mt-4 text-lg leading-8 text-gray-600">
-              The result is PML—a concise, AI-readable language for process modelling—and a live editor that renders it in real time.
+              The result is PML: a concise language that is readable by humans, friendly to AI assistants, and directly connected to a live process diagram.
             </p>
+
+            <div className="mt-8 rounded-2xl border border-gray-200 bg-gray-50 p-6">
+              <p className="text-sm font-semibold text-gray-900">From principle to product</p>
+              <div className="mt-4 space-y-3 text-sm text-gray-700">
+                <div className="flex items-center gap-3">
+                  <span className="h-2 w-2 rounded-full bg-teal" />
+                  <span>Text-first process modelling language</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="h-2 w-2 rounded-full bg-sandy" />
+                  <span>Live layout and lane-aware rendering</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="h-2 w-2 rounded-full bg-smoky" />
+                  <span>AI-assisted edits that remain fully reviewable</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-6">
             <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Our mission</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Principle 1: Text first</h3>
               <p className="text-gray-600 leading-relaxed">
-                Most organisation run on processes that live in slides, wikis, and people&apos;s heads. PML Modeller exists to give those processes a single, editable, shareable home—one that feels as natural as writing a document.
+                Process definitions should be readable and editable without a complex UI. The source should stand on its own.
               </p>
             </div>
             <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Why PML?</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Principle 2: AI compatible by design</h3>
               <p className="text-gray-600 leading-relaxed">
-                PML is purpose-built for collaboration between humans and AI. Unlike BPMN or Visio, it compresses complexity into a readable language while remaining expressive enough for enterprise workflows.
+                AI is useful only when outputs are valid and usable. PML is structured so suggestions become reviewable model edits, not throwaway artifacts.
               </p>
             </div>
             <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Who it&apos;s for</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Principle 3: Human auditable</h3>
               <p className="text-gray-600 leading-relaxed">
-                Business analysts, operations teams, engineering leads, and consultants. Anyone who needs to document, review, or iterate on processes without leaving their text editor.
+                Every change should be inspectable in plain text, trackable in version control, and understandable during reviews and audits.
               </p>
             </div>
           </div>
         </div>
 
-        <div className="mt-24 grid gap-8 md:grid-cols-3">
-          <div className="text-center">
-            <div className="text-4xl font-bold text-teal">10k+</div>
-            <div className="mt-1 text-sm text-gray-600">Diagrams created</div>
-          </div>
-          <div className="text-center">
-            <div className="text-4xl font-bold text-sandy">2,400+</div>
-            <div className="mt-1 text-sm text-gray-600">Teams onboarded</div>
-          </div>
-          <div className="text-center">
-            <div className="text-4xl font-bold text-smoky">99.9%</div>
-            <div className="mt-1 text-sm text-gray-600">Uptime SLA</div>
+        <div className="mt-20 rounded-2xl border border-gray-200 p-8">
+          <h2 className="text-2xl font-bold text-gray-900">Where we are now</h2>
+          <div className="mt-6 grid gap-6 md:grid-cols-3">
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Current stage</p>
+              <p className="mt-2 text-sm text-gray-600">Early production rollout with active iteration based on user feedback.</p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Stable today</p>
+              <p className="mt-2 text-sm text-gray-600">Live rendering, AI proposal workflow, shareable read-only pages.</p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Focus this quarter</p>
+              <p className="mt-2 text-sm text-gray-600">Pricing rollout, docs depth, and tighter workflow adoption loops.</p>
+            </div>
           </div>
         </div>
 
-        <div className="mt-24 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Ready to try?</h2>
-          <p className="text-gray-600 mb-8">Start with 10 free diagrams. No credit card required.</p>
+        <div className="mt-20 text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Model your next process in text, not in drag-and-drop guesswork</h2>
+          <p className="text-gray-600 mb-8">Start with a free workspace and decide later when to scale usage.</p>
           <Link
             href="/auth/signin"
             className="inline-flex items-center justify-center rounded-lg bg-teal px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-teal/20 hover:bg-teal/90 transition-all"
           >
-            Get started free
+            Start free
           </Link>
         </div>
       </main>

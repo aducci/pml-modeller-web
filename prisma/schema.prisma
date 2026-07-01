@@ -18,6 +18,35 @@ model User {
   projects      Project[]
   subscription  Subscription?
   usage         UsageRecord[]
+  organizationMemberships OrganizationMember[]
+  ownedOrganizations      Organization[]      @relation("OrganizationOwner")
+}
+
+model Organization {
+  id            String               @id @default(cuid())
+  name          String
+  slug          String?              @unique
+  isPersonal    Boolean              @default(false)
+  createdAt     DateTime             @default(now())
+  ownerUserId   String?
+  ownerUser     User?                @relation("OrganizationOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  members       OrganizationMember[]
+  projects      Project[]
+  snapshots     Snapshot[]
+  subscriptions Subscription[]
+  usage         UsageRecord[]
+}
+
+model OrganizationMember {
+  id             String           @id @default(cuid())
+  organizationId String
+  userId         String
+  role           OrganizationRole @default(VIEWER)
+  createdAt      DateTime         @default(now())
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
 }
 
 model Project {
@@ -27,38 +56,54 @@ model Project {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   userId      String
+  organizationId String?
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   isPublic    Boolean   @default(false)
   snapshots   Snapshot[]
+
+  @@index([organizationId, updatedAt])
 }
 
 model Snapshot {
   id          String    @id @default(cuid())
   projectId   String
+  organizationId String?
   project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   pmlSource   String    @db.Text
   label       String?
   createdAt   DateTime  @default(now())
+
+  @@index([organizationId, createdAt])
 }
 
 model Subscription {
   id                 String     @id @default(cuid())
   userId             String     @unique
+  organizationId     String?
   user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization       Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   stripeSubId        String     @unique
   stripePriceId      String
   status             SubStatus  @default(TRIALING)
   currentPeriodEnd   DateTime
   cancelAtPeriodEnd  Boolean    @default(false)
+
+  @@index([organizationId])
 }
 
 model UsageRecord {
   id        String    @id @default(cuid())
   userId    String
+  organizationId String?
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   type      UsageType
   createdAt DateTime  @default(now())
   metadata  Json?
+
+  @@index([organizationId, createdAt])
 }
 
 enum Plan {
@@ -78,4 +123,11 @@ enum UsageType {
   AI_CALL
   EXPORT
   DIAGRAM_RENDER
+}
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
 }

@@ -6,6 +6,21 @@
     "react/no-unescaped-entities": "off",
     "@typescript-eslint/no-unused-expressions": "off",
     "react/display-name": "off",
-    "react-hooks/exhaustive-deps": "off"
+    "react-hooks/exhaustive-deps": "off",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          "../PML_DSL/src/*",
+          "../PML_DSL/src/**",
+          "../../PML_DSL/src/*",
+          "../../PML_DSL/src/**",
+          "../../../PML_DSL/src/*",
+          "../../../PML_DSL/src/**",
+          "**/PML_DSL/src/*",
+          "**/PML_DSL/src/**"
+        ]
+      }
+    ]
   }
 }

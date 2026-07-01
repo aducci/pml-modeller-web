@@ -28,4 +28,117 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  .page-enter {
+    animation: page-enter 260ms ease-out both;
+  }
+
+  .page-enter-delay {
+    animation: page-enter 320ms ease-out both;
+    animation-delay: 60ms;
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.feature-stagger {
+  opacity: 0;
+  animation: page-enter 380ms ease-out both;
+}
+
+.feature-card-hover {
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.feature-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(17, 24, 39, 0.08);
+}
+
+.feature-gradient-text {
+  background: linear-gradient(90deg, #156064 0%, #a26769 60%, #ffb563 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.feature-orb {
+  animation: orb-drift 9s ease-in-out infinite;
+}
+
+.feature-orb-delay {
+  animation-delay: 1.5s;
+}
+
+.feature-flow-path {
+  fill: none;
+  stroke: #67e8f9;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 12 10;
+  animation: flow-move 2.4s linear infinite;
+}
+
+.feature-flow-path-delay {
+  animation-delay: 1.2s;
+}
+
+@keyframes flow-move {
+  from {
+    stroke-dashoffset: 44;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.feature-lane-active {
+  animation: lane-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes lane-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(21, 96, 100, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(21, 96, 100, 0);
+  }
+}
+
+@keyframes orb-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -8px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .page-enter-delay,
+  .feature-stagger,
+  .feature-card-hover,
+  .feature-flow-path,
+  .feature-lane-active,
+  .feature-orb,
+  .feature-orb-delay {
+    animation: none !important;
+  }
+
+  .feature-card-hover:hover {
+    transform: none;
+    box-shadow: none;
+  }
 }

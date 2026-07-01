@@ -2,9 +2,9 @@ import { db } from './db';
 import type { UsageType } from '@prisma/client';
 
 export const LIMITS = {
-  FREE:    { projects: 3,   aiCalls: 10,  snapshots: 3  },
-  STARTER: { projects: 20,  aiCalls: 100, snapshots: 10 },
-  PRO:     { projects: Infinity, aiCalls: Infinity, snapshots: Infinity }
+  FREE:    { projects: 10,  aiCalls: 3,   snapshots: 3  },
+  STARTER: { projects: 50,  aiCalls: 30,  snapshots: 10 },
+  PRO:     { projects: Infinity, aiCalls: 100, snapshots: Infinity }
 };
 
 export async function checkLimit(userId: string, type: UsageType) {

@@ -8,12 +8,11 @@ export function SiteHeader({ brandHref = '/' }: { brandHref?: string }) {
           PML Modeller
         </Link>
         <div className="flex gap-6 text-sm font-medium">
-          <Link href="#features" className="text-gray-600 hover:text-teal transition-colors">Features</Link>
+          <Link href="/features" className="text-gray-600 hover:text-teal transition-colors">Features</Link>
           <Link href="/about" className="text-gray-600 hover:text-teal transition-colors">About</Link>
-          <Link href="/docs" className="text-gray-600 hover:text-teal transition-colors">Docs</Link>
           <Link href="/pricing" className="text-gray-600 hover:text-teal transition-colors">Pricing</Link>
           <Link href="/demo" className="text-gray-600 hover:text-teal transition-colors">Demo</Link>
-          <Link href="/auth/signin" className="text-gray-600 hover:text-teal transition-colors">Sign in</Link>
+          <Link href="/auth/signin?from=marketing" className="text-gray-600 hover:text-teal transition-colors">Sign in</Link>
         </div>
       </div>
     </nav>

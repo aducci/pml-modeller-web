@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     const result = createChatStream(messages);
 
     // Return the streaming response
-    return result.toTextStreamResponse();
+  return result.toTextStreamResponse();
   } catch (err) {
     console.error('AI chat error:', err);
     return new Response(
