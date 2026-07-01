@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getActiveTenant } from '@/lib/activeTenant';
+import { buildProjectScopeWhere } from '@/lib/projectScope';
 
 const STARTER_PML = `@process L3 "New process"
 
@@ -74,19 +75,6 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json({ project }, { status: 201 });
-}
-
-function buildProjectScopeWhere(userId: string, organizationId: string, allowLegacyPersonalRows: boolean) {
-  if (!allowLegacyPersonalRows) {
-    return { organizationId };
-  }
-
-  return {
-    OR: [
-      { organizationId },
-      { userId, organizationId: null },
-    ],
-  };
 }
 
 function buildTemplateSource(template: string, name: string) {

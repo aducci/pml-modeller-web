@@ -1,31 +1,42 @@
-import { redirect } from 'next/navigation';
-import { auth } from '@/lib/auth';
+import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import { PlatformHeader } from '@/components/PlatformHeader';
+import { ProcessWorkspaceShell } from '@/components/ProcessWorkspaceShell';
+import { db } from '@/lib/db';
+import { getActiveTenant } from '@/lib/activeTenant';
+import { buildProjectScopeWhere } from '@/lib/projectScope';
 
 export default async function ProjectPage({ params }: { params: { projectId: string } }) {
-  const session = await auth();
-  const cookieStore = await cookies();
-  const hasDevMagicAccess = cookieStore.get('pml-dev-magic-auth')?.value === '1';
-  if (!session?.user && !hasDevMagicAccess) return redirect('/auth/signin');
+  const tenant = await getActiveTenant();
+  if (!tenant) return redirect('/auth/signin');
+
+  const project = await db.project.findFirst({
+    where: {
+      id: params.projectId,
+      ...buildProjectScopeWhere(tenant.user.id, tenant.organization.id, tenant.mode === 'personal'),
+    },
+    select: {
+      id: true,
+      name: true,
+      pmlSource: true,
+      updatedAt: true,
+    },
+  });
+
+  if (!project) {
+    notFound();
+  }
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-gray-50/70 page-enter">
       <PlatformHeader
-        section={`Project: ${params.projectId}`}
-        subtitle="Saved"
+        section={`Project: ${project.name}`}
+        subtitle={new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(project.updatedAt)}
         rightSlot={<Link href="/dashboard" className="text-sm font-medium text-gray-600 hover:text-teal">Back to dashboard</Link>}
       />
 
-      {/* Editor / Canvas workspace placeholder */}
       <div className="h-[calc(100vh-56px)]">
-        <div className="flex h-full items-center justify-center text-gray-400">
-          <div className="text-center">
-            <p className="text-lg font-medium">Editor placeholder</p>
-            <p className="mt-1 text-sm">Import ProcessController + views from pml-core here.</p>
-          </div>
-        </div>
+        <ProcessWorkspaceShell initialPml={project.pmlSource} />
       </div>
     </div>
   );
