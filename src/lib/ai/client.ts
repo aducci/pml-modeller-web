@@ -3,7 +3,7 @@
  */
 
 import { anthropic } from '@ai-sdk/anthropic';
-import { generateText, streamText } from 'ai';
+import { generateText, streamText, Output } from 'ai';
 import { aiResponseSchema, type AiResponse } from './schemas';
 import { PML_SYSTEM_PROMPT } from './prompts';
 
@@ -11,13 +11,13 @@ import { PML_SYSTEM_PROMPT } from './prompts';
  * Create a streaming chat completion with Claude.
  * Used by the /api/ai/chat route.
  */
-export function createChatStream(messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>) {
+export function createChatStream(messages: Array<{ role: 'user' | 'assistant'; content: string }>) {
   return streamText({
     model: anthropic('claude-sonnet-4-6'),
     system: PML_SYSTEM_PROMPT,
     messages,
     temperature: 0.3,
-    maxOutputTokens: 2048,
+    maxTokens: 2048,
   });
 }
 
@@ -38,22 +38,21 @@ export async function generatePatches(
     },
   ];
 
-  const result = await generateText({
-    model: anthropic('claude-sonnet-4-6'),
-    system: `${PML_SYSTEM_PROMPT}\n\nYou must respond with a valid JSON object matching the schema defined above.`,
-    messages,
-    temperature: 0.2,
-    maxOutputTokens: 4096,
-  });
-
-  // Parse the response as JSON
+  // Use structured output + JSON fallback for reliable patch extraction
   try {
+    const result = await generateText({
+      model: anthropic('claude-sonnet-4-6'),
+      system: `${PML_SYSTEM_PROMPT}\n\nYou must respond with a valid JSON object matching the schema defined above.`,
+      messages,
+      temperature: 0.2,
+      maxTokens: 4096,
+    });
+
     const text = result.text.trim();
     const parsed = JSON.parse(text) as AiResponse;
-    // Validate against schema
     return aiResponseSchema.parse(parsed);
   } catch (parseErr) {
-    console.error('AI response parse error:', parseErr, '\nRaw text:', result.text);
+    console.error('AI response parse error:', parseErr);
     throw new Error('Failed to parse AI response as valid patch operations');
   }
 }

@@ -7,7 +7,19 @@ import { SiteHeader } from '@/components/SiteHeader';
 type BillingCycle = 'monthly' | 'annual';
 type PlanName = 'Free' | 'Starter' | 'Pro' | 'Enterprise';
 
-const plans = [
+type Plan = {
+  name: string;
+  monthly: number;
+  annual: number;
+  promise: string;
+  cta: string;
+  href: string;
+  highlighted?: true;
+  capacity: string[];
+  features: string[];
+};
+
+const plans: Plan[] = [
   {
     name: 'Free',
     monthly: 0,
@@ -49,7 +61,7 @@ const plans = [
     capacity: ['10 seats included', '2,000 shared AI generations', '100 organizations'],
     features: ['SSO and SCIM', 'Private AI routing', 'Self-hosted options and audit trails'],
   },
-] as const;
+];
 
 export default function PricingPage() {
   const [billing, setBilling] = useState<BillingCycle>('monthly');
