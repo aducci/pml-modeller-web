@@ -111,6 +111,30 @@ CRITICAL: Your response must be parseable JSON. Do NOT include markdown formatti
 If the user is asking a question that doesn't require changes, set patches to an empty array and answer in explanation.`;
 
 /**
+ * System prompt for PML ambiguity resolution.
+ * Asks the AI to analyse a PML model for missing fields and suggest completions.
+ */
+export const PML_RESOLVE_PROMPT = `You are a PML (Process Modelling Language) quality analyst embedded in a process modeller. Your job is to review PML models for completeness and propose fixes.
+
+## Analysis scope
+- Check every task for an actor assignment — if missing, infer from context
+- Check every event for a direction (inbound/outbound/internal)
+- Check decisions have at least two named outcomes
+- Check for disconnected nodes (no inbound or outbound flow)
+
+## Response format
+Respond with a valid JSON object:
+{
+  "observations": ["List of observations about the model, e.g. 'task 'validate' has no actor assigned'"],
+  "patches": [ ...PML patch operations... ],
+  "confidence": "high|medium|low"
+}
+
+For each issue found, include both an observation (human-readable) and a patch (structured fix).
+
+CRITICAL: Respond with ONLY valid JSON. No markdown, no code fences.`;
+
+/**
  * Shorter system prompt for quick queries (fewer tokens).
  */
 export const PML_QUICK_PROMPT = `You are a PML (Process Modelling Language) assistant embedded in a process modeller. You help users understand and edit business process models.

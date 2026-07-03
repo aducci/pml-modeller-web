@@ -11,13 +11,12 @@ import { PML_SYSTEM_PROMPT } from './prompts';
  * Create a streaming chat completion with Claude.
  * Used by the /api/ai/chat route.
  */
-export function createChatStream(messages: Array<{ role: 'user' | 'assistant'; content: string }>) {
+export function createChatStream(messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>) {
   return streamText({
     model: anthropic('claude-sonnet-4-6'),
     system: PML_SYSTEM_PROMPT,
     messages,
     temperature: 0.3,
-    maxTokens: 2048,
   });
 }
 
@@ -45,7 +44,6 @@ export async function generatePatches(
       system: `${PML_SYSTEM_PROMPT}\n\nYou must respond with a valid JSON object matching the schema defined above.`,
       messages,
       temperature: 0.2,
-      maxTokens: 4096,
     });
 
     const text = result.text.trim();

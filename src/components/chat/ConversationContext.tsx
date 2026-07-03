@@ -42,6 +42,7 @@ export interface ConversationState {
 
 type ConversationAction =
   | { type: 'ADD_MESSAGE'; payload: ConversationMessage }
+  | { type: 'UPDATE_MESSAGE_CONTENT'; payload: { messageId: string; content: string } }
   | { type: 'SET_PROCESSING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'UPDATE_PROPOSAL'; payload: { proposalId: string; status: PatchProposal['status'] } }
@@ -56,6 +57,13 @@ function conversationReducer(state: ConversationState, action: ConversationActio
   switch (action.type) {
     case 'ADD_MESSAGE':
       return { ...state, messages: [...state.messages, action.payload] };
+    case 'UPDATE_MESSAGE_CONTENT':
+      return {
+        ...state,
+        messages: state.messages.map((msg) =>
+          msg.id === action.payload.messageId ? { ...msg, content: action.payload.content } : msg
+        ),
+      };
     case 'SET_PROCESSING':
       return { ...state, isProcessing: action.payload };
     case 'SET_ERROR':
@@ -137,7 +145,7 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
     dispatch({ type: 'SET_PROCESSING', payload: true });
     dispatch({ type: 'SET_ERROR', payload: null });
 
-    // Call /api/ai/propose for structured patches
+    // Try structured /api/ai/propose first; fall back to streaming /api/ai/chat
     try {
       abortRef.current = new AbortController();
       const response = await fetch('/api/ai/propose', {
@@ -147,31 +155,76 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
         signal: abortRef.current.signal,
       });
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(err.error || `Request failed (${response.status})`);
+      if (response.ok) {
+        // Structured patch response
+        const data = await response.json();
+
+        const proposals: PatchProposal[] = (data.patches || []).map((patch: any, i: number) => ({
+          id: `${generateId()}-prop-${i}`,
+          patches: [patch],
+          description: data.explanation || 'Proposed change',
+          confidence: data.confidence || 'medium',
+          status: 'pending' as const,
+          createdAt: Date.now(),
+        }));
+
+        const assistantMsg: ConversationMessage = {
+          id: generateId(),
+          role: 'assistant',
+          content: data.explanation || 'Here are my suggestions:',
+          timestamp: Date.now(),
+          patches: proposals.length > 0 ? proposals : undefined,
+        };
+
+        dispatch({ type: 'ADD_MESSAGE', payload: assistantMsg });
+      } else {
+        // Fall back to streaming chat
+        const streamRes = await fetch('/api/ai/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: content, pmlSnippet: pmlSnippet ?? '' }),
+          signal: abortRef.current.signal,
+        });
+
+        if (!streamRes.ok) {
+          const err = await streamRes.json().catch(() => ({ error: 'Request failed' }));
+          throw new Error(err.error || `Request failed (${streamRes.status})`);
+        }
+
+        // Read the streaming response
+        const reader = streamRes.body?.getReader();
+        if (!reader) throw new Error('No response body');
+
+        const decoder = new TextDecoder();
+        let fullText = '';
+
+        // Add a placeholder assistant message that we'll update
+        const assistantMsgId = generateId();
+        dispatch({
+          type: 'ADD_MESSAGE',
+          payload: {
+            id: assistantMsgId,
+            role: 'assistant',
+            content: '',
+            timestamp: Date.now(),
+          },
+        });
+
+        // Read stream chunks
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          fullText += chunk;
+
+          // Update the message content
+          dispatch({
+            type: 'UPDATE_MESSAGE_CONTENT',
+            payload: { messageId: assistantMsgId, content: fullText },
+          });
+        }
       }
-
-      const data = await response.json();
-
-      const proposals: PatchProposal[] = (data.patches || []).map((patch: any, i: number) => ({
-        id: `${generateId()}-prop-${i}`,
-        patches: [patch],
-        description: data.explanation || 'Proposed change',
-        confidence: data.confidence || 'medium',
-        status: 'pending' as const,
-        createdAt: Date.now(),
-      }));
-
-      const assistantMsg: ConversationMessage = {
-        id: generateId(),
-        role: 'assistant',
-        content: data.explanation || 'Here are my suggestions:',
-        timestamp: Date.now(),
-        patches: proposals.length > 0 ? proposals : undefined,
-      };
-
-      dispatch({ type: 'ADD_MESSAGE', payload: assistantMsg });
     } catch (err: any) {
       if (err.name === 'AbortError') return;
       dispatch({ type: 'SET_ERROR', payload: err.message || 'Failed to get AI response' });
