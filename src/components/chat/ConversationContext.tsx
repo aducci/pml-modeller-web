@@ -113,6 +113,7 @@ interface ConversationContextValue {
   rejectProposal: (proposalId: string) => void;
   clearConversation: () => void;
   setMode: (mode: AssistantMode) => void;
+  startInterview: (pmlSnippet?: string) => void;
 }
 
 const ConversationContext = createContext<ConversationContextValue | null>(null);
@@ -249,8 +250,65 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
     dispatch({ type: 'SET_MODE', payload: mode });
   }, []);
 
+  const startInterview = useCallback(async (pmlSnippet?: string) => {
+    // Add welcome message
+    const welcomeMsg: ConversationMessage = {
+      id: generateId(),
+      role: 'assistant',
+      content: pmlSnippet?.trim()
+        ? `I've reviewed your process model. I can see it has structure already. What would you like to improve or add? I can help with:
+• Identifying missing actors or tasks
+• Checking flow completeness
+• Suggesting metadata (risks, SLAs, KPIs)
+• Refining decision points`
+        : "I'm your AI modelling assistant. I can help you build a process model from scratch.\n\nTell me about the process you want to model. What actors are involved? What triggers it? What are the key steps?",
+      timestamp: Date.now(),
+    };
+    dispatch({ type: 'ADD_MESSAGE', payload: welcomeMsg });
+
+    // If there's existing PML, analyse it
+    if (pmlSnippet?.trim()) {
+      dispatch({ type: 'SET_PROCESSING', payload: true });
+      try {
+        const response = await fetch('/api/ai/propose', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: 'Analyse this process model for completeness and quality. List any gaps or issues.',
+            pmlSnippet,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.explanation || (data.patches?.length ?? 0) > 0) {
+            const analysisMsg: ConversationMessage = {
+              id: generateId(),
+              role: 'assistant',
+              content: data.explanation || 'Here are my observations:',
+              timestamp: Date.now(),
+              patches: (data.patches || []).map((patch: any, i: number) => ({
+                id: `${generateId()}-prop-${i}`,
+                patches: [patch],
+                description: data.explanation || 'Suggested improvement',
+                confidence: data.confidence || 'medium',
+                status: 'pending' as const,
+                createdAt: Date.now(),
+              })),
+            };
+            dispatch({ type: 'ADD_MESSAGE', payload: analysisMsg });
+          }
+        }
+      } catch {
+        // Silently fail — the welcome message is enough
+      } finally {
+        dispatch({ type: 'SET_PROCESSING', payload: false });
+      }
+    }
+  }, []);
+
   return (
-    <ConversationContext.Provider value={{ state, sendMessage, acceptProposal, rejectProposal, clearConversation, setMode }}>
+    <ConversationContext.Provider value={{ state, sendMessage, acceptProposal, rejectProposal, clearConversation, setMode, startInterview }}>
       {children}
     </ConversationContext.Provider>
   );
