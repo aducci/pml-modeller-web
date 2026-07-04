@@ -23,7 +23,7 @@ actor Store
     task(manual) notify_unavailable as "Notify Customer"
         note "Offer alternatives or back-order option."
 
-    decision stock_check as "Stock Available?":
+    decision(OR) stock_check as "Stock Available?":
         in_stock*  as "In Stock"    > process_payment
         out_of_stock as "Out of Stock" > notify_unavailable
 
