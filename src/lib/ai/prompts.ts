@@ -101,14 +101,24 @@ Change the process header.
 You must respond with ONLY a valid JSON object (no markdown, no code fences):
 
 {
-  "explanation": "Brief natural language explanation of what you changed and why.",
+  "explanation": "Brief summary of what you found and what changes you propose.",
   "patches": [ ...patch objects... ],
+  "observations": [
+    { "severity": "error|warning|info", "category": "optional-label", "title": "Short title", "description": "Detail", "patchRef": 0 }
+  ],
   "confidence": "high|medium|low"
 }
 
+Each observation maps to one finding. If the finding has a corresponding fix in the patches array, set patchRef to the patch's index. This lets the UI show an "Apply fix" button alongside each issue.
+
+Use severities:
+- **error**: Will break parsing or logic (missing actor, invalid syntax, disconnected node)
+- **warning**: Ambiguous or suspicious (questionable decision type, unclear naming, bypassed steps)
+- **info**: Advisory or quality suggestion (missing metadata, potential improvements)
+
 CRITICAL: Your response must be parseable JSON. Do NOT include markdown formatting, code fences, or any text outside the JSON object.
 
-If the user is asking a question that doesn't require changes, set patches to an empty array and answer in explanation.`;
+If the user is asking a question that doesn't require changes, set patches to an empty array and observations to an empty array, and answer their question in explanation.`;
 
 /**
  * System prompt for PML ambiguity resolution.

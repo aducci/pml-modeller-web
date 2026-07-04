@@ -9,6 +9,15 @@ import type { PmlPatch } from 'pml-core';
 
 export type MessageRole = 'user' | 'assistant' | 'system';
 
+export interface ModelObservation {
+  severity: 'error' | 'warning' | 'info';
+  category?: string;
+  title: string;
+  description: string;
+  /** Index into the patches array (if this observation has a corresponding fix). */
+  patchRef?: number;
+}
+
 export interface PatchProposal {
   id: string;
   patches: PmlPatch[];
@@ -24,6 +33,7 @@ export interface ConversationMessage {
   content: string;
   timestamp: number;
   patches?: PatchProposal[];
+  observations?: ModelObservation[];
 }
 
 export type AssistantMode = 'guided' | 'exploratory';

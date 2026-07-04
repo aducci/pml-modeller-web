@@ -80,9 +80,27 @@ export const pmlPatchSchema = z.discriminatedUnion('op', [
 // AI response schema
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Observation schema
+// ---------------------------------------------------------------------------
+
+const observationSchema = z.object({
+  severity: z.enum(['error', 'warning', 'info']),
+  category: z.string().max(30).optional(),
+  title: z.string().min(1).max(100),
+  description: z.string().min(1).max(500),
+  /** Index into the patches array (if this observation has a corresponding fix). */
+  patchRef: z.number().int().min(0).optional(),
+});
+
+// ---------------------------------------------------------------------------
+// AI response schema
+// ---------------------------------------------------------------------------
+
 export const aiResponseSchema = z.object({
   explanation: z.string().min(1),
   patches: z.array(pmlPatchSchema).max(20).default([]),
+  observations: z.array(observationSchema).max(30).default([]),
   confidence: z.enum(['high', 'medium', 'low']),
 });
 
