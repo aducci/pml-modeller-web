@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { ProcessController, ProcessWorkspaceView, WorkspaceState } from 'pml-core';
-import { AiAssistantWorkspace } from '@/components/chat/AiAssistantWorkspace';
+import { AiAssistantView } from '@/components/chat/AiAssistantView';
 
 type WorkspaceMode = 'editor' | 'ai-assistant';
 
@@ -38,7 +38,7 @@ export function ProcessWorkspaceShell({
       onNavigateAdmin={() => {}}
       mode={enableAiAssistant ? mode : 'editor'}
       onModeChange={enableAiAssistant ? setMode : undefined}
-      aiAssistantPanel={enableAiAssistant ? <AiAssistantWorkspace controller={controller} state={state} /> : undefined}
+      aiAssistantPanel={enableAiAssistant ? <AiAssistantView controller={controller} state={state} /> : undefined}
     />
   );
 }

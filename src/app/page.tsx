@@ -1,75 +1,8 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { SiteHeader } from '@/components/SiteHeader';
-
-/* ──────────────────────────────────────────
-   AnimatedPipeline — hero 6-step visual
-   ────────────────────────────────────────── */
-const PIPELINE_STEPS = [
-  'Describe\nProcess',
-  'PML\nDSL',
-  'Interactive\nDiagram',
-  'AI\nReview',
-  'SME\nApproval',
-  'BPMN\nExport',
-] as const;
-
-function AnimatedPipeline() {
-  const [activeIdx, setActiveIdx] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      setActiveIdx((p) => (p + 1) % PIPELINE_STEPS.length);
-    }, 1400);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
-
-  return (
-    <div className="flex items-start justify-center gap-1 sm:gap-2 select-none">
-      {PIPELINE_STEPS.map((label, i) => (
-        <div key={label} className="flex items-center gap-1 sm:gap-2">
-          <div
-            className={`relative flex h-16 w-16 sm:h-20 sm:w-20 flex-col items-center justify-center rounded-xl border-2 text-center text-[10px] font-semibold leading-tight transition-all duration-700 ${
-              i === activeIdx
-                ? 'border-teal bg-teal text-white shadow-lg shadow-teal/30 scale-110'
-                : i < activeIdx
-                  ? 'border-teal/30 bg-honeydew/60 text-teal'
-                  : 'border-gray-200 bg-white text-gray-400'
-            }`}
-          >
-            {label.split('\n').map((line, j) => (
-              <span key={j}>{line}</span>
-            ))}
-            {/* completed check */}
-            {i < activeIdx && (
-              <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[10px] text-white shadow-sm">
-                ✓
-              </span>
-            )}
-          </div>
-          {i < PIPELINE_STEPS.length - 1 && (
-            <svg
-              className={`h-5 w-5 shrink-0 transition-colors duration-700 ${
-                i < activeIdx ? 'text-teal' : 'text-gray-300'
-              }`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
 
 /* ──────────────────────────────────────────
    PipelineFlow — vertical animated flow for
@@ -134,10 +67,10 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-br from-honeydew/70 via-white to-white" />
           <div className="absolute -top-20 -right-16 h-72 w-72 rounded-full bg-sandy/20 blur-3xl" />
           <div className="absolute -bottom-20 -left-16 h-60 w-60 rounded-full bg-teal/10 blur-3xl" />
-          <div className="mx-auto max-w-6xl px-6 py-20 lg:py-28 relative">
-            <div className="grid gap-12 lg:grid-cols-[1fr,1.1fr] items-center">
+          <div className="mx-auto max-w-7xl px-6 py-20 lg:py-28 relative">
+            <div className="grid gap-6 lg:grid-cols-[0.7fr,1.5fr] items-center">
               {/* left column — copy */}
-              <div className="page-enter">
+              <div className="page-enter lg:-ml-6">
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal">
                   AI-native process modelling
                 </p>
@@ -173,9 +106,16 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* right column — animated pipeline */}
-              <div className="page-enter-delay">
-                <AnimatedPipeline />
+              {/* right column — workflow video */}
+              <div className="page-enter-delay lg:-mr-32">
+                <video
+                  className="w-full rounded-2xl shadow-xl shadow-teal/10 ring-1 ring-gray-100"
+                  src="/media/pml-workflow.mp4"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                />
               </div>
             </div>
           </div>

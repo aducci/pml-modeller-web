@@ -5,6 +5,7 @@ import {
   Bot, PanelRightClose, PanelRightOpen, Sparkles,
   MessageSquare, Lightbulb, FileCode, X,
 } from 'lucide-react';
+import { applyPatches, generatePml } from 'pml-core';
 import type { ProcessController, WorkspaceState } from 'pml-core';
 import { ChatPanel } from './ChatPanel';
 import { ConversationProvider, useConversation } from './ConversationContext';
@@ -35,7 +36,23 @@ function AiAssistantContent({ controller, state }: Props) {
 
   const handleProposalAccept = useCallback((patches: any[]) => {
     console.log('Proposal accepted:', patches);
-  }, []);
+    if (!patches.length || !state.pmlContent) return;
+
+    try {
+      const result = applyPatches(state.pmlContent, patches);
+      if (result.success && result.pml) {
+        const newPml = result.pml;
+        // Patch the state.pmlContent via the controller
+        // We surface this through the controller by calling setPmlContent
+        controller.setPmlContent(newPml);
+        console.log('Patches applied successfully — canvas should update');
+      } else {
+        console.warn('Patch application failed:', result.error);
+      }
+    } catch (err) {
+      console.error('Error applying patches:', err);
+    }
+  }, [state.pmlContent, controller]);
 
   // Compute initial observations
   const observations = React.useMemo(() => {

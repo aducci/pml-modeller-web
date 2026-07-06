@@ -24,7 +24,6 @@ const addNodeSchema = z.object({
     eventType: z.enum(['message', 'signal', 'timer', 'state']).optional(),
     outcomes: z.array(z.object({ name: z.string(), target: z.string(), primary: z.boolean().optional() })).optional(),
     process: z.string().optional(),
-    status: z.string().optional(),
   }),
   after: z.string().optional(),
 });
@@ -32,7 +31,7 @@ const addNodeSchema = z.object({
 const updateNodeSchema = z.object({
   op: z.literal('update-node'),
   nodeId: z.string().min(1),
-  field: z.enum(['label', 'actor', 'scope', 'taskType', 'direction', 'eventType', 'status', 'metadata']),
+  field: z.enum(['label', 'actor', 'scope', 'taskType', 'direction', 'eventType', 'metadata']),
   value: z.any(),
 });
 

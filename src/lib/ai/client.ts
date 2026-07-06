@@ -3,9 +3,9 @@
  */
 
 import { anthropic } from '@ai-sdk/anthropic';
-import { generateText, streamText, Output } from 'ai';
+import { generateObject, generateText, streamText, Output } from 'ai';
 import { aiResponseSchema, type AiResponse } from './schemas';
-import { PML_SYSTEM_PROMPT } from './prompts';
+import { PML_SYSTEM_PROMPT, PML_RESOLVE_PROMPT } from './prompts';
 
 /**
  * Create a streaming chat completion with Claude.
@@ -17,7 +17,7 @@ export function createChatStream(messages: Array<{ role: 'user' | 'assistant' | 
     system: PML_SYSTEM_PROMPT,
     messages,
     temperature: 0.3,
-  });
+  } as any);
 }
 
 /**
@@ -37,21 +37,57 @@ export async function generatePatches(
     },
   ];
 
-  // Use structured output + JSON fallback for reliable patch extraction
+  // Use generateObject for structured output
   try {
-    const result = await generateText({
+    const { object } = await generateObject({
       model: anthropic('claude-sonnet-4-6'),
-      system: `${PML_SYSTEM_PROMPT}\n\nYou must respond with a valid JSON object matching the schema defined above.`,
+      system: PML_SYSTEM_PROMPT,
       messages,
       temperature: 0.2,
-    });
+      output: Output.object({ schema: aiResponseSchema }),
+    } as any);
 
-    const text = result.text.trim();
-    const parsed = JSON.parse(text) as AiResponse;
-    return aiResponseSchema.parse(parsed);
+    return object as AiResponse;
   } catch (parseErr) {
-    console.error('AI response parse error:', parseErr);
-    throw new Error('Failed to parse AI response as valid patch operations');
+    console.error('AI response error:', parseErr);
+    throw new Error('Failed to generate AI patch operations');
+  }
+}
+
+/**
+ * Resolve ambiguity in a PML model.
+ * Uses structured output (generateObject) like generatePatches, not manual JSON parsing.
+ */
+export async function resolveAmbiguity(
+  pmlSnippet: string,
+  focusType: string = 'full',
+  focusId?: string
+): Promise<AiResponse> {
+  const focusStr = focusId ? ` on '${focusId}'` : '';
+
+  try {
+    const { object } = await generateObject({
+      model: anthropic('claude-sonnet-4-6'),
+      system: PML_RESOLVE_PROMPT,
+      messages: [
+        {
+          role: 'user',
+          content: `Analyse this PML process and suggest completions:\n\`\`\`pml\n${pmlSnippet}\n\`\`\`\n\nFocus: ${focusType}${focusStr}`,
+        },
+      ],
+      temperature: 0.2,
+      output: Output.object({ schema: aiResponseSchema }),
+    } as any);
+
+    return object as AiResponse;
+  } catch (err) {
+    console.error('AI resolve error:', err);
+    return {
+      explanation: 'Failed to analyse model',
+      patches: [],
+      observations: [],
+      confidence: 'low',
+    };
   }
 }
 

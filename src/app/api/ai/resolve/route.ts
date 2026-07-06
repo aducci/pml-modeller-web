@@ -2,23 +2,24 @@
  * POST /api/ai/resolve
  *
  * Resolve ambiguity in a PML model — fills missing fields, suggests
- * completions, and marks uncertain items with status=queried.
+ * completions, and marks uncertain items with the `?` queried marker.
+ *
+ * Uses the shared AI client (consistent with /api/ai/propose), not
+ * a duplicate Anthropic call path.
  *
  * Request body:
  *   { pmlSnippet: string, focusType?: string, focusId?: string }
  *
  * Response:
- *   { patches: PmlPatchOp[], observations: string[], confidence: 'high'|'medium'|'low' }
+ *   { explanation: string, patches: PmlPatchOp[], observations: Obs[], confidence: 'high'|'medium'|'low' }
  */
 
 import { NextRequest } from 'next/server';
-import { generateText } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
-import { PML_RESOLVE_PROMPT } from '@/lib/ai/prompts';
+import { resolveAmbiguity, isAiAvailable } from '@/lib/ai/client';
 
 export async function POST(req: NextRequest) {
   try {
-    if (!process.env.ANTHROPIC_API_KEY) {
+    if (!isAiAvailable()) {
       return new Response(
         JSON.stringify({ error: 'AI is not configured. Set ANTHROPIC_API_KEY.', patches: [], observations: [] }),
         { status: 503, headers: { 'Content-Type': 'application/json' } }
@@ -37,42 +38,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await generateText({
-      model: anthropic('claude-sonnet-4-6'),
-      system: PML_RESOLVE_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: `Analyse this PML process and suggest completions:\n\`\`\`pml\n${pmlSnippet}\n\`\`\`\n\nFocus: ${focusType}${focusId ? ` on '${focusId}'` : ''}`,
-        },
-      ],
-      temperature: 0.2,
+    const result = await resolveAmbiguity(pmlSnippet, focusType, focusId);
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
     });
-
-    const text = result.text.trim();
-    let parsed;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      // If not valid JSON, wrap the text as an observation
-      return new Response(
-        JSON.stringify({
-          patches: [],
-          observations: [text],
-          confidence: 'low',
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    return new Response(
-      JSON.stringify({
-        patches: parsed.patches ?? [],
-        observations: parsed.observations ?? [],
-        confidence: parsed.confidence ?? 'medium',
-      }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
   } catch (err) {
     console.error('AI resolve error:', err);
     return new Response(
