@@ -38,6 +38,9 @@ export interface ConversationMessage {
 
 export type AssistantMode = 'guided' | 'exploratory';
 
+/** Focus type for scoping AI context to a subgraph window. */
+export type GraphFocusType = 'actor' | 'decision' | 'flow-path' | 'full';
+
 export interface ConversationState {
   id: string;
   mode: AssistantMode;
@@ -118,12 +121,15 @@ function createInitialState(): ConversationState {
 
 interface ConversationContextValue {
   state: ConversationState;
-  sendMessage: (content: string, pmlSnippet?: string) => Promise<void>;
+  sendMessage: (content: string, pmlSnippet?: string, focusType?: GraphFocusType, focusId?: string) => Promise<void>;
   acceptProposal: (proposalId: string) => void;
   rejectProposal: (proposalId: string) => void;
   clearConversation: () => void;
   setMode: (mode: AssistantMode) => void;
+  setFocus: (type: GraphFocusType, id: string) => void;
   startInterview: (pmlSnippet?: string) => void;
+  focusType: GraphFocusType;
+  focusId: string | null;
 }
 
 const ConversationContext = createContext<ConversationContextValue | null>(null);
@@ -141,9 +147,20 @@ export function useConversation(): ConversationContextValue {
 export function ConversationProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(conversationReducer, undefined, createInitialState);
   const abortRef = useRef<AbortController | null>(null);
+  const [focusType, setFocusType] = useState<GraphFocusType>('full');
+  const [focusId, setFocusId] = useState<string | null>(null);
 
-  const sendMessage = useCallback(async (content: string, pmlSnippet?: string) => {
+  const setFocus = useCallback((type: GraphFocusType, id: string) => {
+    setFocusType(type);
+    setFocusId(id);
+  }, []);
+
+  const sendMessage = useCallback(async (content: string, pmlSnippet?: string, overrideFocusType?: GraphFocusType, overrideFocusId?: string) => {
     if (!content.trim()) return;
+
+    // Determine effective focus scope
+    const effectiveFocusType = overrideFocusType || focusType;
+    const effectiveFocusId = overrideFocusId || focusId;
 
     // Add user message
     const userMsg: ConversationMessage = {
@@ -159,10 +176,21 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
     // Try structured /api/ai/propose first; fall back to streaming /api/ai/chat
     try {
       abortRef.current = new AbortController();
+
+      // Build request body with optional focus scope
+      const requestBody: Record<string, any> = {
+        message: content,
+        pmlSnippet: pmlSnippet ?? '',
+      };
+      if (effectiveFocusType && effectiveFocusType !== 'full') {
+        requestBody.focusType = effectiveFocusType;
+        requestBody.focusId = effectiveFocusId;
+      }
+
       const response = await fetch('/api/ai/propose', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: content, pmlSnippet: pmlSnippet ?? '' }),
+        body: JSON.stringify(requestBody),
         signal: abortRef.current.signal,
       });
 
