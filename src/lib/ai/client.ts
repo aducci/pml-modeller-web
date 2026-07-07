@@ -3,7 +3,7 @@
  */
 
 import { anthropic } from '@ai-sdk/anthropic';
-import { generateObject, generateText, streamText, Output } from 'ai';
+import { generateObject, streamText } from 'ai';
 import { aiResponseSchema, type AiResponse } from './schemas';
 import { PML_SYSTEM_PROMPT, PML_RESOLVE_PROMPT } from './prompts';
 
@@ -17,7 +17,7 @@ export function createChatStream(messages: Array<{ role: 'user' | 'assistant' | 
     system: PML_SYSTEM_PROMPT,
     messages,
     temperature: 0.3,
-  } as any);
+  });
 }
 
 /**
@@ -37,15 +37,14 @@ export async function generatePatches(
     },
   ];
 
-  // Use generateObject for structured output
   try {
     const { object } = await generateObject({
       model: anthropic('claude-sonnet-4-6'),
       system: PML_SYSTEM_PROMPT,
       messages,
       temperature: 0.2,
-      output: Output.object({ schema: aiResponseSchema }),
-    } as any);
+      schema: aiResponseSchema,
+    });
 
     return object as AiResponse;
   } catch (parseErr) {
@@ -76,8 +75,8 @@ export async function resolveAmbiguity(
         },
       ],
       temperature: 0.2,
-      output: Output.object({ schema: aiResponseSchema }),
-    } as any);
+      schema: aiResponseSchema,
+    });
 
     return object as AiResponse;
   } catch (err) {

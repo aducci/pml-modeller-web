@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useRef, useState } from 'react';
 import type { PmlPatch } from 'pml-core';
 
 // ---------------------------------------------------------------------------
@@ -346,7 +346,7 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   return (
-    <ConversationContext.Provider value={{ state, sendMessage, acceptProposal, rejectProposal, clearConversation, setMode, startInterview }}>
+    <ConversationContext.Provider value={{ state, sendMessage, acceptProposal, rejectProposal, clearConversation, setMode, setFocus, startInterview, focusType, focusId }}>
       {children}
     </ConversationContext.Provider>
   );
