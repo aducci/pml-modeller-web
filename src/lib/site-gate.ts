@@ -2,7 +2,8 @@ import crypto from 'crypto';
 
 /**
  * Generate a signed value for site access cookie.
- * Uses HMAC-SHA256 with COOKIE_SECRET.
+ * Uses HMAC-SHA256 with SITE_PASSWORD.
+ * Uses Node.js crypto (only called from API route, which supports it).
  */
 export function generateAccessToken(secret: string): string {
   const randomValue = crypto.randomBytes(32).toString('hex');
@@ -15,8 +16,10 @@ export function generateAccessToken(secret: string): string {
 
 /**
  * Verify a signed site access token.
+ * Uses Web Crypto API for Edge Runtime compatibility.
+ * Works in both Edge Runtime (middleware) and Serverless Functions (API).
  */
-export function verifyAccessToken(token: string, secret: string): boolean {
+export async function verifyAccessToken(token: string, secret: string): Promise<boolean> {
   try {
     const [randomValue, hmac] = token.split('.');
     if (!randomValue || !hmac) {
@@ -24,15 +27,27 @@ export function verifyAccessToken(token: string, secret: string): boolean {
       return false;
     }
 
-    const expectedHmac = crypto
-      .createHmac('sha256', secret)
-      .update(randomValue)
-      .digest('hex');
-
-    const match = crypto.timingSafeEqual(
-      Buffer.from(hmac),
-      Buffer.from(expectedHmac)
+    // Use Web Crypto API (available in Edge Runtime)
+    const encoder = new TextEncoder();
+    const secretKey = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
     );
+
+    const expectedHmacBuffer = await crypto.subtle.sign(
+      'HMAC',
+      secretKey,
+      encoder.encode(randomValue)
+    );
+
+    const expectedHmac = Array.from(new Uint8Array(expectedHmacBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    const match = hmac === expectedHmac;
     
     if (!match) {
       console.warn('[SiteGate] HMAC mismatch:', {

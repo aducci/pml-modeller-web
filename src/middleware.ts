@@ -52,7 +52,7 @@ function isStaticAsset(pathname: string): boolean {
   return STATIC_PATTERNS.some(pattern => pattern.test(pathname));
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Skip static assets and public routes
@@ -81,7 +81,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/enter-password', request.url));
     }
 
-    // Verify cookie signature
+    // Verify cookie signature (async operation using Web Crypto API)
     const tokenParts = siteAccessCookie.split('.');
     console.log('[Middleware] Cookie received:', {
       firstPartLength: tokenParts[0]?.length || 0,
@@ -90,7 +90,8 @@ export function middleware(request: NextRequest) {
       hasSecret: !!cookieSecret,
     });
 
-    if (!verifyAccessToken(siteAccessCookie, cookieSecret)) {
+    const isValid = await verifyAccessToken(siteAccessCookie, cookieSecret);
+    if (!isValid) {
       console.warn('[Middleware] Cookie verification failed - token invalid');
       return NextResponse.redirect(new URL('/enter-password', request.url));
     }
