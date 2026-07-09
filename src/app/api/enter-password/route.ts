@@ -44,14 +44,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get cookie secret
-    const cookieSecret = process.env.COOKIE_SECRET;
+    // Get cookie secret (with fallback for Edge Runtime)
+    let cookieSecret = process.env.COOKIE_SECRET;
     if (!cookieSecret) {
-      console.error('[SiteGate] COOKIE_SECRET not configured');
-      return NextResponse.json(
-        { error: 'Server configuration error: COOKIE_SECRET not set' },
-        { status: 500 }
-      );
+      console.warn('[SiteGate] COOKIE_SECRET not available, using SITE_PASSWORD as fallback');
+      cookieSecret = sitePassword;
     }
 
     // Generate signed access token

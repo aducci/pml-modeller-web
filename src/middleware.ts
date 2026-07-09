@@ -66,7 +66,7 @@ export function middleware(request: NextRequest) {
   const sitePassword = process.env.SITE_PASSWORD;
   if (sitePassword) {
     const siteAccessCookie = request.cookies.get('site_access')?.value;
-    const cookieSecret = process.env.COOKIE_SECRET;
+    let cookieSecret = process.env.COOKIE_SECRET;
 
     console.log('[Middleware] Password gate check for:', pathname, {
       hasCookie: !!siteAccessCookie,
@@ -74,9 +74,16 @@ export function middleware(request: NextRequest) {
       cookieLength: siteAccessCookie?.length || 0,
     });
 
-    // If cookie not present or secret not configured, redirect to password gate
-    if (!siteAccessCookie || !cookieSecret) {
-      console.warn('[Middleware] Redirecting to password gate - missing cookie or secret');
+    // If no explicit secret in middleware context, derive from SITE_PASSWORD
+    // (fallback for Edge Runtime where env vars might not propagate)
+    if (!cookieSecret) {
+      console.warn('[Middleware] COOKIE_SECRET not available, using SITE_PASSWORD as fallback');
+      cookieSecret = sitePassword;
+    }
+
+    // If cookie not present, redirect to password gate
+    if (!siteAccessCookie) {
+      console.warn('[Middleware] No cookie found, redirecting to password gate');
       return NextResponse.redirect(new URL('/enter-password', request.url));
     }
 
