@@ -1,11 +1,13 @@
-import crypto from 'crypto';
-
 /**
  * Generate a signed value for site access cookie.
  * Uses HMAC-SHA256 with SITE_PASSWORD.
  * Uses Node.js crypto (only called from API route, which supports it).
  */
 export function generateAccessToken(secret: string): string {
+  // Import crypto only when needed (inside function)
+  // This prevents the Edge Runtime from rejecting the entire module
+  const crypto = require('crypto');
+  
   const randomValue = crypto.randomBytes(32).toString('hex');
   const hmac = crypto
     .createHmac('sha256', secret)
