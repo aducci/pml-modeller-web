@@ -44,12 +44,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get cookie secret (with fallback for Edge Runtime)
-    let cookieSecret = process.env.COOKIE_SECRET;
-    if (!cookieSecret) {
-      console.warn('[SiteGate] COOKIE_SECRET not available, using SITE_PASSWORD as fallback');
-      cookieSecret = sitePassword;
-    }
+    // Use SITE_PASSWORD as the token secret (consistent with middleware)
+    const cookieSecret = sitePassword;
 
     // Generate signed access token
     const token = generateAccessToken(cookieSecret);

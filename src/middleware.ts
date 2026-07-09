@@ -66,20 +66,8 @@ export function middleware(request: NextRequest) {
   const sitePassword = process.env.SITE_PASSWORD;
   if (sitePassword) {
     const siteAccessCookie = request.cookies.get('site_access')?.value;
-    let cookieSecret = process.env.COOKIE_SECRET;
-
-    console.log('[Middleware] Password gate check for:', pathname, {
-      hasCookie: !!siteAccessCookie,
-      hasSecret: !!cookieSecret,
-      cookieLength: siteAccessCookie?.length || 0,
-    });
-
-    // If no explicit secret in middleware context, derive from SITE_PASSWORD
-    // (fallback for Edge Runtime where env vars might not propagate)
-    if (!cookieSecret) {
-      console.warn('[Middleware] COOKIE_SECRET not available, using SITE_PASSWORD as fallback');
-      cookieSecret = sitePassword;
-    }
+    // Use SITE_PASSWORD as the token secret (consistent with API route)
+    const cookieSecret = sitePassword;
 
     // If cookie not present, redirect to password gate
     if (!siteAccessCookie) {
