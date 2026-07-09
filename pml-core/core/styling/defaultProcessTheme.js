@@ -1,0 +1,183 @@
+/**
+ * Default theme — "Blueprint Minimal" visual language.
+ *
+ * Near-monochromatic node fills; shape/weight carries semantic meaning;
+ * color is reserved for state changes and the loopback accent only.
+ */
+import { createLayoutSettings } from '../processLayout/layoutTypes';
+// Canvas token defaults are owned by createLayoutSettings() in layoutTypes.ts.
+// This reference keeps both definitions in sync without manual duplication.
+const _layoutDefaults = createLayoutSettings().canvasConfig;
+export const DEFAULT_PROCESS_THEME = {
+    id: 'standard-light',
+    name: 'Standard Light',
+    description: 'Blueprint Minimal — warm blue-gray family, structure over color.',
+    elementStyles: {
+        event: {
+            shape: 'circle',
+            appearance: { fill: '#E6F1FB', stroke: '#378ADD', label: '#0C447C', strokeWidth: 1 },
+            text: { fontSizePx: 10, weight: 500, maxLines: 2, wrap: 'clamp' },
+            labelPlacement: 'auto',
+            infoPolicy: { primaryField: 'label', placement: 'hidden' },
+            interaction: { selectedStroke: '#378ADD', selectedStrokeWidth: 2.5 },
+        },
+        // `decision` and `route` resolve to `gateway` via getElementStyle() —
+        // these entries exist so spreads in presets still compile.
+        decision: {
+            shape: 'diamond',
+            appearance: { fill: '#D3D1C7', stroke: '#5F5E5A', label: '#2C2C2A', strokeWidth: 1 },
+            text: { fontSizePx: 10, weight: 500, maxLines: 2, wrap: 'clamp' },
+            labelPlacement: 'auto',
+            infoPolicy: { primaryField: 'label', placement: 'hidden' },
+            interaction: { selectedStroke: '#378ADD', selectedStrokeWidth: 2.5 },
+        },
+        /* 'route' removed in v2.7 — use 'decision' with gatewayKind instead */
+        // Canonical gateway token — decision + route both resolve here.
+        gateway: {
+            shape: 'diamond',
+            appearance: { fill: '#D3D1C7', stroke: '#5F5E5A', label: '#2C2C2A', strokeWidth: 1 },
+            text: { fontSizePx: 10, weight: 500, maxLines: 2, wrap: 'clamp' },
+            labelPlacement: 'auto',
+            infoPolicy: { primaryField: 'label', placement: 'hidden' },
+            interaction: { selectedStroke: '#378ADD', selectedStrokeWidth: 2.5 },
+        },
+        subprocess: {
+            shape: 'rounded-rect',
+            appearance: {
+                fill: '#E6F1FB',
+                stroke: '#378ADD',
+                label: '#0C447C',
+                strokeWidth: 1,
+                strokeDasharray: '5 3',
+                cornerRadiusPx: 6,
+            },
+            text: { fontSizePx: 10, weight: 500, maxLines: 2, wrap: 'clamp' },
+            labelPlacement: 'inside',
+            infoPolicy: {
+                primaryField: 'label',
+                placement: 'hidden',
+            },
+            interaction: { selectedStroke: '#378ADD', selectedStrokeWidth: 2.5 },
+        },
+        task: {
+            shape: 'rounded-rect',
+            appearance: { fill: '#F1EFE8', stroke: '#888780', label: '#2C2C2A', strokeWidth: 1, cornerRadiusPx: 6 },
+            text: { fontSizePx: 10, weight: 500, maxLines: 2, wrap: 'clamp' },
+            labelPlacement: 'inside',
+            infoPolicy: {
+                primaryField: 'label',
+                placement: 'hidden',
+            },
+            interaction: { selectedStroke: '#378ADD', selectedStrokeWidth: 2.5 },
+        },
+        unknown: {
+            shape: 'rounded-rect',
+            appearance: { fill: '#F1EFE8', stroke: '#D3D1C7', label: '#888780', strokeWidth: 1, cornerRadiusPx: 6 },
+            text: { fontSizePx: 11, weight: 500, maxLines: 2, wrap: 'clamp' },
+            labelPlacement: 'inside',
+            infoPolicy: { primaryField: 'label', placement: 'bottom-inside', secondaryFields: ['type'] },
+            interaction: { selectedStroke: '#378ADD', selectedStrokeWidth: 2.5 },
+        },
+    },
+    edges: {
+        default: {
+            stroke: '#888780',
+            strokeWidth: 1.5,
+        },
+        crossLane: {
+            stroke: '#B4B2A9',
+            strokeWidth: 1.5,
+            strokeDasharray: '5 3',
+        },
+        loopback: {
+            stroke: '#BA7517',
+            strokeWidth: 2,
+        },
+        selected: {
+            stroke: '#378ADD',
+            strokeWidth: 2.5,
+        },
+        halo: {
+            default: { color: '#ffffff', width: 4 },
+            selected: { color: '#B5D4F4', width: 5 },
+        },
+        marker: {
+            fill: '#888780',
+        },
+        label: {
+            fill: '#5F5E5A',
+            background: '#1a1f2e',
+            border: 'rgba(255,255,255,0.15)',
+            fontSize: 10,
+            fontWeight: 400,
+            haloColor: '#F7F6F2',
+            haloWidth: 1,
+            charWidthPx: 7,
+            paddingX: 14,
+            minWidth: 56,
+            maxWidth: 200,
+        },
+    },
+    edgeLabelPositions: {
+        defaults: { anchor: 'mid', side: 'above', offsetPx: 8, secondaryAnchor: 'end', secondarySide: 'above', secondaryOffsetPx: 8 },
+        perType: {
+            STH: { anchor: 'mid', side: 'above', offsetPx: 8, secondaryAnchor: 'end', secondarySide: 'above', secondaryOffsetPx: 8 },
+            STV: { anchor: 'mid', side: 'right', offsetPx: 8, secondaryAnchor: 'end', secondarySide: 'right', secondaryOffsetPx: 8 },
+            SEH: { anchor: 'elbow-1', side: 'above', offsetPx: 8, secondaryAnchor: 'mid', secondarySide: 'above', secondaryOffsetPx: 8 },
+            SEV: { anchor: 'elbow-1', side: 'right', offsetPx: 8, secondaryAnchor: 'mid', secondarySide: 'right', secondaryOffsetPx: 8 },
+            DEH: { anchor: 'elbow-1', side: 'above', offsetPx: 8, secondaryAnchor: 'mid', secondarySide: 'above', secondaryOffsetPx: 8 },
+            DEN: { anchor: 'elbow-1', side: 'above', offsetPx: 8, secondaryAnchor: 'mid', secondarySide: 'above', secondaryOffsetPx: 8 },
+            DEF: { anchor: 'elbow-2', side: 'above', offsetPx: 8, secondaryAnchor: 'elbow-1', secondarySide: 'above', secondaryOffsetPx: 8 },
+            DEV: { anchor: 'elbow-1', side: 'right', offsetPx: 8, secondaryAnchor: 'mid', secondarySide: 'right', secondaryOffsetPx: 8 },
+            DBL: { anchor: 'elbow-1', side: 'below', offsetPx: 8, secondaryAnchor: 'mid', secondarySide: 'below', secondaryOffsetPx: 8 },
+            TEH: { anchor: 'elbow-2', side: 'above', offsetPx: 10, secondaryAnchor: 'mid', secondarySide: 'above', secondaryOffsetPx: 10 },
+            TEV: { anchor: 'elbow-2', side: 'right', offsetPx: 10, secondaryAnchor: 'mid', secondarySide: 'right', secondaryOffsetPx: 10 },
+            SLP: { anchor: 'mid', side: 'above', offsetPx: 10, secondaryAnchor: 'end', secondarySide: 'above', secondaryOffsetPx: 10 },
+            POH: { anchor: 'elbow-1', side: 'above', offsetPx: 8, secondaryAnchor: 'mid', secondarySide: 'above', secondaryOffsetPx: 8 },
+            POV: { anchor: 'elbow-1', side: 'right', offsetPx: 8, secondaryAnchor: 'mid', secondarySide: 'right', secondaryOffsetPx: 8 },
+            AOT: { anchor: 'mid', side: 'center', offsetPx: 0, secondaryAnchor: 'end', secondarySide: 'center', secondaryOffsetPx: 0 },
+        },
+    },
+    lanes: {
+        bodyFill: '#FCFCFA',
+        headerFill: '#F8F7F4',
+        borderColor: '#E5E3DF',
+        borderWidth: 1,
+        selectedBorderColor: '#6366F1',
+        selectedBorderWidth: 2,
+        headerSelectedColor: '#6366F1',
+        labelColor: '#6B7280',
+        cornerRadiusPx: 0,
+        headerFontWeight: 500,
+        headerLabelOpacity: 0.65,
+    },
+    curtains: {
+        inbound: {
+            fill: '#F8F7F4',
+            fillOpacity: 0.40,
+            stroke: '#D1CDE8',
+            strokeWidth: 1,
+            labelColor: '#6B7280',
+        },
+        outbound: {
+            fill: '#F8F7F4',
+            fillOpacity: 0.40,
+            stroke: '#E8D1CD',
+            strokeWidth: 1,
+            labelColor: '#6B7280',
+        },
+    },
+    typography: {
+        laneHeader: { fontSizePx: 11, weight: 500, tracking: 'wide' },
+        nodeLabel: { fontSizePx: 11, weight: 500 },
+        edgeLabel: { fontSizePx: 10, weight: 400 },
+        curtainLabel: { fontSizePx: 9, weight: 500, uppercase: true, tracking: 'wider' },
+    },
+    canvasTokens: {
+        laneHeaderHeight: _layoutDefaults.laneHeaderHeight,
+        baseCurtainWidth: _layoutDefaults.baseCurtainWidth,
+        curtainPadding: _layoutDefaults.curtainPadding,
+        visualBoundsPadding: _layoutDefaults.visualBoundsPadding,
+        labelContainerWidth: _layoutDefaults.labelContainerWidth,
+    },
+};

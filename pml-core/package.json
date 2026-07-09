@@ -1,0 +1,14 @@
+{
+  "name": "pml-core",
+  "version": "0.1.0",
+  "description": "PML parser, layout engine, and routing engine — the core of the Process Modeller",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "types": "./index.d.ts"
+    }
+  }
+}
