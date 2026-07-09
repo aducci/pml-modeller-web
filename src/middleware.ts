@@ -72,7 +72,6 @@ export function middleware(request: NextRequest) {
       hasCookie: !!siteAccessCookie,
       hasSecret: !!cookieSecret,
       cookieLength: siteAccessCookie?.length || 0,
-      allCookies: Array.from(request.cookies.entries()).map(([k]) => k),
     });
 
     // If cookie not present or secret not configured, redirect to password gate
