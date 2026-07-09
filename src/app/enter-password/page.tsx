@@ -21,17 +21,23 @@ export default function EnterPassword() {
         body: JSON.stringify({ password }),
       });
 
+      const data = await response.json().catch(() => ({}));
+
       if (response.ok) {
         router.push('/');
       } else if (response.status === 401) {
         setError('Incorrect password');
         setPassword('');
+      } else if (response.status === 400) {
+        setError('Password is required');
+      } else if (response.status === 500) {
+        setError(data.error || 'Server error - please contact support');
       } else {
-        setError('Something went wrong');
+        setError(data.error || 'Something went wrong. Please try again.');
       }
     } catch (err) {
-      setError('Network error. Please try again.');
-      console.error(err);
+      setError('Network error. Please check your connection and try again.');
+      console.error('[SiteGate] Fetch error:', err);
     } finally {
       setIsLoading(false);
     }

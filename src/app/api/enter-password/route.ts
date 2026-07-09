@@ -11,14 +11,33 @@ export async function POST(request: NextRequest) {
     const { password } = body;
 
     if (!password || typeof password !== 'string') {
+      console.error('[SiteGate] Password missing or invalid type');
       return NextResponse.json(
         { error: 'Password required' },
         { status: 400 }
       );
     }
 
-    // Verify password
-    if (!verifyPassword(password)) {
+    // Check if SITE_PASSWORD is configured
+    const sitePassword = process.env.SITE_PASSWORD;
+    if (!sitePassword) {
+      console.error('[SiteGate] SITE_PASSWORD environment variable not configured');
+      return NextResponse.json(
+        { error: 'Server configuration error: SITE_PASSWORD not set' },
+        { status: 500 }
+      );
+    }
+
+    // Verify password with detailed logging
+    const passwordMatch = password === sitePassword;
+    console.log('[SiteGate] Password verification:', {
+      provided: password.length + ' chars',
+      configured: sitePassword.length + ' chars',
+      match: passwordMatch,
+    });
+
+    if (!passwordMatch) {
+      console.warn('[SiteGate] Invalid password attempt');
       return NextResponse.json(
         { error: 'Invalid password' },
         { status: 401 }
@@ -30,7 +49,7 @@ export async function POST(request: NextRequest) {
     if (!cookieSecret) {
       console.error('[SiteGate] COOKIE_SECRET not configured');
       return NextResponse.json(
-        { error: 'Server configuration error' },
+        { error: 'Server configuration error: COOKIE_SECRET not set' },
         { status: 500 }
       );
     }
@@ -56,6 +75,7 @@ export async function POST(request: NextRequest) {
       path: config.path,
     });
 
+    console.log('[SiteGate] Password verified, cookie set, redirecting to home');
     return response;
   } catch (error) {
     console.error('[SiteGate] POST /api/enter-password error:', error);
