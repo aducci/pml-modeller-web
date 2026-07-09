@@ -49,6 +49,12 @@ export async function POST(request: NextRequest) {
 
     // Generate signed access token
     const token = generateAccessToken(cookieSecret);
+    const tokenParts = token.split('.');
+    console.log('[SiteGate] Token generated:', {
+      firstPartLength: tokenParts[0]?.length || 0,
+      hmacLength: tokenParts[1]?.length || 0,
+      totalLength: token.length,
+    });
 
     // Create response
     const response = NextResponse.json(
@@ -68,18 +74,17 @@ export async function POST(request: NextRequest) {
       path: config.path,
     });
 
-    console.log('[SiteGate] Cookie configured:', {
+    console.log('[SiteGate] Cookie set:', {
       name: config.name,
       httpOnly: config.httpOnly,
       secure: config.secure,
       sameSite: config.sameSite,
       maxAge: config.maxAge,
       path: config.path,
-      tokenLength: token.length,
       nodeEnv: process.env.NODE_ENV,
     });
 
-    console.log('[SiteGate] Password verified, cookie set, redirecting to home');
+    console.log('[SiteGate] Response returned with cookie');
     return response;
   } catch (error) {
     console.error('[SiteGate] POST /api/enter-password error:', error);

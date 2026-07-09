@@ -71,17 +71,25 @@ export function middleware(request: NextRequest) {
 
     // If cookie not present, redirect to password gate
     if (!siteAccessCookie) {
-      console.warn('[Middleware] No cookie found, redirecting to password gate');
+      console.warn('[Middleware] No cookie found');
       return NextResponse.redirect(new URL('/enter-password', request.url));
     }
 
     // Verify cookie signature
+    const tokenParts = siteAccessCookie.split('.');
+    console.log('[Middleware] Cookie received:', {
+      firstPartLength: tokenParts[0]?.length || 0,
+      hmacLength: tokenParts[1]?.length || 0,
+      totalLength: siteAccessCookie.length,
+      hasSecret: !!cookieSecret,
+    });
+
     if (!verifyAccessToken(siteAccessCookie, cookieSecret)) {
-      console.warn('[Middleware] Cookie verification failed');
+      console.warn('[Middleware] Cookie verification failed - token invalid');
       return NextResponse.redirect(new URL('/enter-password', request.url));
     }
 
-    console.log('[Middleware] Cookie verified, access granted');
+    console.log('[Middleware] Cookie verified ✓');
   }
 
   // ───────────────────────────────────────────────
