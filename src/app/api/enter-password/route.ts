@@ -75,6 +75,17 @@ export async function POST(request: NextRequest) {
       path: config.path,
     });
 
+    console.log('[SiteGate] Cookie configured:', {
+      name: config.name,
+      httpOnly: config.httpOnly,
+      secure: config.secure,
+      sameSite: config.sameSite,
+      maxAge: config.maxAge,
+      path: config.path,
+      tokenLength: token.length,
+      nodeEnv: process.env.NODE_ENV,
+    });
+
     console.log('[SiteGate] Password verified, cookie set, redirecting to home');
     return response;
   } catch (error) {

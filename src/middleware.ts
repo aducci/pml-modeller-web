@@ -68,15 +68,26 @@ export function middleware(request: NextRequest) {
     const siteAccessCookie = request.cookies.get('site_access')?.value;
     const cookieSecret = process.env.COOKIE_SECRET;
 
+    console.log('[Middleware] Password gate check for:', pathname, {
+      hasCookie: !!siteAccessCookie,
+      hasSecret: !!cookieSecret,
+      cookieLength: siteAccessCookie?.length || 0,
+      allCookies: Array.from(request.cookies.entries()).map(([k]) => k),
+    });
+
     // If cookie not present or secret not configured, redirect to password gate
     if (!siteAccessCookie || !cookieSecret) {
+      console.warn('[Middleware] Redirecting to password gate - missing cookie or secret');
       return NextResponse.redirect(new URL('/enter-password', request.url));
     }
 
     // Verify cookie signature
     if (!verifyAccessToken(siteAccessCookie, cookieSecret)) {
+      console.warn('[Middleware] Cookie verification failed');
       return NextResponse.redirect(new URL('/enter-password', request.url));
     }
+
+    console.log('[Middleware] Cookie verified, access granted');
   }
 
   // ───────────────────────────────────────────────
