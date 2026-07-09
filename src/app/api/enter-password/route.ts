@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Generate signed access token
-    const token = generateAccessToken(cookieSecret);
+    const token = await generateAccessToken(cookieSecret);
     const tokenParts = token.split('.');
     console.log('[SiteGate] Token generated:', {
       firstPartLength: tokenParts[0]?.length || 0,

@@ -1,18 +1,33 @@
 /**
  * Generate a signed value for site access cookie.
  * Uses HMAC-SHA256 with SITE_PASSWORD.
- * Uses Node.js crypto (only called from API route, which supports it).
+ * Uses Web Crypto API (works in Edge Runtime and Serverless Functions).
  */
-export function generateAccessToken(secret: string): string {
-  // Import crypto only when needed (inside function)
-  // This prevents the Edge Runtime from rejecting the entire module
-  const crypto = require('crypto');
-  
-  const randomValue = crypto.randomBytes(32).toString('hex');
-  const hmac = crypto
-    .createHmac('sha256', secret)
-    .update(randomValue)
-    .digest('hex');
+export async function generateAccessToken(secret: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const secretKey = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  const randomBytes = crypto.getRandomValues(new Uint8Array(32));
+  const randomValue = Array.from(randomBytes)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+
+  const hmacBuffer = await crypto.subtle.sign(
+    'HMAC',
+    secretKey,
+    encoder.encode(randomValue)
+  );
+
+  const hmac = Array.from(new Uint8Array(hmacBuffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+
   return `${randomValue}.${hmac}`;
 }
 
