@@ -19,18 +19,31 @@ export function generateAccessToken(secret: string): string {
 export function verifyAccessToken(token: string, secret: string): boolean {
   try {
     const [randomValue, hmac] = token.split('.');
-    if (!randomValue || !hmac) return false;
+    if (!randomValue || !hmac) {
+      console.warn('[SiteGate] Invalid token format - missing parts');
+      return false;
+    }
 
     const expectedHmac = crypto
       .createHmac('sha256', secret)
       .update(randomValue)
       .digest('hex');
 
-    return crypto.timingSafeEqual(
+    const match = crypto.timingSafeEqual(
       Buffer.from(hmac),
       Buffer.from(expectedHmac)
     );
-  } catch {
+    
+    if (!match) {
+      console.warn('[SiteGate] HMAC mismatch:', {
+        receivedHmac: hmac.substring(0, 8) + '...',
+        expectedHmac: expectedHmac.substring(0, 8) + '...',
+      });
+    }
+    
+    return match;
+  } catch (error) {
+    console.error('[SiteGate] Verification error:', error);
     return false;
   }
 }

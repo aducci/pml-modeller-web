@@ -46,6 +46,12 @@ export async function POST(request: NextRequest) {
 
     // Use SITE_PASSWORD as the token secret (consistent with middleware)
     const cookieSecret = sitePassword;
+    
+    console.log('[SiteGate] Using secret:', {
+      secretLength: cookieSecret.length,
+      secretFirstChar: cookieSecret[0],
+      secretLastChar: cookieSecret[cookieSecret.length - 1],
+    });
 
     // Generate signed access token
     const token = generateAccessToken(cookieSecret);

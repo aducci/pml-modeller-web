@@ -68,6 +68,12 @@ export function middleware(request: NextRequest) {
     const siteAccessCookie = request.cookies.get('site_access')?.value;
     // Use SITE_PASSWORD as the token secret (consistent with API route)
     const cookieSecret = sitePassword;
+    
+    console.log('[Middleware] Using secret:', {
+      secretLength: cookieSecret.length,
+      secretFirstChar: cookieSecret[0],
+      secretLastChar: cookieSecret[cookieSecret.length - 1],
+    });
 
     // If cookie not present, redirect to password gate
     if (!siteAccessCookie) {
