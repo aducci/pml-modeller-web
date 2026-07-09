@@ -129,31 +129,82 @@ export default function Home() {
             <div className="max-w-3xl">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal">The problem</p>
               <h2 className="mt-4 text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
-                Enterprise Process Modelling Is Broken
+                Traditional Process Modelling Has Its Shortfalls
               </h2>
               <p className="mt-4 text-lg leading-8 text-gray-600">
-                Most enterprise modelling tools force you to spend more time arranging boxes
-                than describing the process itself.
+                Most tools make you work for the tool. You put in the hard yards to make it
+                look right, convey the message you need, and meet the modelling standards your
+                organisation demands — before you've even had a chance to think about the process
+                itself.
               </p>
             </div>
 
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {[
-                { icon: '⊞', text: 'Diagram layout consumes most modelling effort' },
-                { icon: '⚠', text: 'Process quality depends on modeller experience' },
-                { icon: '○', text: 'AI struggles with visual diagram formats' },
-                { icon: '✕', text: 'Knowledge is lost after workshops end' },
-                { icon: '✎', text: 'Process sign-off is manual and painful' },
-                { icon: '⚑', text: 'Changes require full diagram redraws' },
-              ].map((item) => (
-                <div
-                  key={item.text}
-                  className="feature-card-hover flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-4"
-                >
-                  <span className="mt-0.5 text-lg text-teal">{item.icon}</span>
-                  <p className="text-sm text-gray-700 leading-relaxed">{item.text}</p>
+            {/* Three visual tiles */}
+            <div className="mt-12 grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+
+              {/* Tile 1 — Layout effort */}
+              <div className="flex flex-col rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                <div className="aspect-video w-full bg-gray-50">
+                  <video
+                    className="h-full w-full object-cover"
+                    src="/media/01-manual-diagramming.mp4"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                  />
                 </div>
-              ))}
+                <div className="flex flex-col gap-2 p-6">
+                  <h3 className="text-lg md:text-xl font-semibold text-gray-900">Most Time Spent on Layout</h3>
+                  <p className="text-sm leading-relaxed text-gray-600">
+                    Endless nudging of boxes, aligning connectors, and wrestling with swimlane widths.
+                    Layout shouldn't be something you worry about — it should just work.
+                  </p>
+                </div>
+              </div>
+
+              {/* Tile 2 — Stakeholder complexity */}
+              <div className="flex flex-col rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                <div className="aspect-video w-full bg-gray-50">
+                  <video
+                    className="h-full w-full object-cover"
+                    src="/media/03-main-alternate-flow.mp4"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                  />
+                </div>
+                <div className="flex flex-col gap-2 p-6">
+                  <h3 className="text-lg md:text-xl font-semibold text-gray-900">Stakeholders Care About Their Flows</h3>
+                  <p className="text-sm leading-relaxed text-gray-600">
+                    Each stakeholder only really cares about their own steps. So why do traditional models force
+                    everyone to look at the whole picture at once — and argue about parts that aren't theirs?
+                  </p>
+                </div>
+              </div>
+
+              {/* Tile 3 — Happy path only */}
+              <div className="flex flex-col rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                <div className="aspect-video w-full bg-gray-50">
+                  <video
+                    className="h-full w-full object-cover"
+                    src="/media/02-stakeholder-perspective.mp4"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                  />
+                </div>
+                <div className="flex flex-col gap-2 p-6">
+                  <h3 className="text-lg md:text-xl font-semibold text-gray-900">Traditional Models Only Show the Happy Path</h3>
+                  <p className="text-sm leading-relaxed text-gray-600">
+                    A complete process model defines every flow — exceptions, alternates, and edge cases included.
+                    But in traditional tools, that completeness turns a clean diagram into an unreadable mess.
+                  </p>
+                </div>
+              </div>
+
             </div>
           </div>
         </section>

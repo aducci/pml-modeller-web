@@ -6,28 +6,93 @@ First, run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Copy `.env.example` to `.env.local` and fill in the required values:
+
+```bash
+cp .env.example .env.local
+```
+
+See `.env.example` for all required environment variables including:
+- Database connection
+- NextAuth configuration (Google/GitHub OAuth)
+- API keys (Anthropic, Stripe)
+- Site password gate (optional)
+
+## Deployment
+
+### Vercel Deployment
+
+This project is configured for deployment on [Vercel](https://vercel.com).
+
+**Step 1: Connect to Vercel**
+1. Go to [vercel.com](https://vercel.com)
+2. Click "Add New..." → "Project"
+3. Import the GitHub repository: `aducci/pml-modeller-web`
+4. Click "Import"
+
+**Step 2: Configure Environment Variables**
+In the Vercel project settings, add environment variables:
+- `DATABASE_URL` - PostgreSQL connection string
+- `NEXTAUTH_SECRET` - Generated secret (see `.env.example`)
+- `NEXTAUTH_URL` - Your production domain
+- `GOOGLE_ID` & `GOOGLE_SECRET` - OAuth credentials
+- `GITHUB_ID` & `GITHUB_SECRET` - OAuth credentials
+- `ANTHROPIC_API_KEY` - LLM API key
+- `STRIPE_SECRET_KEY` & `STRIPE_PUBLISHABLE_KEY` - Billing keys
+- `SITE_PASSWORD` & `COOKIE_SECRET` - Site gate security (optional)
+
+**Step 3: Deploy**
+Vercel automatically deploys on every push to `main` branch.
+
+For custom domain (e.g., provai.com):
+1. Go to project settings → Domains
+2. Add your custom domain
+3. Follow DNS configuration instructions
+
+### Local Production Build
+
+Test the production build locally:
+
+```bash
+npm run build
+npm start
+```
+
+## Features
+
+- 🔐 Site-wide password gate (optional, for development sites)
+- 🔑 NextAuth authentication (Google/GitHub OAuth)
+- 💬 AI integration (Anthropic)
+- 💳 Stripe billing support
+- 📊 Prisma ORM with PostgreSQL
+- 🎨 Tailwind CSS styling
+- 📱 Responsive design
+
+## Site Password Gate
+
+If `SITE_PASSWORD` is set in environment variables, the entire site will require password authentication before loading.
+
+**Login credentials:**
+- Password: Use the value of `SITE_PASSWORD`
+- Cookie: Persists for 30 days (HttpOnly, Secure, SameSite=Lax)
+
+**Logout:**
+- Visit `/site-lock/logout` to clear access
 
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
 
 - [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- [Vercel Documentation](https://vercel.com/docs) - deployment and hosting
+- [NextAuth.js Documentation](https://next-auth.js.org) - authentication
+- [Prisma Documentation](https://www.prisma.io/docs) - database ORM
 
 ## Deploy on Vercel
 
