@@ -24,9 +24,21 @@ interface Props {
 // ---------------------------------------------------------------------------
 
 function AiAssistantContent({ controller, state }: Props) {
-  const { sendMessage } = useConversation();
+  const { sendMessage, focusType, focusId } = useConversation();
   const [showPmlSource, setShowPmlSource] = useState(false);
   const [showObservations, setShowObservations] = useState(true);
+
+  // Keep the canvas visually scoped to whatever the AI conversation is
+  // currently focused on. `viewAsActor` is a transient rendering convenience
+  // (see PML_DSL/docs/FINAL/06_AI_Modelling_Engine.md, Principle 8) — it is
+  // derived fresh from the current focus every render, never persisted.
+  // Only 'actor' focus has a direct canvas primitive today; decision/flow-path
+  // scoping would need a new equivalent and is left for a follow-up.
+  React.useEffect(() => {
+    controller.updateViewPanel({
+      viewAsActor: focusType === 'actor' && focusId ? focusId : null,
+    });
+  }, [controller, focusType, focusId]);
 
   const pmlSnippet = state.pmlContent || '';
   const nodeCount = state.layoutResult?.nodes?.filter((n: any) => n.x !== undefined).length ?? 0;

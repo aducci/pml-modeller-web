@@ -5,16 +5,21 @@
 import { anthropic } from '@ai-sdk/anthropic';
 import { generateObject, streamText } from 'ai';
 import { aiResponseSchema, type AiResponse } from './schemas';
-import { PML_SYSTEM_PROMPT, PML_RESOLVE_PROMPT } from './prompts';
+import { PML_SYSTEM_PROMPT, PML_CHAT_PROMPT, PML_RESOLVE_PROMPT } from './prompts';
 
 /**
  * Create a streaming chat completion with Claude.
  * Used by the /api/ai/chat route.
+ *
+ * Uses PML_CHAT_PROMPT, not PML_SYSTEM_PROMPT — the latter mandates a
+ * raw-JSON-only response (correct for the schema-enforced generateObject
+ * call sites below) but has no schema to enforce it here, so the model
+ * would otherwise stream literal JSON text as the "answer".
  */
 export function createChatStream(messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>) {
   return streamText({
     model: anthropic('claude-sonnet-4-6'),
-    system: PML_SYSTEM_PROMPT,
+    system: PML_CHAT_PROMPT,
     messages,
     temperature: 0.3,
   });
