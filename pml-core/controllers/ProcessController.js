@@ -55,7 +55,7 @@ export class ProcessController {
         });
         this.layoutEngine = new LayoutEngine();
         const initialPatternTable = patternTableController?.getTable() ?? DEFAULT_PATTERN_TABLE.map((p) => ({ ...p }));
-        const { graph, diagnostics, processInterfaces } = parsePml(initialContent, { flowClassification: 'inferred' });
+        const { graph, diagnostics, processInterfaces } = parsePml(initialContent, { flowClassification: 'inferred', validationMode: 'loose' });
         this.cachedGraph = graph;
         // Initialize state first, then compute layout
         const initialState = {
@@ -102,7 +102,7 @@ export class ProcessController {
         return this.layoutEngine.computeLayout(graph, overrides);
     }
     setPmlContent(content) {
-        const { graph, diagnostics, processInterfaces } = parsePml(content, { flowClassification: 'inferred' });
+        const { graph, diagnostics, processInterfaces } = parsePml(content, { flowClassification: 'inferred', validationMode: 'loose' });
         this.cachedGraph = graph;
         this.state = {
             ...this.state,
@@ -406,7 +406,7 @@ export class ProcessController {
         else {
             newTrail = [...existingTrail, { processName, content }];
         }
-        this.cachedGraph = parsePml(content, { flowClassification: 'inferred' }).graph;
+        this.cachedGraph = parsePml(content, { flowClassification: 'inferred', validationMode: 'loose' }).graph;
         this.state = {
             ...this.state,
             pmlContent: content,
@@ -428,7 +428,7 @@ export class ProcessController {
         const newTrail = trail.slice(0, -1);
         const target = newTrail[newTrail.length - 1];
         if (target) {
-            const parsed = parsePml(target.content, { flowClassification: 'inferred' });
+            const parsed = parsePml(target.content, { flowClassification: 'inferred', validationMode: 'loose' });
             const graph = parsed.graph;
             this.cachedGraph = graph;
             this.state = {
@@ -452,7 +452,7 @@ export class ProcessController {
             return;
         const target = trail[index];
         const nextTrail = trail.slice(0, index + 1);
-        const parsed = parsePml(target.content, { flowClassification: 'inferred' });
+        const parsed = parsePml(target.content, { flowClassification: 'inferred', validationMode: 'loose' });
         this.cachedGraph = parsed.graph;
         this.state = {
             ...this.state,

@@ -3,9 +3,11 @@
  * utilities without polluting the new controllers.
  */
 import { FlowClassificationMode } from '../core/flowClassification';
+import type { ValidationMode } from '../core/adapters/contractGuards';
 import type { ProcessInterfaceRef } from '../types';
 export declare function parsePml(content: string, options?: {
     flowClassification?: FlowClassificationMode;
+    validationMode?: ValidationMode;
 }): {
     raw: string;
     model: any;

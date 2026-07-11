@@ -35,7 +35,9 @@ function extractProcessInterfaces(content) {
 export function parsePml(content, options) {
     try {
         const rawModel = inferFlowClassification(parsePmlTextToProcessModel(content), options?.flowClassification ?? 'explicit');
-        const { graph, warnings } = pmlToNormalizedGraphWithDiagnostics(rawModel);
+        const { graph, warnings } = pmlToNormalizedGraphWithDiagnostics(rawModel, {
+            validationMode: options?.validationMode ?? 'strict',
+        });
         const processInterfaces = extractProcessInterfaces(content);
         return {
             raw: content,

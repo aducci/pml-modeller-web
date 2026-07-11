@@ -8,7 +8,7 @@ function normalizeAngle(angle) {
         angle += Math.PI * 2;
     return Math.abs(angle);
 }
-function segmentIntersection(a1, a2, b1, b2) {
+export function segmentIntersection(a1, a2, b1, b2) {
     const det = (p, q, r) => {
         return (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
     };

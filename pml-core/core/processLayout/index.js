@@ -22,6 +22,7 @@ import { runPreCoordinateStages } from './preCoordinate';
 import { computeLaneGeometry, applyDepthFolding } from './laneGeometry';
 import { assignNodeSlotsWithinLaneDepth, recomputeTotalBounds, preReserveCorridorSpace } from './coordinateAssignment';
 import { applyLaneDensityPolicy, updateLaneActiveChannels, expandLanesForRoutingChannels, applyContinuityAlignmentLocks, applyMixedRelayXLocks, resolveLoopbackStyle, } from './routingPost';
+import { resolveEdgeCrossings } from './crossingResolution';
 import { recordStage } from './stageHelpers';
 import { isVirtualLaneMode, normalizeForVirtualLanes } from './virtualLane';
 import { resolveGroupingStrategy } from './groupingStrategy';
@@ -135,6 +136,8 @@ function runRoutingPhase(input) {
         compactMode: state.settings.routing.compactMode,
     }).map((e) => ({ ...e, routing: e.routing }));
     appendStageReport(state.diagnostics, assertRoutingStageContractsWithNodes(state.edges, state.nodes));
+    recordStage(state, 'crossing-resolution');
+    resolveEdgeCrossings(state);
     return state;
 }
 // ============================================================================
