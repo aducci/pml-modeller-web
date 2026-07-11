@@ -73,6 +73,7 @@ export function createLayoutSettings(overrides) {
             channelDensityMode: 'auto',
             crossLaneLaneTopBufferPx: 20,
             horizontalConnectionsOnly: false,
+            autoRelocateToAvoidOverlap: false,
             decisionLaneAffinity: {
                 mode: 'advisory',
                 minDominantOutgoingRatio: 0.6,

@@ -23,6 +23,7 @@ import { computeLaneGeometry, applyDepthFolding } from './laneGeometry';
 import { assignNodeSlotsWithinLaneDepth, recomputeTotalBounds, preReserveCorridorSpace } from './coordinateAssignment';
 import { applyLaneDensityPolicy, updateLaneActiveChannels, expandLanesForRoutingChannels, applyContinuityAlignmentLocks, applyMixedRelayXLocks, resolveLoopbackStyle, } from './routingPost';
 import { resolveEdgeCrossings } from './crossingResolution';
+import { applyOverlapAvoidance } from './overlapAvoidance';
 import { recordStage } from './stageHelpers';
 import { isVirtualLaneMode, normalizeForVirtualLanes } from './virtualLane';
 import { resolveGroupingStrategy } from './groupingStrategy';
@@ -31,6 +32,13 @@ import { getNodeDirection, isBoundaryBandDirection, isEventNodeKind } from '../n
 // PUBLIC ENTRY POINT
 // ============================================================================
 export function computeProcessLayout(graph, settingOverrides) {
+    const result = computeProcessLayoutCore(graph, settingOverrides);
+    if (!result.settings.routing.autoRelocateToAvoidOverlap) {
+        return result;
+    }
+    return applyOverlapAvoidance(graph, settingOverrides, result, computeProcessLayoutCore);
+}
+function computeProcessLayoutCore(graph, settingOverrides) {
     const graphResult = runGraphPhase(graph, settingOverrides);
     const geoResult = runGeometryPhase(graphResult);
     const routingResult = runRoutingPhase(geoResult);

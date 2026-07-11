@@ -437,6 +437,16 @@ export interface LayoutSettings {
          */
         crossLaneLaneTopBufferPx: number;
         horizontalConnectionsOnly: boolean;
+        /**
+         * When true, if the routed layout still has edge crossings after channel
+         * allocation and crossing-resolution, try relocating unpinned gateway
+         * nodes (decisions with no author-assigned actor/lane) to a different
+         * lane and keep whichever placement minimizes crossings. Off by default:
+         * it re-runs the full layout pipeline once per (candidate node × lane)
+         * combination, so it costs more and can move a gateway further from
+         * where the author expected it.
+         */
+        autoRelocateToAvoidOverlap: boolean;
         decisionLaneAffinity: {
             mode: 'off' | 'advisory' | 'adaptive';
             minDominantOutgoingRatio: number;

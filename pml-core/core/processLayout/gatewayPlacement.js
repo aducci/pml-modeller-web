@@ -75,7 +75,15 @@ function placeGateway(gateway, incoming, outgoing, nodeMap, laneList, laneIndexM
         bottom: envelope.bottomCorridorSlots,
         right: envelope.rightCorridorSlots,
     };
-    const { bestLane, score } = selectBestLane(gateway, incoming, outgoing, nodeMap, laneList, laneIndexMap, options.laneAffinityWeights, envelope);
+    // overlapAvoidance.ts pins a trial lane on unpinned gateways via this
+    // metadata key while it searches for a relocation that clears a crossing.
+    // Honor it verbatim instead of re-scoring, so the search isn't fighting
+    // its own trial placement.
+    const forcedLaneId = gateway.metadata?.forcedLaneId;
+    const forcedLane = forcedLaneId ? laneList.find((l) => l.id === forcedLaneId) : undefined;
+    const { bestLane, score } = forcedLane
+        ? { bestLane: forcedLane, score: 0 }
+        : selectBestLane(gateway, incoming, outgoing, nodeMap, laneList, laneIndexMap, options.laneAffinityWeights, envelope);
     diagnostics.laneAffinityScore = score;
     if (bestLane && gateway.laneId !== bestLane.id) {
         diagnostics.toLaneId = bestLane.id;
