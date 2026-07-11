@@ -8,9 +8,17 @@
 // between edges that were never in "conflict" by its own bookkeeping — most
 // notably edges with a laneless endpoint (terminal events, unassigned
 // gateways), which all collapse onto channel 0 regardless of which lane
-// they originate from. This stage runs a real segment-intersection check on
+// they originate from. This stage runs a true segment-intersection check on
 // the routed polylines and nudges the lower-priority edge in each crossing
 // pair sideways until it clears, or gives up after a bounded number of tries.
+//
+// This intentionally only fixes literal intersections, not near-misses
+// (segments that pass close but don't touch). A "nudge if too close"
+// heuristic was tried and reverted: greedily pushing one edge away from
+// another can shove it into a third edge's path, and fixing that can shove
+// a fourth — an unbounded whack-a-mole with no local stopping rule. Minimum
+// edge-to-edge clearance needs a real global solve (e.g. widening channel
+// allocation's corridor width), not a per-pair post-process.
 import { segmentIntersection } from './convergenceLoop';
 const MAX_ITERATIONS = 3;
 function findCrossingPairs(edges) {
