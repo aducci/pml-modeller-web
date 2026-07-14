@@ -16,70 +16,16 @@
 // behind settings.routing.autoRelocateToAvoidOverlap (off by default, since
 // it multiplies layout cost by candidates × lanes), it looks at which edges
 // still cross, or still cut through an unrelated node's box, after the
-// normal pipeline runs; finds the gateway/decision nodes involved that have
-// no author-assigned actor (so relocating them doesn't contradict anything
-// the author wrote); and tries each other lane for each candidate — keeping
-// whichever trial minimizes the combined defect count.
+// normal pipeline (including postRoutingConflictResolution.ts) runs; finds
+// the gateway/decision nodes involved that have no author-assigned actor (so
+// relocating them doesn't contradict anything the author wrote); and tries
+// each other lane for each candidate — keeping whichever trial minimizes the
+// combined defect count from layoutDefects.ts (the same metric
+// postRoutingConflictResolution.ts uses, so "better" means the same thing in
+// both places).
 import { isGatewayNodeKind } from '../nodeKinds';
-import { segmentIntersection } from './convergenceLoop';
+import { countLayoutDefects } from './layoutDefects';
 const MAX_CANDIDATE_NODES = 4;
-function nodeOverlapsSegment(node, a, b) {
-    if (node.x === undefined || node.y === undefined)
-        return false;
-    const left = node.x - node.width / 2;
-    const right = node.x + node.width / 2;
-    const top = node.y - node.height / 2;
-    const bottom = node.y + node.height / 2;
-    const minX = Math.min(a.x, b.x);
-    const maxX = Math.max(a.x, b.x);
-    const minY = Math.min(a.y, b.y);
-    const maxY = Math.max(a.y, b.y);
-    return maxX > left && minX < right && maxY > top && minY < bottom;
-}
-/**
- * Every routed edge/node pair that's still wrong after the normal pipeline:
- * true edge-vs-edge crossings, plus edges cutting through a node they don't
- * connect to. Returns the offending node ids (candidates for relocation)
- * and a total count (the search's objective to minimize).
- */
-function findDefects(result) {
-    const nodeIds = new Set();
-    let count = 0;
-    const routed = result.edges.filter((e) => (e.routing?.waypoints?.length ?? 0) >= 2);
-    for (let i = 0; i < routed.length; i++) {
-        const a = routed[i];
-        const aPoints = a.routing.waypoints;
-        for (let j = i + 1; j < routed.length; j++) {
-            const b = routed[j];
-            if (a.source === b.source || a.source === b.target || a.target === b.source || a.target === b.target) {
-                continue;
-            }
-            const bPoints = b.routing.waypoints;
-            for (let si = 1; si < aPoints.length; si++) {
-                for (let sj = 1; sj < bPoints.length; sj++) {
-                    if (segmentIntersection(aPoints[si - 1], aPoints[si], bPoints[sj - 1], bPoints[sj])) {
-                        count += 1;
-                        nodeIds.add(a.source).add(a.target).add(b.source).add(b.target);
-                    }
-                }
-            }
-        }
-    }
-    for (const edge of routed) {
-        const points = edge.routing.waypoints;
-        for (let si = 1; si < points.length; si++) {
-            for (const node of result.nodes) {
-                if (node.id === edge.source || node.id === edge.target)
-                    continue;
-                if (nodeOverlapsSegment(node, points[si - 1], points[si])) {
-                    count += 1;
-                    nodeIds.add(edge.source).add(edge.target).add(node.id);
-                }
-            }
-        }
-    }
-    return { nodeIds, count };
-}
 function cloneGraphWithForcedLane(graph, nodeId, laneId) {
     return {
         ...graph,
@@ -87,7 +33,7 @@ function cloneGraphWithForcedLane(graph, nodeId, laneId) {
     };
 }
 export function applyOverlapAvoidance(graph, settingOverrides, baseline, computeCore) {
-    const baselineDefects = findDefects(baseline);
+    const baselineDefects = countLayoutDefects(baseline.nodes, baseline.edges);
     if (baselineDefects.count === 0) {
         return baseline;
     }
@@ -106,7 +52,7 @@ export function applyOverlapAvoidance(graph, settingOverrides, baseline, compute
                 continue;
             const trialGraph = cloneGraphWithForcedLane(graph, candidate.id, lane.id);
             const trialResult = computeCore(trialGraph, settingOverrides);
-            const trialCount = findDefects(trialResult).count;
+            const trialCount = countLayoutDefects(trialResult.nodes, trialResult.edges).count;
             if (trialCount < bestCount) {
                 best = trialResult;
                 bestCount = trialCount;

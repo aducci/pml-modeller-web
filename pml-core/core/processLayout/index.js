@@ -22,8 +22,7 @@ import { runPreCoordinateStages } from './preCoordinate';
 import { computeLaneGeometry, applyDepthFolding } from './laneGeometry';
 import { assignNodeSlotsWithinLaneDepth, recomputeTotalBounds, preReserveCorridorSpace } from './coordinateAssignment';
 import { applyLaneDensityPolicy, updateLaneActiveChannels, expandLanesForRoutingChannels, applyContinuityAlignmentLocks, applyMixedRelayXLocks, resolveLoopbackStyle, } from './routingPost';
-import { resolveEdgeCrossings } from './crossingResolution';
-import { resolveNodeObstacles } from './nodeObstacleAvoidance';
+import { resolvePostRoutingConflicts } from './postRoutingConflictResolution';
 import { applyOverlapAvoidance } from './overlapAvoidance';
 import { recordStage } from './stageHelpers';
 import { isVirtualLaneMode, normalizeForVirtualLanes } from './virtualLane';
@@ -145,18 +144,8 @@ function runRoutingPhase(input) {
         compactMode: state.settings.routing.compactMode,
     }).map((e) => ({ ...e, routing: e.routing }));
     appendStageReport(state.diagnostics, assertRoutingStageContractsWithNodes(state.edges, state.nodes));
-    // Node-obstacle avoidance and crossing-resolution can each perturb a
-    // segment the other stage already fixed — e.g. dodging a node can push a
-    // segment straight into another edge's path, and clearing that can push
-    // it back toward the node. Alternate both a couple of times so each stage
-    // gets a chance to react to the other's fix; both are individually bounded
-    // and idempotent once nothing is left to resolve, so this converges fast.
-    for (let round = 0; round < 2; round++) {
-        recordStage(state, 'node-obstacle-avoidance');
-        resolveNodeObstacles(state);
-        recordStage(state, 'crossing-resolution');
-        resolveEdgeCrossings(state);
-    }
+    recordStage(state, 'post-routing-conflict-resolution');
+    resolvePostRoutingConflicts(state);
     return state;
 }
 // ============================================================================
