@@ -75,7 +75,7 @@ function placeGateway(gateway, incoming, outgoing, nodeMap, laneList, laneIndexM
         bottom: envelope.bottomCorridorSlots,
         right: envelope.rightCorridorSlots,
     };
-    // overlapAvoidance.ts pins a trial lane on unpinned gateways via this
+    // layoutAutoArrange.ts pins a trial lane on unpinned gateways via this
     // metadata key while it searches for a relocation that clears a crossing.
     // Honor it verbatim instead of re-scoring, so the search isn't fighting
     // its own trial placement.

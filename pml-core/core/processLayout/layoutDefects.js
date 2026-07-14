@@ -1,6 +1,6 @@
 // Shared defect-counting used by both the post-routing conflict-resolution
 // controller (postRoutingConflictResolution.ts) and the lane-relocation
-// search (overlapAvoidance.ts), so "how bad is this layout" means exactly
+// search (layoutAutoArrange.ts), so "how bad is this layout" means exactly
 // the same thing in both places: the number of true edge-vs-edge crossings
 // plus the number of edge segments that cut through a node they don't
 // connect to.

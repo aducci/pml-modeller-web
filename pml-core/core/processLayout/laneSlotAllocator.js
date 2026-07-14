@@ -4,6 +4,17 @@
 // writes: returns { id, y }[] without mutating input nodes
 import { effectiveSize } from './elementSizing';
 /**
+ * layoutAutoArrange.ts pins this metadata key on a trial node while
+ * searching for a within-lane row swap that clears a defect — it wins over
+ * chain index (but not over another forced index) so the search can
+ * actually observe the effect of the swap instead of the strategy
+ * re-deriving the same order from chain data.
+ */
+function forcedSlotIndexOf(node) {
+    const value = node.metadata?.forcedSlotIndex;
+    return typeof value === 'number' ? value : undefined;
+}
+/**
  * ChainIndexStrategy — preserves existing sort: chain index ascending,
  * then lexical node ID for tie-breaking. This is the default and produces
  * the same output as the original inline sort.
@@ -11,6 +22,11 @@ import { effectiveSize } from './elementSizing';
 export const ChainIndexStrategy = {
     sort(nodes) {
         return nodes.slice().sort((a, b) => {
+            const aForced = forcedSlotIndexOf(a);
+            const bForced = forcedSlotIndexOf(b);
+            if (aForced !== undefined || bForced !== undefined) {
+                return (aForced ?? Number.MAX_SAFE_INTEGER) - (bForced ?? Number.MAX_SAFE_INTEGER);
+            }
             const aChain = a.chainIndex ?? Number.MAX_SAFE_INTEGER;
             const bChain = b.chainIndex ?? Number.MAX_SAFE_INTEGER;
             if (aChain !== bChain)
@@ -50,6 +66,11 @@ export const BarycentreStrategy = {
             scores.set(node.id, count > 0 ? sum / count : Number.MAX_SAFE_INTEGER);
         }
         return nodes.slice().sort((a, b) => {
+            const aForced = forcedSlotIndexOf(a);
+            const bForced = forcedSlotIndexOf(b);
+            if (aForced !== undefined || bForced !== undefined) {
+                return (aForced ?? Number.MAX_SAFE_INTEGER) - (bForced ?? Number.MAX_SAFE_INTEGER);
+            }
             const sa = scores.get(a.id) ?? Number.MAX_SAFE_INTEGER;
             const sb = scores.get(b.id) ?? Number.MAX_SAFE_INTEGER;
             if (sa !== sb)

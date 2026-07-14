@@ -438,13 +438,16 @@ export interface LayoutSettings {
         crossLaneLaneTopBufferPx: number;
         horizontalConnectionsOnly: boolean;
         /**
-         * When true, if the routed layout still has edge crossings after channel
-         * allocation and crossing-resolution, try relocating unpinned gateway
-         * nodes (decisions with no author-assigned actor/lane) to a different
-         * lane and keep whichever placement minimizes crossings. Off by default:
-         * it re-runs the full layout pipeline once per (candidate node × lane)
-         * combination, so it costs more and can move a gateway further from
-         * where the author expected it.
+         * When true, if the routed layout still has crossings or node overlaps
+         * after channel allocation and post-routing conflict resolution, search
+         * for a rearrangement that clears them (see layoutAutoArrange.ts): try
+         * relocating unpinned gateway nodes (decisions with no author-assigned
+         * actor) to a different lane, and try swapping the vertical order of
+         * sibling nodes within a lane (which never contradicts an authored actor
+         * assignment, only presentation order). Keeps whichever single trial
+         * minimizes the defect count. Off by default: it re-runs the full layout
+         * pipeline once per trial, so it costs more, and a lane relocation can
+         * move a gateway further from where the author expected it.
          */
         autoRelocateToAvoidOverlap: boolean;
         decisionLaneAffinity: {
