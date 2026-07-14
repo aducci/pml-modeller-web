@@ -54,6 +54,25 @@ function priorityScore(edge, nodeById) {
         return 2;
     return 1;
 }
+/**
+ * Which way to nudge `victim` so it moves away from `other` instead of
+ * further into it. `other`'s two points span a range along the axis the
+ * victim segment will move on; the victim moves toward whichever side of
+ * that range it's already closer to. Without this, a fixed "always
+ * positive" offset can escalate forever if the other segment extends much
+ * further in the positive direction than the negative (e.g. an edge that
+ * runs most of the width of the canvas) — moving further "away" the wrong
+ * way just goes deeper into it.
+ */
+function nudgeDirection(victimA, victimB, otherA, otherB) {
+    const victimHorizontal = Math.abs(victimA.y - victimB.y) < 0.5;
+    if (victimHorizontal) {
+        const mid = (otherA.y + otherB.y) / 2;
+        return victimA.y >= mid ? 1 : -1;
+    }
+    const mid = (otherA.x + otherB.x) / 2;
+    return victimA.x >= mid ? 1 : -1;
+}
 /** True if this waypoint index is a fully interior vertex (never port-anchored). */
 function isInteriorVertex(index, pointCount) {
     return index > 0 && index < pointCount - 1;
@@ -104,19 +123,28 @@ export function resolveEdgeCrossings(state) {
             const scoreB = priorityScore(crossing.edgeB, nodeById);
             let victim;
             let segIndex;
+            let other;
+            let otherSegIndex;
             if (scoreA !== scoreB) {
-                [victim, segIndex] = scoreA < scoreB ? [crossing.edgeA, crossing.segIndexA] : [crossing.edgeB, crossing.segIndexB];
+                [victim, segIndex, other, otherSegIndex] = scoreA < scoreB
+                    ? [crossing.edgeA, crossing.segIndexA, crossing.edgeB, crossing.segIndexB]
+                    : [crossing.edgeB, crossing.segIndexB, crossing.edgeA, crossing.segIndexA];
             }
             else {
                 // Deterministic tie-break: lexically later edge id is the victim.
                 const aIsVictim = crossing.edgeA.id > crossing.edgeB.id;
-                [victim, segIndex] = aIsVictim ? [crossing.edgeA, crossing.segIndexA] : [crossing.edgeB, crossing.segIndexB];
+                [victim, segIndex, other, otherSegIndex] = aIsVictim
+                    ? [crossing.edgeA, crossing.segIndexA, crossing.edgeB, crossing.segIndexB]
+                    : [crossing.edgeB, crossing.segIndexB, crossing.edgeA, crossing.segIndexA];
             }
             if (attemptedEdgeIds.has(victim.id))
                 continue;
             attemptedEdgeIds.add(victim.id);
-            const offset = channelSpacing * (iteration + 1);
-            const nudged = nudgeInteriorSegment(victim.routing.waypoints, segIndex, offset);
+            const victimPoints = victim.routing.waypoints;
+            const otherPoints = other.routing.waypoints;
+            const direction = nudgeDirection(victimPoints[segIndex - 1], victimPoints[segIndex], otherPoints[otherSegIndex - 1], otherPoints[otherSegIndex]);
+            const offset = direction * channelSpacing * (iteration + 1);
+            const nudged = nudgeInteriorSegment(victimPoints, segIndex, offset);
             if (nudged) {
                 resolvedAnyThisPass = true;
                 resolvedCount += 1;
