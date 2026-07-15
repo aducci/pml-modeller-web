@@ -30,3 +30,17 @@ export function getLaneIndexMap(lanes) {
         .forEach((lane, index) => indexMap.set(lane.id, index));
     return indexMap;
 }
+/** Index an array of id-bearing items by their `id`. */
+export function buildById(items) {
+    return new Map(items.map((item) => [item.id, item]));
+}
+/** Index edges by target (incoming) and by source (outgoing) in one pass. */
+export function buildIncomingOutgoingMaps(edges) {
+    const incomingByTarget = new Map();
+    const outgoingBySource = new Map();
+    for (const edge of edges) {
+        appendToMap(incomingByTarget, edge.target, edge);
+        appendToMap(outgoingBySource, edge.source, edge);
+    }
+    return { incomingByTarget, outgoingBySource };
+}

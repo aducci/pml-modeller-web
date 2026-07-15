@@ -1,3 +1,5 @@
+import { buildById } from './stageHelpers';
+import { nodeRect as nodeToRect } from '../layoutGeometry';
 function createReport() {
     return { errors: [], warnings: [] };
 }
@@ -35,17 +37,9 @@ function pointNearRectBoundary(point, rect, tolerance) {
         point.x <= right + tolerance;
     return onVertical || onHorizontal;
 }
-function nodeToRect(node) {
-    return {
-        x: (node.x ?? 0) - node.width / 2,
-        y: (node.y ?? 0) - node.height / 2,
-        width: node.width,
-        height: node.height,
-    };
-}
 export function assertRoutingStageContractsWithNodes(edges, nodes) {
     const report = createReport();
-    const nodeById = new Map(nodes.map((node) => [node.id, node]));
+    const nodeById = buildById(nodes);
     const tolerance = 1;
     for (const edge of edges) {
         if (edge.flowLayer === 'hidden') {

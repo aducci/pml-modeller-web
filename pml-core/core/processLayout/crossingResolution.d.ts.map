@@ -1,1 +1,1 @@
-{"version":3,"file":"crossingResolution.d.ts","sourceRoot":"","sources":["../../../src/core/processLayout/crossingResolution.ts"],"names":[],"mappings":"AAsBA,OAAO,EAA0B,WAAW,EAAS,MAAM,eAAe,CAAC;AA0G3E,wBAAgB,oBAAoB,CAAC,KAAK,EAAE,WAAW,GAAG,IAAI,CAkE7D"}
+{"version":3,"file":"crossingResolution.d.ts","sourceRoot":"","sources":["../../../src/core/processLayout/crossingResolution.ts"],"names":[],"mappings":"AAsBA,OAAO,EAA0B,WAAW,EAAS,MAAM,eAAe,CAAC;AA2G3E,wBAAgB,oBAAoB,CAAC,KAAK,EAAE,WAAW,GAAG,IAAI,CAkE7D"}

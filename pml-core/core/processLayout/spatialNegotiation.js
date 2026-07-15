@@ -26,9 +26,9 @@
  * Hard invariants are constants — never relaxed at runtime (spec Section 7.2).
  */
 import { SPATIAL_NEGOTIATION_INVARIANTS, } from './layoutTypes';
-import { segmentsIntersect, rectAnchors } from '../layoutGeometry';
+import { segmentsIntersect, rectAnchors, nodeRect as nodeToRect } from '../layoutGeometry';
 import { isGatewayNodeKind } from '../nodeKinds';
-import { appendToMap, stableSortById, getLaneIndexMap } from './stageHelpers';
+import { appendToMap, stableSortById, getLaneIndexMap, buildById } from './stageHelpers';
 import { mustGetNode } from '../nodeLookup';
 export const DEFAULT_SPATIAL_SETTINGS = {
     straightDownAlignmentThresholdPx: 20,
@@ -41,7 +41,7 @@ export const DEFAULT_SPATIAL_SETTINGS = {
 // Public entry point
 // ---------------------------------------------------------------------------
 export function evaluateBoundedSpatialOpportunities(nodes, edges, laneMap, gatewayEnvelopes, settings = DEFAULT_SPATIAL_SETTINGS) {
-    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+    const nodeMap = buildById(nodes);
     const windows = buildEdgeWindows(edges);
     if (windows.length === 0) {
         return { acceptedAdjustments: [], rejectedProposals: [], windowDiagnostics: [], skipped: true, skipReason: 'no-multi-edge-windows' };
@@ -333,14 +333,6 @@ function generateSymmetryProposal(gateway, targets, proposals) {
 // ---------------------------------------------------------------------------
 function isGatewayNode(node) {
     return isGatewayNodeKind(node.type);
-}
-function nodeToRect(node) {
-    return {
-        x: (node.x ?? 0) - node.width / 2,
-        y: (node.y ?? 0) - node.height / 2,
-        width: node.width,
-        height: node.height,
-    };
 }
 function getEvaluatedTriggers(window) {
     const base = ['T1', 'T4'];

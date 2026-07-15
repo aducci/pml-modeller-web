@@ -5,8 +5,9 @@
 // - continuity alignment hints and final bounds.
 import { LaneSlotAllocator, ChainIndexStrategy, BarycentreStrategy } from './laneSlotAllocator';
 import { resolveMixedDecisionRelayPlacement } from './mixedRelayPlacement';
-import { resolveContinuityAlignedY, applyContinuityRefinements } from './continuityAlignment';
+import { applyContinuityRefinements } from './continuityAlignment';
 import { effectiveSize } from './elementSizing';
+import { buildIncomingOutgoingMaps, buildById } from './stageHelpers';
 import { rectMerge, rectBounds } from '../layoutGeometry';
 import { getNodeDirection, isBoundaryBandDirection, isBoundaryBandNode, isInboundDirection, isOutboundDirection, } from '../nodeKinds';
 export function assignNodeSlotsWithinLaneDepth(state) {
@@ -39,18 +40,9 @@ export function recomputeTotalBounds(state) {
     state.totalBounds = merged ? rectBounds(merged) : { minX: 0, minY: 0, maxX: 0, maxY: 0 };
 }
 function buildLaneAndAdjacencyIndexes(state) {
-    const laneById = new Map(state.lanes.map((lane) => [lane.id, lane]));
-    const nodeById = new Map(state.nodes.map((node) => [node.id, node]));
-    const incomingByTarget = new Map();
-    const outgoingBySource = new Map();
-    for (const edge of state.edges) {
-        const incoming = incomingByTarget.get(edge.target) || [];
-        incoming.push(edge);
-        incomingByTarget.set(edge.target, incoming);
-        const outgoing = outgoingBySource.get(edge.source) || [];
-        outgoing.push(edge);
-        outgoingBySource.set(edge.source, outgoing);
-    }
+    const laneById = buildById(state.lanes);
+    const nodeById = buildById(state.nodes);
+    const { incomingByTarget, outgoingBySource } = buildIncomingOutgoingMaps(state.edges);
     return { laneById, nodeById, incomingByTarget, outgoingBySource };
 }
 function computeDepthLaneGroupsAndColumnWidths(state) {
@@ -121,7 +113,7 @@ function applyLaneInnerBounds(state, laneStartX, laneEndX) {
     }
 }
 function buildBoundaryBandResolver(boundaryBandGap, laneStartX, laneEndX, state) {
-    const laneById = new Map(state.lanes.map((lane) => [lane.id, lane]));
+    const laneById = buildById(state.lanes);
     return (node) => {
         if (!isBoundaryBandNode(node)) {
             return undefined;
@@ -213,13 +205,9 @@ function placeNodesWithinDepthAndLane(state, depthLaneMap, laneById, nodeById, i
         if (orderedNodes.length === 1) {
             const node = orderedNodes[0];
             const defaultY = Math.max(packTop, Math.min(packBottom, laneCenter));
-            const alignedY = resolveContinuityAlignedY(node, lane, laneHeaderHeight, incomingByTarget, outgoingBySource, nodeById);
             const boundaryBandX = resolveBoundaryBandX(node);
             node.x = boundaryBandX ?? x;
-            node.y = alignedY ?? defaultY;
-            if (alignedY !== undefined && Math.abs(defaultY - alignedY) > state.settings.heuristics.continuityTolerancePx) {
-                provenance.push(`continuity-alignment:${node.id}:y=${Math.round(defaultY)}->${Math.round(alignedY)}`);
-            }
+            node.y = defaultY;
             continue;
         }
         // Multiple nodes: use the allocator for vertical stacking within pack bounds
@@ -248,7 +236,7 @@ function placeNodesWithinDepthAndLane(state, depthLaneMap, laneById, nodeById, i
  * subtract them from the actual delta.
  */
 export function preReserveCorridorSpace(state) {
-    const nodeById = new Map(state.nodes.map((n) => [n.id, n]));
+    const nodeById = buildById(state.nodes);
     const laneOrder = new Map();
     state.lanes
         .slice()

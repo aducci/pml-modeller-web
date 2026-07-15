@@ -8,6 +8,7 @@
 // and LANE_FIELD_OWNERSHIP.y/height for why these specific writes are allowed
 // to happen out-of-phase instead of being an undisclosed ownership violation.
 import { effectiveSize } from './elementSizing';
+import { buildById } from './stageHelpers';
 export function applyLaneDensityPolicy(state) {
     const settings = state.settings;
     const stackData = new Map();
@@ -50,8 +51,8 @@ export function applyLaneDensityPolicy(state) {
     }
 }
 export function updateLaneActiveChannels(state, edgeChannels) {
-    const nodeById = new Map(state.nodes.map((node) => [node.id, node]));
-    const edgeById = new Map(state.edges.map((edge) => [edge.id, edge]));
+    const nodeById = buildById(state.nodes);
+    const edgeById = buildById(state.edges);
     const channelsByLane = new Map();
     for (const lane of state.lanes) {
         channelsByLane.set(lane.id, new Set([0]));
@@ -101,7 +102,7 @@ export function expandLanesForRoutingChannels(state) {
 }
 // Registered handoff: NODE_FIELD_OWNERSHIP.y (phaseContract.ts).
 export function applyContinuityAlignmentLocks(state) {
-    const nodeById = new Map(state.nodes.map((node) => [node.id, node]));
+    const nodeById = buildById(state.nodes);
     for (const node of state.nodes) {
         if (node.y === undefined || !node.metadata?.continuityAlignToNodeId) {
             continue;
@@ -117,7 +118,7 @@ export function applyContinuityAlignmentLocks(state) {
     }
 }
 export function applyMixedRelayXLocks(state) {
-    const nodeById = new Map(state.nodes.map((node) => [node.id, node]));
+    const nodeById = buildById(state.nodes);
     for (const node of state.nodes) {
         if (node.x === undefined) {
             continue;

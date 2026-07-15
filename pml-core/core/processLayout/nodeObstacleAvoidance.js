@@ -12,16 +12,16 @@
 // This stage checks each routed segment against every node it doesn't
 // touch, and nudges the segment clear if it cuts through the node's body.
 import { segmentIntersection } from './convergenceLoop';
+import { nodeRect as nodeBoxRect, rectBounds } from '../layoutGeometry';
 const MAX_ITERATIONS = 3;
 const OBSTACLE_MARGIN_PX = 8;
 function nodeRect(node, margin) {
-    const x = node.x ?? 0;
-    const y = node.y ?? 0;
+    const bounds = rectBounds(nodeBoxRect(node));
     return {
-        left: x - node.width / 2 - margin,
-        right: x + node.width / 2 + margin,
-        top: y - node.height / 2 - margin,
-        bottom: y + node.height / 2 + margin,
+        left: bounds.minX - margin,
+        right: bounds.maxX + margin,
+        top: bounds.minY - margin,
+        bottom: bounds.maxY + margin,
     };
 }
 /** True if the (axis-aligned) segment passes through the interior of `rect`, not just grazes its boundary. */

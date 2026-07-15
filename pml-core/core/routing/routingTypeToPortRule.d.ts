@@ -12,7 +12,6 @@
  */
 import { PortAssignmentRule } from '../processLayout/layoutTypes';
 import { RoutingTypeCode } from './routingRuleDefinition';
-export declare const ROUTING_TYPE_PORT_RULES: Record<RoutingTypeCode, PortAssignmentRule>;
 /**
  * Returns the PortAssignmentRule for a given routing type code.
  * Returns null for codes that should not override engine defaults (AOT).

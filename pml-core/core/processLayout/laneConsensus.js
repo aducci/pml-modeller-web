@@ -1,6 +1,7 @@
 // Stage: Lane Consensus
 // reads:  nodes (laneId, depth), edges (source, target)
 // writes: nothing — returns LaneConsensusResult (caller applies assignments)
+import { buildById } from './stageHelpers';
 function stableNodeOrder(nodes) {
     return nodes
         .slice()
@@ -32,7 +33,7 @@ function pickWinner(votes, laneIds) {
 export function propagateLaneConsensus(nodes, edges, lanes, successorWeight = 0, fallbackLaneId) {
     const laneIds = lanes.map((l) => l.id);
     const defaultLaneId = fallbackLaneId || laneIds[0] || 'default';
-    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+    const nodeMap = buildById(nodes);
     // Build incoming and outgoing adjacency
     const incoming = new Map();
     const outgoing = new Map();
@@ -156,7 +157,7 @@ export function propagateLaneConsensus(nodes, edges, lanes, successorWeight = 0,
 export function analyzeDecisionLaneAffinity(nodes, edges, settings) {
     if (settings.mode === 'off')
         return [];
-    const nodeById = new Map(nodes.map((n) => [n.id, n]));
+    const nodeById = buildById(nodes);
     const outgoingEdges = new Map();
     for (const n of nodes)
         outgoingEdges.set(n.id, []);

@@ -95,8 +95,10 @@ function wrapToLines(text, maxLines, maxChars, ellipsis, forceWrap) {
     if (wasTruncated && resultLines.length > 0) {
         const lastIdx = resultLines.length - 1;
         const line = resultLines[lastIdx];
-        if (line.length >= maxChars && !line.endsWith(ellipsis)) {
-            resultLines[lastIdx] = line.slice(0, Math.max(0, maxChars - ellipsis.length)).trimEnd() + ellipsis;
+        if (!line.endsWith(ellipsis)) {
+            resultLines[lastIdx] = line.length + ellipsis.length > maxChars
+                ? line.slice(0, Math.max(0, maxChars - ellipsis.length)).trimEnd() + ellipsis
+                : line + ellipsis;
         }
     }
     return { lines: resultLines.slice(0, maxLines), truncated: wasTruncated };

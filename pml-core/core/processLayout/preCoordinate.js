@@ -4,7 +4,7 @@
 // - flow-chain detection and node chain assignment.
 import { computeRanking } from './ranking';
 import { LongestPathStrategy, AnnotationKeyFlowStrategy } from './keyFlowPinning';
-import { recordStage } from './stageHelpers';
+import { recordStage, buildById } from './stageHelpers';
 import { isGatewayNodeKind } from '../nodeKinds';
 export function runPreCoordinateStages(state, graph) {
     recordStage(state, 'ranking');
@@ -42,7 +42,7 @@ function computeNodeDepths(state, graph) {
 function detectFlowChains(state, graph, keyFlowPath) {
     const chains = [];
     const signatures = new Set();
-    const graphNodeMap = new Map(graph.nodes.map((n) => [n.id, n]));
+    const graphNodeMap = buildById(graph.nodes);
     const outgoingBySource = new Map();
     for (const edge of graph.edges) {
         if (!outgoingBySource.has(edge.source)) {
@@ -96,7 +96,7 @@ function traceLinearChain(startId, graphNodeMap, outgoingBySource) {
     return chain;
 }
 function assignNodesToChains(state, chains) {
-    const nodeMap = new Map(state.nodes.map((n) => [n.id, n]));
+    const nodeMap = buildById(state.nodes);
     for (let chainIndex = 0; chainIndex < chains.length; chainIndex++) {
         const chain = chains[chainIndex];
         for (let nodeIndex = 0; nodeIndex < chain.nodeIds.length; nodeIndex++) {

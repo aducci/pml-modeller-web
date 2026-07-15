@@ -18,6 +18,37 @@ export function segmentIntersection(a1, a2, b1, b2) {
     const d4 = det(b1, b2, a2);
     return d1 * d2 < 0 && d3 * d4 < 0;
 }
+function buildRoutedSegments(edges) {
+    const segments = [];
+    for (const edge of edges) {
+        const points = edge.routing?.waypoints || [];
+        for (let i = 1; i < points.length; i++) {
+            segments.push({ edgeId: edge.id, source: edge.source, target: edge.target, a: points[i - 1], b: points[i] });
+        }
+    }
+    return segments;
+}
+/**
+ * Shared O(n²) segment-pair scan used by both convergence-loop crossing
+ * counting (below) and layoutDefects.ts's defect scoring — each caller
+ * supplies its own pair-skip rule (same edge vs. shares an endpoint) since
+ * the two consumers need different subsets, not the same crossing
+ * definition. Only the scan/loop itself is shared.
+ */
+export function forEachSegmentCrossing(edges, shouldSkipPair, onCrossing) {
+    const segments = buildRoutedSegments(edges);
+    for (let i = 0; i < segments.length; i++) {
+        for (let j = i + 1; j < segments.length; j++) {
+            const s1 = segments[i];
+            const s2 = segments[j];
+            if (shouldSkipPair(s1, s2))
+                continue;
+            if (segmentIntersection(s1.a, s1.b, s2.a, s2.b)) {
+                onCrossing(s1, s2);
+            }
+        }
+    }
+}
 function computeElbowMetrics(edges) {
     let totalElbows = 0;
     let degenerateElbows = 0;
@@ -45,26 +76,8 @@ function computeElbowMetrics(edges) {
     return { total: totalElbows, degenerate: degenerateElbows };
 }
 function computeCrossings(edges) {
-    const segments = [];
-    for (const edge of edges) {
-        const points = edge.routing?.waypoints || [];
-        for (let i = 1; i < points.length; i++) {
-            segments.push({ edgeId: edge.id, a: points[i - 1], b: points[i] });
-        }
-    }
     let crossings = 0;
-    for (let i = 0; i < segments.length; i++) {
-        for (let j = i + 1; j < segments.length; j++) {
-            const s1 = segments[i];
-            const s2 = segments[j];
-            if (s1.edgeId === s2.edgeId) {
-                continue;
-            }
-            if (segmentIntersection(s1.a, s1.b, s2.a, s2.b)) {
-                crossings += 1;
-            }
-        }
-    }
+    forEachSegmentCrossing(edges, (a, b) => a.edgeId === b.edgeId, () => { crossings += 1; });
     return crossings;
 }
 export function runConvergenceLoop(edges, maxPasses = 5) {

@@ -1,3 +1,4 @@
+import { buildById } from './stageHelpers';
 function edgeKey(from, to) {
     return `${from}->${to}`;
 }
@@ -29,7 +30,7 @@ function buildBiAdjacency(graph, backEdgeSet) {
     }
     return { predecessors, successors };
 }
-export function detectBackEdges(graph) {
+function detectBackEdges(graph) {
     const adjacency = buildForwardAdjacency(graph);
     const incomingCount = new Map();
     for (const node of graph.nodes)
@@ -80,7 +81,7 @@ export function detectBackEdges(graph) {
     });
     return backEdges;
 }
-export function topologicalSort(graph, backEdges) {
+function topologicalSort(graph, backEdges) {
     const backEdgeSet = new Set(backEdges.map((edge) => edgeKey(edge.from, edge.to)));
     const inDegree = new Map();
     const adjacency = new Map();
@@ -125,7 +126,7 @@ export function topologicalSort(graph, backEdges) {
     }
     return topoOrder;
 }
-export function longestPathRanking(graph, topologicalOrder, backEdges) {
+function longestPathRanking(graph, topologicalOrder, backEdges) {
     const backEdgeSet = new Set(backEdges.map((edge) => edgeKey(edge.from, edge.to)));
     const adjacency = buildForwardAdjacency(graph, backEdgeSet);
     const ranks = new Map();
@@ -185,7 +186,7 @@ function computeReachabilityFromInbound(graph) {
  */
 function applyCrossLanePenalty(ranks, graph, topologicalOrder, backEdges, strategy) {
     const backEdgeSet = new Set(backEdges.map((e) => edgeKey(e.from, e.to)));
-    const nodeMap = new Map(graph.nodes.map((n) => [n.id, n]));
+    const nodeMap = buildById(graph.nodes);
     const { predecessors, successors } = buildBiAdjacency(graph, backEdgeSet);
     const bumped = new Set();
     for (const nodeId of topologicalOrder) {

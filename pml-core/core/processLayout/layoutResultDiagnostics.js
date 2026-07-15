@@ -4,6 +4,7 @@
  * Centralized diagnostics assembly for layout quality, boundary placement,
  * and routing provenance tracking.
  */
+import { buildById } from './stageHelpers';
 import { rectsOverlap, nodeRect } from '../layoutGeometry';
 export function buildLayoutDiagnostics(state) {
     const routingSmellWarnings = detectRoutingSmells(state);
@@ -96,7 +97,7 @@ function buildIssues(warnings, errors) {
 }
 function detectRoutingSmells(state) {
     const warnings = [];
-    const nodeById = new Map(state.nodes.map((node) => [node.id, node]));
+    const nodeById = buildById(state.nodes);
     for (const edge of state.edges) {
         const routing = edge.routing;
         if (!routing) {

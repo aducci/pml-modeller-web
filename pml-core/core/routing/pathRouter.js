@@ -8,6 +8,7 @@
  *
  * Zero inline routing logic. All decisions delegated to specialist modules.
  */
+import { buildById } from '../processLayout/stageHelpers';
 import { resolveScenario } from './scenarioResolver';
 import { resolvePortAssignment } from './portResolver';
 import { matchRoutingRule, } from './routingRuleDefinition';
@@ -19,7 +20,7 @@ import { determineRailTier, buildRailOffset, distance, midpoint } from '../layou
 import { mustGetNode } from '../nodeLookup';
 import { buildBundleWindows } from './bundleWindows';
 import { evaluateAndApplyBundlesWithResults, detectStackedEdges } from './worldEvaluator';
-export class PathRouter {
+class PathRouter {
     constructor(nodes, lanes) {
         Object.defineProperty(this, "nodeMap", {
             enumerable: true,
@@ -33,7 +34,7 @@ export class PathRouter {
             writable: true,
             value: void 0
         });
-        this.nodeMap = new Map(nodes.map((n) => [n.id, n]));
+        this.nodeMap = buildById(nodes);
         this.laneMap = new Map(lanes.map((l) => [l.id, l]));
     }
     routeEdge(edge, options = {}) {
@@ -313,7 +314,7 @@ function selectLabelAnchor(waypoints) {
     const end = waypoints[longestIdx];
     return midpoint(start, end);
 }
-export function createPathRouter(nodes, lanes) {
+function createPathRouter(nodes, lanes) {
     return new PathRouter(nodes, lanes);
 }
 export function routeAllEdges(edges, nodes, lanes, options = {}) {
@@ -321,7 +322,7 @@ export function routeAllEdges(edges, nodes, lanes, options = {}) {
     const inDegreeMap = new Map();
     const outDegreeMap = new Map();
     const outTargetLaneIdsMap = new Map();
-    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+    const nodeMap = buildById(nodes);
     for (const edge of edges) {
         outDegreeMap.set(edge.source, (outDegreeMap.get(edge.source) ?? 0) + 1);
         inDegreeMap.set(edge.target, (inDegreeMap.get(edge.target) ?? 0) + 1);
@@ -348,7 +349,7 @@ export function routeAllEdges(edges, nodes, lanes, options = {}) {
     // Bundle world evaluation — score sibling groups and apply best candidate routing.
     // Build a background waypoints map from all initially-routed edges so the evaluator
     // can detect cross-bundle crossings (not just crossings within each bundle).
-    const routingNodeMap = new Map(nodes.map((n) => [n.id, n]));
+    const routingNodeMap = buildById(nodes);
     const laneMap = new Map(lanes.map((l) => [l.id, l]));
     const bundles = buildBundleWindows(routedEdges, routingNodeMap);
     if (bundles.length > 0) {

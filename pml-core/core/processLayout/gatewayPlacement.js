@@ -4,6 +4,7 @@
 // returns: GatewayEnvelopeMap (consumed by port resolver — not stored on LayoutState)
 import { isGatewayNodeKind } from '../nodeKinds';
 import { mustGetNode } from '../nodeLookup';
+import { buildById } from './stageHelpers';
 // ---------------------------------------------------------------------------
 // Defaults
 // ---------------------------------------------------------------------------
@@ -26,7 +27,7 @@ export function applyGatewayPlacementHeuristics(context, options = DEFAULT_GATEW
     const envelopeMap = new Map();
     if (!options.enabled)
         return envelopeMap;
-    const nodeMap = new Map(context.nodes.map((n) => [n.id, n]));
+    const nodeMap = buildById(context.nodes);
     const laneList = Array.from(context.lanes.values()).sort((a, b) => a.y - b.y);
     const laneIndexMap = new Map(laneList.map((l, i) => [l.id, i]));
     const incomingByNode = new Map();

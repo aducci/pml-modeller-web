@@ -1,7 +1,7 @@
 import { LayoutEdge, LayoutNode } from '../processLayout/layoutTypes';
 import { ProcessThemeSchema } from '../styling/styleSchema';
 import { type EdgeLabelPlacement } from './edgeLabelPositioning';
-export interface ResolvedNodeLabel {
+interface ResolvedNodeLabel {
     nodeId: string;
     lines: string[];
     x: number;
@@ -11,7 +11,7 @@ export interface ResolvedNodeLabel {
     fill: string;
     lineSpacing: number;
 }
-export interface ResolvedSecondaryLabel {
+interface ResolvedSecondaryLabel {
     nodeId: string;
     text: string;
     x: number;
@@ -22,7 +22,7 @@ export interface ResolvedSecondaryLabel {
     opacity: number;
     letterSpacing?: string;
 }
-export interface ResolvedEdgeLabel {
+interface ResolvedEdgeLabel {
     edgeId: string;
     text: string;
     x: number;
@@ -43,4 +43,5 @@ export interface LabelControllerResult {
     edgeLabels: Map<string, ResolvedEdgeLabel>;
 }
 export declare function buildProcessLabelControllerResult(nodes: LayoutNode[], edges: LayoutEdge[], theme: ProcessThemeSchema, padding: number): LabelControllerResult;
+export {};
 //# sourceMappingURL=labelController.d.ts.map

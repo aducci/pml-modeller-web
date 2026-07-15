@@ -1,8 +1,8 @@
-import { getLaneIndexMap } from './stageHelpers';
+import { getLaneIndexMap, buildById } from './stageHelpers';
 import { mustGetNode } from '../nodeLookup';
 export function allocateChannels(edges, nodes, lanes, settings) {
     const isVirtual = settings?.layout.laneMode === 'virtual';
-    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+    const nodeMap = buildById(nodes);
     const laneOrder = getLaneIndexMap(lanes);
     const edgeChannels = new Map();
     const channelOccupancy = new Map();

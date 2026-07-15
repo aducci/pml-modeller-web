@@ -24,7 +24,7 @@ export interface CurtainGeometry {
         width: number;
     };
 }
-export interface CurtainGeometryInput {
+interface CurtainGeometryInput {
     inboundEventNodes: LayoutNode[];
     outboundEventNodes: LayoutNode[];
     /** Left edge of the first swimlane, in canvas coordinates. */
@@ -47,4 +47,5 @@ export interface CurtainGeometryInput {
  * value object for the renderer to consume without further calculation.
  */
 export declare function computeCurtainGeometry(input: CurtainGeometryInput): CurtainGeometry;
+export {};
 //# sourceMappingURL=curtainGeometry.d.ts.map

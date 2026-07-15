@@ -20,6 +20,7 @@
 // edge-to-edge clearance needs a real global solve (e.g. widening channel
 // allocation's corridor width), not a per-pair post-process.
 import { segmentIntersection } from './convergenceLoop';
+import { buildById } from './stageHelpers';
 const MAX_ITERATIONS = 3;
 function findCrossingPairs(edges) {
     const routed = edges.filter((e) => (e.routing?.waypoints?.length ?? 0) >= 2);
@@ -108,7 +109,7 @@ function nudgeInteriorSegment(points, segIndex, offset) {
     return true;
 }
 export function resolveEdgeCrossings(state) {
-    const nodeById = new Map(state.nodes.map((n) => [n.id, n]));
+    const nodeById = buildById(state.nodes);
     const channelSpacing = state.settings.spacing.channelSpacing;
     let resolvedCount = 0;
     let unresolvedCount = 0;

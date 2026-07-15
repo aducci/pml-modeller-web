@@ -7,7 +7,7 @@
  */
 import { PatternDefinition, DetectNodeType } from './patternDefinition';
 import { LayoutNode, Lane } from '../processLayout/layoutTypes';
-export interface MatchContext {
+interface MatchContext {
     sourceIsBoundary: boolean;
     targetIsBoundary: boolean;
     sameLane: boolean;
@@ -20,7 +20,7 @@ export interface MatchContext {
     laneDirection: 'same' | 'upward' | 'downward';
     deltaYRatio: number;
 }
-export interface PatternMatchResult {
+interface PatternMatchResult {
     pattern: PatternDefinition;
     scenarioKey: string;
 }
@@ -28,4 +28,5 @@ export interface PatternMatchResult {
 export declare function buildMatchContext(source: LayoutNode, target: LayoutNode, laneMap: Map<string, Lane>, sourceOutDegree: number, targetInDegree: number, outgoingTargetLaneIds: string[]): MatchContext;
 /** Evaluate a pattern table against a context; returns first matching pattern or null. */
 export declare function matchPattern(table: PatternDefinition[], ctx: MatchContext): PatternMatchResult | null;
+export {};
 //# sourceMappingURL=patternMatcher.d.ts.map

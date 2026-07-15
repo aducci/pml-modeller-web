@@ -37,6 +37,7 @@ export * from './views/CanvasToolbar';
 export * from './views/ProcessDataPanel';
 export * from './core/ProcessCanvas';
 // Admin views
+export * from './core/sharedState';
 export * from './views/admin/AdminView';
 export * from './views/admin/LayoutRulesPanel';
 export * from './views/admin/PatternTablePanel';

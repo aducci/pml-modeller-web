@@ -37,6 +37,7 @@
 // count wins; ties keep the baseline unchanged.
 import { isGatewayNodeKind } from '../nodeKinds';
 import { countLayoutDefects } from './layoutDefects';
+import { buildById } from './stageHelpers';
 const MAX_LANE_CANDIDATE_NODES = 4;
 const MAX_SIBLING_GROUP_SIZE = 6;
 function cloneGraphWithForcedLane(graph, nodeId, laneId) {
@@ -46,7 +47,7 @@ function cloneGraphWithForcedLane(graph, nodeId, laneId) {
     };
 }
 function buildLaneRelocationTrials(graph, baseline, defectNodeIds) {
-    const nodeById = new Map(graph.nodes.map((n) => [n.id, n]));
+    const nodeById = buildById(graph.nodes);
     const laneByNodeId = new Map(baseline.nodes.map((n) => [n.id, n.laneId]));
     const candidates = Array.from(defectNodeIds)
         .map((id) => nodeById.get(id))

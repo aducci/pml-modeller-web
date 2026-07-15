@@ -4,12 +4,12 @@
 //         [depth-folding sub-stage] nodes.depth (may be reduced in compact mode)
 // - optional depth folding (compact density).
 import { analyzeDecisionLaneAffinity, propagateLaneConsensus } from './laneConsensus';
-import { recordStage } from './stageHelpers';
+import { recordStage, buildIncomingOutgoingMaps, buildById } from './stageHelpers';
 import { getNodeDirection, isBoundaryBandNode, isInboundDirection, isOutboundDirection, } from '../nodeKinds';
 export function computeLaneGeometry(state) {
     recordStage(state, 'lane-geometry');
     const laneByActorId = new Map();
-    const nodeById = new Map(state.nodes.map((n) => [n.id, n]));
+    const nodeById = buildById(state.nodes);
     for (const lane of state.lanes) {
         if (lane.actorId) {
             laneByActorId.set(lane.actorId, lane);
@@ -32,16 +32,7 @@ export function computeLaneGeometry(state) {
         state.diagnostics.warnings.push(`Lane consensus used default assignment for ${defaultAssignments} node(s).`);
     }
     const defaultLaneId = state.lanes[0]?.id ?? 'default';
-    const incomingByTarget = new Map();
-    const outgoingBySource = new Map();
-    for (const edge of state.edges) {
-        const incoming = incomingByTarget.get(edge.target) || [];
-        incoming.push(edge);
-        incomingByTarget.set(edge.target, incoming);
-        const outgoing = outgoingBySource.get(edge.source) || [];
-        outgoing.push(edge);
-        outgoingBySource.set(edge.source, outgoing);
-    }
+    const { incomingByTarget, outgoingBySource } = buildIncomingOutgoingMaps(state.edges);
     for (const node of state.nodes) {
         if (!isInterfaceEvent(node) || node.laneId) {
             continue;
@@ -142,7 +133,7 @@ export function applyDepthFolding(state) {
         return state;
     recordStage(state, 'depth-folding');
     const occupiedSlots = new Map();
-    const nodeById = new Map(state.nodes.map((node) => [node.id, node]));
+    const nodeById = buildById(state.nodes);
     const incomingByTarget = new Map();
     for (const edge of state.edges) {
         if (!incomingByTarget.has(edge.target)) {

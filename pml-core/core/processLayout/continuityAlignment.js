@@ -3,74 +3,19 @@
 // writes: nothing directly — mutates node.y/metadata (their real job) but
 //         returns provenance text; callers push it to state.provenanceLog
 //
-// Two passes over the same underlying concern — "should this node's Y match
-// a same-lane neighbor's Y so the flow reads as a straight line" — run at
-// different points in the pipeline:
+// applyContinuityRefinements runs as a full second pass over every node,
+// immediately after initial placement (placeNodesWithinDepthAndLane)
+// finishes, aligning each continuity-eligible node's Y to a same-lane
+// neighbor's Y so the flow reads as a straight line.
 //
-//   resolveContinuityAlignedY   — consulted only for a depth-lane cell that
-//                                  holds exactly one node, during initial
-//                                  placement (placeNodesWithinDepthAndLane).
-//   applyContinuityRefinements  — a full second pass over every node, run
-//                                  immediately after initial placement
-//                                  finishes. Handles more cases (source-inbound
-//                                  events, spine gateways) and additionally
-//                                  checks for sibling collisions before
-//                                  committing a move.
-//
-// These were previously in separate places in coordinateAssignment.ts and
-// independently duplicated the same node-classification predicates
-// (isTerminalOutboundEvent, isLinearBridgeNode, "same-lane earlier-depth
-// predecessor"). Whether resolveContinuityAlignedY's work is fully
-// superseded by the later, more rigorous pass is an open question — see
-// resolveContinuityAlignedY's own comment before removing it.
+// A narrower first-pass variant (resolveContinuityAlignedY) used to run
+// inline during initial placement for solo-node depth-lane cells. It was
+// removed after verifying — by stubbing it out and running the full golden-
+// master + invariant suite — that its output was always overwritten by this
+// function, making it dead code.
 import { CONTINUITY_ELIGIBLE_TYPES } from './layoutTypes';
 import { isGatewayNodeKind, isInboundEventNode, isOutboundEventNode } from '../nodeKinds';
 import { effectiveSize } from './elementSizing';
-/**
- * Aligned Y for a solo node occupying its depth-lane cell, or undefined if
- * this node isn't a continuity-alignment candidate. Only handles the
- * terminal-outbound-event and linear-bridge cases — applyContinuityRefinements
- * (below) handles those plus source-inbound events and spine gateways, and
- * additionally checks for sibling collisions.
- *
- * NOTE: applyContinuityRefinements runs as a full second pass immediately
- * after this function's caller finishes, and appears to be a strict superset
- * for the two cases this function handles. It's plausible this function's
- * alignment is always overwritten by that later pass, making it redundant —
- * unverified as of the extraction that moved this here (see
- * docs/FINAL/08_Architecture_Deepening_Review.md's coordinateAssignment.ts
- * restructuring plan, Phase 3). Do not delete without re-running that
- * investigation; do not assume it's live behavior either.
- */
-export function resolveContinuityAlignedY(node, lane, laneHeaderHeight, incomingByTarget, outgoingBySource, nodeById) {
-    if (!CONTINUITY_ELIGIBLE_TYPES.has(node.type)) {
-        return undefined;
-    }
-    const incomingEdges = incomingByTarget.get(node.id) || [];
-    const outgoingEdges = outgoingBySource.get(node.id) || [];
-    if (incomingEdges.length !== 1) {
-        return undefined;
-    }
-    const predecessor = nodeById.get(incomingEdges[0].source);
-    if (!predecessor || predecessor.y === undefined || predecessor.laneId !== node.laneId) {
-        return undefined;
-    }
-    const predecessorDepth = predecessor.depth ?? Number.NEGATIVE_INFINITY;
-    const nodeDepth = node.depth ?? Number.POSITIVE_INFINITY;
-    if (predecessorDepth >= nodeDepth) {
-        return undefined;
-    }
-    const isTerminalOutboundEvent = isOutboundEventNode(node)
-        && outgoingEdges.length === 0;
-    const isLinearBridgeNode = incomingEdges.length === 1 && outgoingEdges.length === 1;
-    if (!isTerminalOutboundEvent && !isLinearBridgeNode) {
-        return undefined;
-    }
-    const halfHeight = effectiveSize(node).height / 2;
-    const minY = lane.y + laneHeaderHeight + halfHeight;
-    const maxY = lane.y + lane.height - halfHeight;
-    return Math.max(minY, Math.min(maxY, predecessor.y));
-}
 /**
  * Refines node.y for continuity alignment across the whole node set. Mutates
  * node.y (this stage's real job) but returns provenance text rather than

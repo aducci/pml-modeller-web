@@ -108,7 +108,8 @@ export interface EdgeStyle {
     };
 }
 export type EdgeLabelAnchor = 'start' | 'mid' | 'end' | 'elbow-1' | 'elbow-2' | 'elbow-3';
-export type EdgeLabelSide = 'above' | 'center' | 'below' | 'left' | 'right';
+/** 'auto' mirrors above/below or left/right from the anchor's own local segment direction — see edgeLabelPositioning.ts. */
+export type EdgeLabelSide = 'above' | 'center' | 'below' | 'left' | 'right' | 'auto';
 export interface EdgeLabelPlacement {
     anchor: EdgeLabelAnchor;
     side: EdgeLabelSide;

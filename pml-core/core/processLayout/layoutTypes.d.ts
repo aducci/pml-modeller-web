@@ -684,20 +684,6 @@ export interface GeometryPhaseResult extends GraphPhaseResult {
 /** Output of Phase C: channel allocation, lane expansion, edge routing. */
 export interface RoutingPhaseResult extends GeometryPhaseResult {
 }
-/** Fields readable by the lane consensus / laneGeometry stage. */
-export type LaneGeometryInput = Readonly<Pick<LayoutState, 'nodes' | 'edges' | 'lanes' | 'settings' | 'diagnostics'>>;
-/** Fields readable by the depth-folding stage. */
-export type DepthFoldingInput = Readonly<Pick<LayoutState, 'nodes' | 'lanes' | 'settings' | 'chains'>>;
-/** Fields readable by coordinate assignment. */
-export type CoordinateAssignmentInput = Readonly<Pick<LayoutState, 'nodes' | 'edges' | 'lanes' | 'chains' | 'settings'>>;
-/** Fields readable by gateway placement. */
-export type GatewayPlacementInput = Readonly<Pick<LayoutState, 'nodes' | 'edges' | 'lanes' | 'settings'>>;
-/** Fields readable by channel allocation. */
-export type ChannelAllocationInput = Readonly<Pick<LayoutState, 'edges' | 'nodes' | 'lanes'>>;
-/** Fields readable by the routing stage. */
-export type RoutingStageInput = Readonly<Pick<LayoutState, 'edges' | 'nodes' | 'lanes' | 'settings'>>;
-/** Fields readable by convergence analysis. */
-export type ConvergenceInput = Readonly<Pick<LayoutState, 'edges'>>;
 export type DeepPartial<T> = {
     [K in keyof T]?: T[K] extends Record<string, any> ? DeepPartial<T[K]> : T[K];
 };

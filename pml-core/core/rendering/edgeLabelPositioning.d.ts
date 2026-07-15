@@ -1,20 +1,7 @@
-import type { RoutingTypeCode } from '../routing/routingRuleDefinition';
 import type { LayoutEdge } from '../processLayout/layoutTypes';
-export type EdgeLabelAnchor = 'start' | 'mid' | 'end' | 'elbow-1' | 'elbow-2' | 'elbow-3';
-export type EdgeLabelSide = 'above' | 'center' | 'below' | 'left' | 'right';
-export interface EdgeLabelPlacement {
-    anchor: EdgeLabelAnchor;
-    side: EdgeLabelSide;
-    offsetPx: number;
-    secondaryAnchor: EdgeLabelAnchor;
-    secondarySide: EdgeLabelSide;
-    secondaryOffsetPx: number;
-}
-export interface EdgeLabelPositioning {
-    defaults: EdgeLabelPlacement;
-    perType: Partial<Record<RoutingTypeCode, EdgeLabelPlacement>>;
-}
-export interface ResolvedEdgeLabelPosition {
+import type { EdgeLabelSide, EdgeLabelPositioning } from '../styling/styleSchema';
+export type { EdgeLabelAnchor, EdgeLabelSide, EdgeLabelPlacement, EdgeLabelPositioning } from '../styling/styleSchema';
+interface ResolvedEdgeLabelPosition {
     x: number;
     y: number;
     side: EdgeLabelSide;

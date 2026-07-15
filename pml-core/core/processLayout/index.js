@@ -24,7 +24,7 @@ import { assignNodeSlotsWithinLaneDepth, recomputeTotalBounds, preReserveCorrido
 import { applyLaneDensityPolicy, updateLaneActiveChannels, expandLanesForRoutingChannels, applyContinuityAlignmentLocks, applyMixedRelayXLocks, resolveLoopbackStyle, } from './routingPost';
 import { resolvePostRoutingConflicts } from './postRoutingConflictResolution';
 import { applyLayoutAutoArrange } from './layoutAutoArrange';
-import { recordStage } from './stageHelpers';
+import { recordStage, buildById } from './stageHelpers';
 import { isVirtualLaneMode, normalizeForVirtualLanes } from './virtualLane';
 import { resolveGroupingStrategy } from './groupingStrategy';
 import { getNodeDirection, isBoundaryBandDirection, isEventNodeKind } from '../nodeKinds';
@@ -83,7 +83,7 @@ function runGeometryPhase(input) {
     recordStage(state, 'gateway-placement');
     const gatewayEnvelopes = applyGatewayPlacementHeuristics(state);
     recordStage(state, 'spatial-negotiation');
-    const spatialResult = evaluateBoundedSpatialOpportunities(state.nodes, state.edges, new Map(state.lanes.map((l) => [l.id, l])), gatewayEnvelopes, DEFAULT_SPATIAL_SETTINGS);
+    const spatialResult = evaluateBoundedSpatialOpportunities(state.nodes, state.edges, buildById(state.lanes), gatewayEnvelopes, DEFAULT_SPATIAL_SETTINGS);
     if (spatialResult.acceptedAdjustments.length > 0) {
         state.diagnostics.provenanceLog?.push(`SpatialNegotiation: ${spatialResult.acceptedAdjustments.length} adjustments accepted, ` +
             `${spatialResult.rejectedProposals.length} rejected, ` +

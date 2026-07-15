@@ -8,10 +8,10 @@
  *
  * Zero inline routing logic. All decisions delegated to specialist modules.
  */
-import { LayoutEdge, LayoutNode, Lane, RoutingChannel } from '../processLayout/layoutTypes';
+import { LayoutEdge, LayoutNode, Lane } from '../processLayout/layoutTypes';
 import { PatternDefinition } from './patternDefinition';
 import { RoutingRuleDefinition } from './routingRuleDefinition';
-export interface RouteEdgeOptions {
+interface RouteEdgeOptions {
     loopbackStyle?: 'edge-slot' | 'over-swimlane' | 'cross-lane';
     edgeChannelStrategy?: 'follow-node' | 'adaptive';
     channelDensityMode?: 'spacious' | 'fit-to-lane' | 'auto';
@@ -30,14 +30,6 @@ export interface RouteEdgeOptions {
         outTargetLaneIdsMap: Map<string, string[]>;
     };
 }
-export declare class PathRouter {
-    private nodeMap;
-    private laneMap;
-    constructor(nodes: LayoutNode[], lanes: Lane[]);
-    routeEdge(edge: LayoutEdge, options?: RouteEdgeOptions): RoutingChannel;
-    private resolveEdgeChannel;
-    private buildDebugSnapshot;
-}
-export declare function createPathRouter(nodes: LayoutNode[], lanes: Lane[]): PathRouter;
 export declare function routeAllEdges(edges: LayoutEdge[], nodes: LayoutNode[], lanes: Lane[], options?: RouteEdgeOptions): LayoutEdge[];
+export {};
 //# sourceMappingURL=pathRouter.d.ts.map

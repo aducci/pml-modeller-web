@@ -15,7 +15,7 @@ import { PortResolution } from './portResolver';
 import { ScenarioResolution } from './scenarioResolver';
 import { GeometryResult } from './geometryRealizer';
 import { BundleEvaluationResult } from './worldEvaluator';
-export interface RouteWhyPacket {
+interface RouteWhyPacket {
     scenarioKey: string;
     patternFamily: string;
     selectedPatternId: string;
@@ -37,7 +37,7 @@ export declare function buildRoutingDiagnosticsV2(scenario: ScenarioResolution, 
 /** Merges world evaluation results into an existing diagnostics object (mutates in place). */
 export declare function applyBundleResultToDiagnostics(diag: RoutingDiagnosticsV2, bundleResult: BundleEvaluationResult): void;
 export declare function buildProvenanceString(why: RouteWhyPacket, channel: number, extraTokens?: string[]): string;
-export interface RoutingTypeInfo {
+interface RoutingTypeInfo {
     code: string;
     label: string;
     skew: string;
@@ -45,4 +45,5 @@ export interface RoutingTypeInfo {
     isDashed: boolean;
 }
 export declare function deriveRoutingTypeCode(bendType: 'h-first' | 'v-first' | 'h-v-h' | 'v-h-v' | 'straight', sourcePort: ConcretePortSide, targetPort: ConcretePortSide, elbowYPolicy: ElbowYPolicy, scenarioKey: string, channel: number, isSelfLoop: boolean): RoutingTypeInfo;
+export {};
 //# sourceMappingURL=routingDiagnostics.d.ts.map
