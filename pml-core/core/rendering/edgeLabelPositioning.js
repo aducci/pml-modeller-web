@@ -1,3 +1,13 @@
+/**
+ * Resolves an edge label's final position deterministically from anchor +
+ * offset (+ mirror) alone. This is the label's ONLY placement mechanism —
+ * there is no further automatic adjustment downstream (no collision
+ * avoidance, no decluttering). Two edges of the same routing type, with the
+ * same config, always land at the same offset from their own anchor point,
+ * full stop — that determinism is the entire point of a per-routing-type
+ * config, and is why edge labels deliberately don't participate in the
+ * node-label overlap-avoidance pass (see labelController.ts).
+ */
 export function resolveEdgeLabelPosition(edge, positioning, padding) {
     const waypoints = edge.routing?.waypoints;
     if (!waypoints || waypoints.length === 0)
@@ -9,7 +19,6 @@ export function resolveEdgeLabelPosition(edge, positioning, padding) {
     return {
         x: padding + anchorPoint.x + offset.x,
         y: padding + anchorPoint.y + offset.y,
-        avoidOverlap: placement.avoidOverlap,
     };
 }
 function getAnchorPoint(waypoints, anchor) {

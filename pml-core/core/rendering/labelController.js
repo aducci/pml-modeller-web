@@ -3,7 +3,6 @@ import { formatLabel, toLetterSpacing } from './labelFormatter';
 import { resolveEdgeLabelPosition } from './edgeLabelPositioning';
 import { isEventNodeKind, isGatewayNodeKind } from '../nodeKinds';
 const NODE_CLEARANCE = 6;
-const EDGE_CLEARANCE = 10;
 export function buildProcessLabelControllerResult(nodes, edges, theme, padding) {
     const activeAnchorsByNode = buildActiveAnchorsByNode(edges);
     const nodeLabels = new Map();
@@ -24,15 +23,21 @@ export function buildProcessLabelControllerResult(nodes, edges, theme, padding) 
             continue;
         secondaryLabels.set(node.id, secondaryLabel);
     }
+    // Edge labels are placed entirely by anchor + offset (+ mirror) — a
+    // deterministic, per-routing-type config with no automatic adjustment.
+    // They deliberately don't participate in the node-label decluttering
+    // pass above: letting them get silently relocated to avoid incidental
+    // neighbors would mean two edges of the very same routing type, with the
+    // very same config, could render at different relative positions purely
+    // because of what else happens to be nearby — defeating the point of a
+    // config that's supposed to apply uniformly per routing type.
     for (const edge of edges) {
         if (!edge.condition || !edge.routing?.waypoints || edge.routing.waypoints.length < 2)
             continue;
         const label = resolveEdgeLabel(edge, theme, padding);
         if (!label)
             continue;
-        const placed = label.avoidOverlap ? separateEdgeLabel(label, occupiedBoxes) : label;
-        edgeLabels.set(edge.id, placed);
-        occupiedBoxes.push(toEdgeBox(placed));
+        edgeLabels.set(edge.id, label);
     }
     return { activeAnchorsByNode, nodeLabels, secondaryLabels, edgeLabels };
 }
@@ -167,7 +172,6 @@ function resolveEdgeLabel(edge, theme, padding) {
         fill: edgeLabelStyle.fill,
         haloFill: edgeLabelStyle.haloColor ?? theme.lanes.bodyFill,
         haloWidth: edgeLabelStyle.haloWidth,
-        avoidOverlap: position.avoidOverlap,
     };
 }
 function toNodeBox(label) {
@@ -180,28 +184,12 @@ function toNodeBox(label) {
         height,
     };
 }
-function toEdgeBox(label) {
-    return {
-        x: label.x - label.width / 2,
-        y: label.y - label.height / 2,
-        width: label.width,
-        height: label.height,
-    };
-}
 function separateNodeLabel(label, occupied) {
     const box = separateBox(toNodeBox(label), occupied, NODE_CLEARANCE);
     return {
         ...label,
         x: box.x + box.width / 2,
         y: box.y + label.fontSize / 1.5,
-    };
-}
-function separateEdgeLabel(label, occupied) {
-    const box = separateBox(toEdgeBox(label), occupied, EDGE_CLEARANCE);
-    return {
-        ...label,
-        x: box.x + box.width / 2,
-        y: box.y + box.height / 2,
     };
 }
 /**

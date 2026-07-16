@@ -127,13 +127,6 @@ export interface EdgeLabelPlacement {
         y: number;
     };
     mirrorAxis: EdgeLabelMirrorAxis;
-    /**
-     * Whether this label participates in automatic overlap avoidance with
-     * other labels (labelController.ts's separateEdgeLabel). Default true.
-     * Set false once you've deliberately placed a label via `offset` and
-     * want it guaranteed to stay exactly there.
-     */
-    avoidOverlap: boolean;
 }
 export interface EdgeLabelPositioning {
     defaults: EdgeLabelPlacement;

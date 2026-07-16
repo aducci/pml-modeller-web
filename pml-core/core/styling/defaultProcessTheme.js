@@ -119,10 +119,10 @@ export const DEFAULT_PROCESS_THEME = {
         },
     },
     edgeLabelPositions: {
-        defaults: { anchor: 'mid', offset: { x: 0, y: -8 }, mirrorAxis: 'none', avoidOverlap: true },
+        defaults: { anchor: 'mid', offset: { x: 0, y: -8 }, mirrorAxis: 'none' },
         perType: {
-            STH: { anchor: 'mid', offset: { x: 0, y: -8 }, mirrorAxis: 'none', avoidOverlap: true },
-            STV: { anchor: 'mid', offset: { x: 8, y: 0 }, mirrorAxis: 'none', avoidOverlap: true },
+            STH: { anchor: 'mid', offset: { x: 0, y: -8 }, mirrorAxis: 'none' },
+            STV: { anchor: 'mid', offset: { x: 8, y: 0 }, mirrorAxis: 'none' },
             // mirrorAxis: 'vertical'/'horizontal' flips the offset onto whichever
             // side its own local elbow direction implies (above/below for a
             // horizontal-bend routing type, left/right for a vertical-bend one),
@@ -130,21 +130,21 @@ export const DEFAULT_PROCESS_THEME = {
             // That's what makes a decision's "up" branch and "down" branch land
             // on opposite, correctly-mirrored sides of their own lines without
             // any awareness of each other. See edgeLabelPositioning.ts's applyMirror().
-            SEH: { anchor: 'elbow-1', offset: { x: 0, y: -8 }, mirrorAxis: 'vertical', avoidOverlap: true },
-            SEV: { anchor: 'elbow-1', offset: { x: 8, y: 0 }, mirrorAxis: 'horizontal', avoidOverlap: true },
-            DEH: { anchor: 'elbow-1', offset: { x: 0, y: -8 }, mirrorAxis: 'vertical', avoidOverlap: true },
-            DEN: { anchor: 'elbow-1', offset: { x: 0, y: -8 }, mirrorAxis: 'vertical', avoidOverlap: true },
-            DEF: { anchor: 'elbow-2', offset: { x: 0, y: -8 }, mirrorAxis: 'vertical', avoidOverlap: true },
-            DEV: { anchor: 'elbow-1', offset: { x: 8, y: 0 }, mirrorAxis: 'horizontal', avoidOverlap: true },
+            SEH: { anchor: 'elbow-1', offset: { x: 0, y: -8 }, mirrorAxis: 'vertical' },
+            SEV: { anchor: 'elbow-1', offset: { x: 8, y: 0 }, mirrorAxis: 'horizontal' },
+            DEH: { anchor: 'elbow-1', offset: { x: 0, y: -8 }, mirrorAxis: 'vertical' },
+            DEN: { anchor: 'elbow-1', offset: { x: 0, y: -8 }, mirrorAxis: 'vertical' },
+            DEF: { anchor: 'elbow-2', offset: { x: 0, y: -8 }, mirrorAxis: 'vertical' },
+            DEV: { anchor: 'elbow-1', offset: { x: 8, y: 0 }, mirrorAxis: 'horizontal' },
             // DBL (boundary drop-out) intentionally stays fixed below: it's a
             // single always-downward escape route, not one of a mirrored pair.
-            DBL: { anchor: 'elbow-1', offset: { x: 0, y: 8 }, mirrorAxis: 'none', avoidOverlap: true },
-            TEH: { anchor: 'elbow-2', offset: { x: 0, y: -10 }, mirrorAxis: 'vertical', avoidOverlap: true },
-            TEV: { anchor: 'elbow-2', offset: { x: 10, y: 0 }, mirrorAxis: 'horizontal', avoidOverlap: true },
-            SLP: { anchor: 'mid', offset: { x: 0, y: -10 }, mirrorAxis: 'none', avoidOverlap: true },
-            POH: { anchor: 'elbow-1', offset: { x: 0, y: -8 }, mirrorAxis: 'vertical', avoidOverlap: true },
-            POV: { anchor: 'elbow-1', offset: { x: 8, y: 0 }, mirrorAxis: 'horizontal', avoidOverlap: true },
-            AOT: { anchor: 'mid', offset: { x: 0, y: 0 }, mirrorAxis: 'none', avoidOverlap: true },
+            DBL: { anchor: 'elbow-1', offset: { x: 0, y: 8 }, mirrorAxis: 'none' },
+            TEH: { anchor: 'elbow-2', offset: { x: 0, y: -10 }, mirrorAxis: 'vertical' },
+            TEV: { anchor: 'elbow-2', offset: { x: 10, y: 0 }, mirrorAxis: 'horizontal' },
+            SLP: { anchor: 'mid', offset: { x: 0, y: -10 }, mirrorAxis: 'none' },
+            POH: { anchor: 'elbow-1', offset: { x: 0, y: -8 }, mirrorAxis: 'vertical' },
+            POV: { anchor: 'elbow-1', offset: { x: 8, y: 0 }, mirrorAxis: 'horizontal' },
+            AOT: { anchor: 'mid', offset: { x: 0, y: 0 }, mirrorAxis: 'none' },
         },
     },
     lanes: {

@@ -33,7 +33,6 @@ interface ResolvedEdgeLabel {
     fill: string;
     haloFill: string;
     haloWidth: number;
-    avoidOverlap: boolean;
 }
 export interface LabelControllerResult {
     activeAnchorsByNode: Map<string, Set<string>>;
