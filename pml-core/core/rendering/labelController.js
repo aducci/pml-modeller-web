@@ -204,28 +204,42 @@ function separateEdgeLabel(label, occupied) {
         y: box.y + box.height / 2,
     };
 }
-/** Tries a small set of discrete escape offsets, returning the first that clears every occupied box. */
+/**
+ * Pushes `box` clear of every box in `occupied`, resolving one collision per
+ * iteration via a minimum-translation vector (see pushClear). Continuous by
+ * construction: as the box's starting position moves smoothly, the push
+ * shrinks smoothly to zero as the overlap disappears — no jump between fixed
+ * candidate positions, unlike the discrete offset list this replaced.
+ */
 function separateBox(box, occupied, clearance) {
-    const offsets = [
-        { dx: 0, dy: 0 },
-        { dx: 0, dy: 12 },
-        { dx: 0, dy: -12 },
-        { dx: 14, dy: 0 },
-        { dx: -14, dy: 0 },
-        { dx: 14, dy: 12 },
-        { dx: -14, dy: 12 },
-    ];
-    for (const offset of offsets) {
-        const candidate = {
-            ...box,
-            x: box.x + offset.dx,
-            y: box.y + offset.dy,
-        };
-        if (!occupied.some((other) => overlaps(candidate, other, clearance))) {
-            return candidate;
-        }
+    let current = box;
+    const maxIterations = 8;
+    for (let i = 0; i < maxIterations; i++) {
+        const collision = occupied.find((other) => overlaps(current, other, clearance));
+        if (!collision)
+            return current;
+        current = pushClear(current, collision, clearance);
     }
-    return box;
+    return current;
+}
+/**
+ * Minimum-translation push: moves `box` along whichever single axis needs
+ * the smaller shift to clear `other` by exactly `clearance`. Proportional to
+ * how much the boxes currently overlap, so it's zero right at the boundary
+ * and grows smoothly from there — the property the old fixed-candidate-list
+ * approach didn't have.
+ */
+function pushClear(box, other, clearance) {
+    const dx = (box.x + box.width / 2) - (other.x + other.width / 2);
+    const dy = (box.y + box.height / 2) - (other.y + other.height / 2);
+    const overlapX = (box.width + other.width) / 2 + clearance - Math.abs(dx);
+    const overlapY = (box.height + other.height) / 2 + clearance - Math.abs(dy);
+    if (overlapX < overlapY) {
+        const dir = dx >= 0 ? 1 : -1;
+        return { ...box, x: box.x + dir * overlapX };
+    }
+    const dir = dy >= 0 ? 1 : -1;
+    return { ...box, y: box.y + dir * overlapY };
 }
 function overlaps(a, b, clearance) {
     return !(a.x + a.width + clearance < b.x ||
