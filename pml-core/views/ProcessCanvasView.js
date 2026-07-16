@@ -4,9 +4,11 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import ProcessCanvas from '../core/ProcessCanvas';
 import { CanvasToolbar } from './CanvasToolbar';
 import { DEFAULT_PROCESS_THEME } from '../core/styling/defaultProcessTheme';
-const FIT_VIEW_MARGIN = 32;
+import { DEFAULT_LAYOUT_SETTINGS } from '../core/processLayout/layoutTypes';
+// Asymmetric top-left margin on fit-to-view (vs. the even margin used for the
+// zoom calculation) reads better than a centered fit — purely an aesthetic
+// constant, not something a user needs to tune, so it stays a literal here.
 const FIT_VIEW_GOLDEN_RATIO = 1.618;
-const FIT_VIEW_MAX_ZOOM = 1.5;
 function mergeDeep(base, overrides) {
     if (!overrides || Object.keys(overrides).length === 0)
         return base;
@@ -28,6 +30,7 @@ export const ProcessCanvasView = ({ state, onZoom, onPan, onSetViewport, onSelec
     const lastFittedLayoutRef = useRef(null);
     const [interactionMode, setInteractionMode] = useState('select');
     const showLanes = (state.layoutResult?.settings?.layout?.showLanes ?? true) && state.viewPanel?.swimlanesOn;
+    const zoomBounds = state.layoutResult?.settings?.viewport ?? DEFAULT_LAYOUT_SETTINGS.viewport;
     // Track container size with ResizeObserver
     useEffect(() => {
         const ro = new ResizeObserver(([entry]) => {
@@ -47,9 +50,10 @@ export const ProcessCanvasView = ({ state, onZoom, onPan, onSetViewport, onSelec
         if (!vw || !vh || !layoutResult)
             return null;
         const { bounds, settings, lanes } = layoutResult;
-        const canvasPadding = settings?.spacing?.canvasPaddingX ?? 60;
-        const canvasPaddingY = settings?.spacing?.canvasPaddingY ?? 24;
-        const visualBoundsPadding = settings?.canvasConfig?.visualBoundsPadding ?? 24;
+        const canvasPadding = settings?.spacing?.canvasPaddingX ?? DEFAULT_LAYOUT_SETTINGS.spacing.canvasPaddingX;
+        const canvasPaddingY = settings?.spacing?.canvasPaddingY ?? DEFAULT_LAYOUT_SETTINGS.spacing.canvasPaddingY;
+        const visualBoundsPadding = settings?.canvasConfig?.visualBoundsPadding ?? DEFAULT_LAYOUT_SETTINGS.canvasConfig.visualBoundsPadding;
+        const viewport = settings?.viewport ?? DEFAULT_LAYOUT_SETTINGS.viewport;
         // Mirror ProcessCanvas visual bounds calculation
         let maxLaneY = bounds.height;
         if (lanes?.length > 0) {
@@ -58,8 +62,8 @@ export const ProcessCanvasView = ({ state, onZoom, onPan, onSetViewport, onSelec
         // Full canvas content spans from (0,0) to (fullW, fullH) in canvas space
         const fullW = bounds.width + canvasPadding * 2 + visualBoundsPadding * 2;
         const fullH = maxLaneY + canvasPaddingY * 2 + visualBoundsPadding * 2;
-        const margin = FIT_VIEW_MARGIN;
-        const zoom = Math.min((vw - margin * 2) / fullW, (vh - margin * 2) / fullH, FIT_VIEW_MAX_ZOOM);
+        const margin = viewport.fitMarginPx;
+        const zoom = Math.min((vw - margin * 2) / fullW, (vh - margin * 2) / fullH, viewport.fitMaxZoom);
         const topLeftMargin = margin / FIT_VIEW_GOLDEN_RATIO;
         const panX = topLeftMargin;
         const panY = topLeftMargin;
@@ -113,11 +117,11 @@ export const ProcessCanvasView = ({ state, onZoom, onPan, onSetViewport, onSelec
             }
             else if (e.key === '=' || e.key === '+') {
                 e.preventDefault();
-                onZoom(Math.min(3, state.zoom + 0.1));
+                onZoom(Math.min(zoomBounds.zoomMax, state.zoom + zoomBounds.zoomStep));
             }
             else if (e.key === '-') {
                 e.preventDefault();
-                onZoom(Math.max(0.1, state.zoom - 0.1));
+                onZoom(Math.max(zoomBounds.zoomMin, state.zoom - zoomBounds.zoomStep));
             }
             else if (e.key === 'f' || (e.shiftKey && e.key === 'F')) {
                 e.preventDefault();
@@ -130,7 +134,7 @@ export const ProcessCanvasView = ({ state, onZoom, onPan, onSetViewport, onSelec
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [state.zoom, onZoom, onResetView, fitToView]);
+    }, [state.zoom, onZoom, onResetView, fitToView, onToggleLanes, zoomBounds]);
     const resolvedTheme = useMemo(() => mergeDeep(DEFAULT_PROCESS_THEME, state.themeOverrides), [state.themeOverrides]);
     const handleExportSvg = useCallback(() => {
         const svg = containerRef.current?.querySelector('svg');
@@ -155,7 +159,7 @@ export const ProcessCanvasView = ({ state, onZoom, onPan, onSetViewport, onSelec
                     fontSize: 11, fontWeight: 600, color: '#94A3B8',
                     letterSpacing: '0.03em', userSelect: 'none', pointerEvents: 'none',
                     textTransform: 'uppercase',
-                }, children: state.processName })), _jsx(ProcessCanvas, { layoutResult: state.layoutResult, zoom: state.zoom, panX: state.panX, panY: state.panY, viewportWidth: dimensions.width || 800, viewportHeight: dimensions.height || 600, theme: resolvedTheme, interactionMode: interactionMode, onZoomRequest: (delta) => onZoom(Math.max(0.1, Math.min(3, state.zoom + delta))), onPanRequest: onPan, selectedElement: state.selectedElement, onElementSelect: onSelect, showLanes: showLanes, viewAsActor: viewAsActor, flowVisibility: flowVisibility, connectorStyle: connectorStyle, curtainsOn: curtainsOn }), state.layoutResult && (() => {
+                }, children: state.processName })), _jsx(ProcessCanvas, { layoutResult: state.layoutResult, zoom: state.zoom, panX: state.panX, panY: state.panY, viewportWidth: dimensions.width || 800, viewportHeight: dimensions.height || 600, theme: resolvedTheme, interactionMode: interactionMode, onZoomRequest: (delta) => onZoom(Math.max(zoomBounds.zoomMin, Math.min(zoomBounds.zoomMax, state.zoom + delta))), onPanRequest: onPan, selectedElement: state.selectedElement, onElementSelect: onSelect, showLanes: showLanes, viewAsActor: viewAsActor, flowVisibility: flowVisibility, connectorStyle: connectorStyle, curtainsOn: curtainsOn }), state.layoutResult && (() => {
                 const nodeCount = (state.layoutResult.nodes ?? []).filter((n) => n.x !== undefined).length;
                 const edgeCount = (state.layoutResult.edges ?? []).length;
                 const laneCount = (state.layoutResult.lanes ?? []).length;
@@ -164,5 +168,5 @@ export const ProcessCanvasView = ({ state, onZoom, onPan, onSetViewport, onSelec
                         fontSize: 10, color: '#94A3B8', userSelect: 'none', pointerEvents: 'none',
                         fontVariantNumeric: 'tabular-nums', letterSpacing: '0.02em',
                     }, children: [nodeCount, " nodes \u00B7 ", edgeCount, " edges \u00B7 ", laneCount, " lane", laneCount !== 1 ? 's' : ''] }));
-            })(), _jsx(CanvasToolbar, { zoom: state.zoom, interactionMode: interactionMode, onSetInteractionMode: setInteractionMode, onZoomIn: () => onZoom(Math.min(3, state.zoom + 0.1)), onZoomOut: () => onZoom(Math.max(0.1, state.zoom - 0.1)), onReset: onResetView, onFit: fitToView, onExportSvg: handleExportSvg, showLanes: showLanes, onToggleLanes: onToggleLanes, laneMode: state.layoutResult?.settings?.layout?.laneMode ?? 'standard' })] }));
+            })(), _jsx(CanvasToolbar, { zoom: state.zoom, interactionMode: interactionMode, onSetInteractionMode: setInteractionMode, onZoomIn: () => onZoom(Math.min(zoomBounds.zoomMax, state.zoom + zoomBounds.zoomStep)), onZoomOut: () => onZoom(Math.max(zoomBounds.zoomMin, state.zoom - zoomBounds.zoomStep)), onReset: onResetView, onFit: fitToView, onExportSvg: handleExportSvg, showLanes: showLanes, onToggleLanes: onToggleLanes, laneMode: state.layoutResult?.settings?.layout?.laneMode ?? 'standard' })] }));
 };

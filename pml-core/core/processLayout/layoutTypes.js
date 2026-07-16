@@ -137,7 +137,14 @@ export function createLayoutSettings(overrides) {
                     default: '#334155'
                 }
             }
-        }
+        },
+        viewport: {
+            fitMarginPx: 32,
+            fitMaxZoom: 1.5,
+            zoomStep: 0.1,
+            zoomMin: 0.1,
+            zoomMax: 3,
+        },
     };
     const resolvedSettings = {
         ...defaults,
@@ -190,6 +197,7 @@ export function createLayoutSettings(overrides) {
                 },
             },
         },
+        viewport: { ...defaults.viewport, ...overrides?.viewport },
     };
     if (resolvedSettings.densityMode === 'compact') {
         resolvedSettings.spacing = {
@@ -212,6 +220,8 @@ export function createLayoutSettings(overrides) {
     }
     return resolvedSettings;
 }
+/** Canonical defaults — reference this instead of re-declaring literal fallbacks elsewhere. */
+export const DEFAULT_LAYOUT_SETTINGS = createLayoutSettings();
 export function createEmptyLayoutState(groupingStrategy, settings) {
     return {
         nodes: [],

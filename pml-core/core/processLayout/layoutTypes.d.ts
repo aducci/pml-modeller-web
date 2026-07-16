@@ -563,6 +563,19 @@ export interface LayoutSettings {
             };
         };
     };
+    /** Canvas fit-to-view and manual zoom bounds — read by ProcessCanvasView, not the layout engine. */
+    viewport: {
+        /** Screen-pixel breathing room kept between the diagram and the container edge on "fit to view". */
+        fitMarginPx: number;
+        /** Fit-to-view never zooms in past this, even on a tiny/sparse diagram. */
+        fitMaxZoom: number;
+        /** Increment applied per zoom-in/out step (keyboard shortcut or toolbar button). */
+        zoomStep: number;
+        /** Lower bound for manual zoom. */
+        zoomMin: number;
+        /** Upper bound for manual zoom. */
+        zoomMax: number;
+    };
 }
 /** User-facing layout suggestion produced from convergence or quality analysis. */
 export interface LayoutSuggestion {
@@ -688,5 +701,7 @@ export type DeepPartial<T> = {
     [K in keyof T]?: T[K] extends Record<string, any> ? DeepPartial<T[K]> : T[K];
 };
 export declare function createLayoutSettings(overrides?: DeepPartial<LayoutSettings>): LayoutSettings;
+/** Canonical defaults — reference this instead of re-declaring literal fallbacks elsewhere. */
+export declare const DEFAULT_LAYOUT_SETTINGS: LayoutSettings;
 export declare function createEmptyLayoutState(groupingStrategy: GroupingStrategy, settings?: LayoutSettings): LayoutState;
 //# sourceMappingURL=layoutTypes.d.ts.map
