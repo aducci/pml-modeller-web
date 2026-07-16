@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { DevMagicLinkPanel } from '@/components/DevMagicLinkPanel';
+import { signIn } from '@/lib/auth';
 
 const sourceLabels: Record<string, string> = {
   demo: 'Demo preview',
@@ -14,6 +15,16 @@ export default function SignIn({ searchParams }: { searchParams: { from?: string
   const source = searchParams.from ?? 'marketing';
   const sourceLabel = sourceLabels[source] ?? 'Website';
   const callbackUrl = `/dashboard?entry=${encodeURIComponent(source)}`;
+
+  async function signInWithGoogle() {
+    'use server';
+    await signIn('google', { redirectTo: callbackUrl });
+  }
+
+  async function signInWithGitHub() {
+    'use server';
+    await signIn('github', { redirectTo: callbackUrl });
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-honeydew via-white to-white px-6 py-10 page-enter">
@@ -49,8 +60,7 @@ export default function SignIn({ searchParams }: { searchParams: { from?: string
           </div>
 
           <div className="space-y-4">
-            <form action="/api/auth/signin/google" method="POST">
-              <input type="hidden" name="callbackUrl" value={callbackUrl} />
+            <form action={signInWithGoogle}>
               <button
                 type="submit"
                 className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 hover:border-teal hover:text-teal transition-colors"
@@ -64,8 +74,7 @@ export default function SignIn({ searchParams }: { searchParams: { from?: string
                 Continue with Google
               </button>
             </form>
-            <form action="/api/auth/signin/github" method="POST">
-              <input type="hidden" name="callbackUrl" value={callbackUrl} />
+            <form action={signInWithGitHub}>
               <button
                 type="submit"
                 className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 hover:border-teal hover:text-teal transition-colors"

@@ -6,6 +6,7 @@ import { verifyAccessToken } from '@/lib/site-gate';
 const PUBLIC_ROUTES = [
   '/enter-password',
   '/api/enter-password',
+  '/api/auth',
   '/favicon.ico',
   '/robots.txt',
 ];
@@ -33,6 +34,10 @@ const STATIC_PATTERNS = [
 ];
 
 function isPublicRoute(pathname: string): boolean {
+  if (pathname.startsWith('/api/auth')) {
+    return true;
+  }
+
   // Check exact matches
   if (PUBLIC_ROUTES.includes(pathname)) {
     return true;
