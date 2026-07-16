@@ -16,7 +16,7 @@ import { codeToPortRule } from './routingTypeToPortRule';
 import { realizeWaypoints } from './geometryRealizer';
 import { buildRouteWhyPacket, buildProvenanceString, buildRoutingDiagnosticsV2, applyBundleResultToDiagnostics, } from './routingDiagnostics';
 import { deriveRoutingTypeCode } from './routingDiagnostics';
-import { determineRailTier, buildRailOffset, distance, midpoint } from '../layoutGeometry';
+import { determineRailTier, buildRailOffset, distance, midpoint, isStraightPolyline } from '../layoutGeometry';
 import { mustGetNode } from '../nodeLookup';
 import { buildBundleWindows } from './bundleWindows';
 import { evaluateAndApplyBundlesWithResults, detectStackedEdges } from './worldEvaluator';
@@ -209,7 +209,15 @@ class PathRouter {
             scenario: scenario.scenarioKey,
             pattern: geometry.bendType,
             policies: scenario.appliedPolicies,
-            routingType: deriveRoutingTypeCode(geometry.bendType, geometry.sourceAnchor.side, geometry.targetAnchor.side, rule.elbowYPolicy, scenario.scenarioKey, channel, edge.source === edge.target).code,
+            // The routing TYPE CODE describes the resulting shape (what the user
+            // sees), not which algorithm produced it — those can diverge when an
+            // algorithm picked for the general case (e.g. "h-first" for a
+            // decision's fan-out) happens to collapse to a straight line for this
+            // specific edge because its endpoints align. geometry.bendType (used
+            // above for `pattern`/diagnostics) correctly keeps recording which
+            // algorithm ran; only the classification fed to deriveRoutingTypeCode
+            // needs to reflect the actual waypoints.
+            routingType: deriveRoutingTypeCode(isStraightPolyline(geometry.waypoints) ? 'straight' : geometry.bendType, geometry.sourceAnchor.side, geometry.targetAnchor.side, rule.elbowYPolicy, scenario.scenarioKey, channel, edge.source === edge.target).code,
             preferences: {
                 loopbackStyle: context.loopbackStyle,
                 edgeChannelStrategy: context.edgeChannelStrategy,

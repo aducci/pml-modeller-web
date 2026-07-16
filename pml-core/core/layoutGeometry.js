@@ -174,6 +174,23 @@ export function polylineBounds(points) {
     }
     return { minX, minY, maxX, maxY };
 }
+/**
+ * True when a routed polyline has no actual bend — either it's just the two
+ * endpoints, or every waypoint happens to share the same x or y. A routing
+ * algorithm can be selected for its ability to route around obstacles in the
+ * general case (e.g. "h-first" for a decision's fan-out) while still
+ * producing a bend-free result for a specific edge whose endpoints happen to
+ * align; callers that classify or label a route by its resulting shape (not
+ * by which algorithm ran) should check this instead of trusting the
+ * algorithm's own label.
+ */
+export function isStraightPolyline(points) {
+    if (points.length <= 2)
+        return true;
+    const allSameX = points.every((p) => Math.abs(p.x - points[0].x) < 0.5);
+    const allSameY = points.every((p) => Math.abs(p.y - points[0].y) < 0.5);
+    return allSameX || allSameY;
+}
 // ============================================================================
 // SEGMENT INTERSECTION
 // ============================================================================

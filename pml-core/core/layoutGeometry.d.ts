@@ -52,6 +52,17 @@ export declare function pointToSegmentDistance(point: Point, seg: Segment): numb
 export declare function polylineLength(points: Point[]): number;
 export declare function polylineBounds(points: Point[]): Bounds;
 /**
+ * True when a routed polyline has no actual bend — either it's just the two
+ * endpoints, or every waypoint happens to share the same x or y. A routing
+ * algorithm can be selected for its ability to route around obstacles in the
+ * general case (e.g. "h-first" for a decision's fan-out) while still
+ * producing a bend-free result for a specific edge whose endpoints happen to
+ * align; callers that classify or label a route by its resulting shape (not
+ * by which algorithm ran) should check this instead of trusting the
+ * algorithm's own label.
+ */
+export declare function isStraightPolyline(points: Point[]): boolean;
+/**
  * True when segment (a1→a2) and segment (b1→b2) properly cross.
  * Collinear/touching endpoints are treated as non-intersecting for routing purposes.
  */
