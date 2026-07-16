@@ -2,6 +2,7 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useCallback, useMemo } from 'react';
 import { DEFAULT_PROCESS_THEME } from '../../core/styling/defaultProcessTheme';
+import { deepMerge } from '../../core/deepMerge';
 import { Field, Section, Num, Slider, ColorInput, ResetBtn, Select } from './controls';
 const NODE_TYPES = [
     ['task', 'Task'],
@@ -43,20 +44,6 @@ const ROUTING_TYPES = [
     ['POV', 'Parallel Offset V'],
     ['AOT', 'Auto Orthogonal'],
 ];
-function mergeDeep(base, overrides) {
-    if (!overrides)
-        return base;
-    const result = { ...base };
-    for (const key of Object.keys(overrides)) {
-        if (typeof overrides[key] === 'object' && overrides[key] !== null && !Array.isArray(overrides[key]) && typeof base[key] === 'object') {
-            result[key] = mergeDeep(base[key], overrides[key]);
-        }
-        else {
-            result[key] = overrides[key];
-        }
-    }
-    return result;
-}
 function setPath(obj, path, value) {
     if (path.length === 0)
         return value;
@@ -64,7 +51,9 @@ function setPath(obj, path, value) {
     return { ...obj, [head]: setPath(obj[head] ?? {}, tail, value) };
 }
 export const ThemePanel = ({ overrides, onChange }) => {
-    const theme = useMemo(() => mergeDeep(DEFAULT_PROCESS_THEME, overrides), [overrides]);
+    // Cast to any: this panel indexes theme fields dynamically by string path (setPath/Field
+    // wiring below), which the strict ProcessThemeSchema type doesn't support.
+    const theme = useMemo(() => deepMerge(DEFAULT_PROCESS_THEME, overrides), [overrides]);
     const set_ = useCallback((path, value) => {
         onChange(setPath(overrides, path, value));
     }, [overrides, onChange]);

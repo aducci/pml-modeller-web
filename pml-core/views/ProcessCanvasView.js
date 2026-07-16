@@ -5,25 +5,11 @@ import ProcessCanvas from '../core/ProcessCanvas';
 import { CanvasToolbar } from './CanvasToolbar';
 import { DEFAULT_PROCESS_THEME } from '../core/styling/defaultProcessTheme';
 import { DEFAULT_LAYOUT_SETTINGS } from '../core/processLayout/layoutTypes';
+import { deepMerge } from '../core/deepMerge';
 // Asymmetric top-left margin on fit-to-view (vs. the even margin used for the
 // zoom calculation) reads better than a centered fit — purely an aesthetic
 // constant, not something a user needs to tune, so it stays a literal here.
 const FIT_VIEW_GOLDEN_RATIO = 1.618;
-function mergeDeep(base, overrides) {
-    if (!overrides || Object.keys(overrides).length === 0)
-        return base;
-    const result = { ...base };
-    for (const key of Object.keys(overrides)) {
-        if (typeof overrides[key] === 'object' && overrides[key] !== null && !Array.isArray(overrides[key]) && typeof base[key] === 'object') {
-            result[key] = mergeDeep(base[key], overrides[key]);
-        }
-        else {
-            result[key] = overrides[key];
-        }
-    }
-    return result;
-}
-const memoizedMergeDeep = (base, overrides) => mergeDeep(base, overrides);
 export const ProcessCanvasView = ({ state, onZoom, onPan, onSetViewport, onSelect, onResetView, onToggleLanes, onToggleLaneMode, viewAsActor, flowVisibility, connectorStyle, curtainsOn = true, }) => {
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const containerRef = useRef(null);
@@ -135,7 +121,7 @@ export const ProcessCanvasView = ({ state, onZoom, onPan, onSetViewport, onSelec
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [state.zoom, onZoom, onResetView, fitToView, onToggleLanes, zoomBounds]);
-    const resolvedTheme = useMemo(() => mergeDeep(DEFAULT_PROCESS_THEME, state.themeOverrides), [state.themeOverrides]);
+    const resolvedTheme = useMemo(() => deepMerge(DEFAULT_PROCESS_THEME, state.themeOverrides), [state.themeOverrides]);
     const handleExportSvg = useCallback(() => {
         const svg = containerRef.current?.querySelector('svg');
         if (!svg)

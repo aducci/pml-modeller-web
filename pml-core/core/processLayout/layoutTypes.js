@@ -4,6 +4,7 @@
  * Comprehensive type system for process layout computation,
  * routing contracts, and rendering output.
  */
+import { deepMerge } from '../deepMerge';
 import { CONTINUITY_ELIGIBLE_NODE_KINDS } from '../nodeKinds';
 export const SPATIAL_NEGOTIATION_INVARIANTS = {
     maxNodeDeltaPx: 16,
@@ -146,59 +147,10 @@ export function createLayoutSettings(overrides) {
             zoomMax: 3,
         },
     };
-    const resolvedSettings = {
-        ...defaults,
-        ...overrides,
-        canvas: { ...defaults.canvas, ...overrides?.canvas },
-        spacing: { ...defaults.spacing, ...overrides?.spacing },
-        sizing: { ...defaults.sizing, ...overrides?.sizing },
-        routing: {
-            ...defaults.routing,
-            ...overrides?.routing,
-            revealGroups: (overrides?.routing?.revealGroups ?? defaults.routing.revealGroups).filter((group) => typeof group === 'string'),
-            protectedStructures: {
-                ...defaults.routing.protectedStructures,
-                ...overrides?.routing?.protectedStructures,
-            },
-            decisionLaneAffinity: {
-                ...defaults.routing.decisionLaneAffinity,
-                ...overrides?.routing?.decisionLaneAffinity,
-            },
-        },
-        laneConsensus: { ...defaults.laneConsensus, ...overrides?.laneConsensus },
-        layout: { ...defaults.layout, ...overrides?.layout },
-        quality: { ...defaults.quality, ...overrides?.quality },
-        heuristics: { ...defaults.heuristics, ...overrides?.heuristics },
-        canvasConfig: {
-            ...defaults.canvasConfig,
-            ...overrides?.canvasConfig,
-            colors: {
-                ...defaults.canvasConfig.colors,
-                ...overrides?.canvasConfig?.colors,
-                event: {
-                    ...defaults.canvasConfig.colors.event,
-                    ...overrides?.canvasConfig?.colors?.event,
-                },
-                decision: {
-                    ...defaults.canvasConfig.colors.decision,
-                    ...overrides?.canvasConfig?.colors?.decision,
-                },
-                subprocess: {
-                    ...defaults.canvasConfig.colors.subprocess,
-                    ...overrides?.canvasConfig?.colors?.subprocess,
-                },
-                task: {
-                    ...defaults.canvasConfig.colors.task,
-                    ...overrides?.canvasConfig?.colors?.task,
-                },
-                edge: {
-                    ...defaults.canvasConfig.colors.edge,
-                    ...overrides?.canvasConfig?.colors?.edge,
-                },
-            },
-        },
-        viewport: { ...defaults.viewport, ...overrides?.viewport },
-    };
+    const resolvedSettings = deepMerge(defaults, overrides);
+    // deepMerge replaces arrays wholesale rather than merging them; re-apply the
+    // string-only guard the old hand-written merge had for this field.
+    resolvedSettings.routing.revealGroups = resolvedSettings.routing.revealGroups.filter((group) => typeof group === 'string');
     if (resolvedSettings.densityMode === 'compact') {
         resolvedSettings.spacing = {
             ...resolvedSettings.spacing,
