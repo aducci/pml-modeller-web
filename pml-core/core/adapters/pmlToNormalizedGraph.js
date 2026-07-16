@@ -152,21 +152,34 @@ function pmlToNormalizedGraphCore(pmlModel, options = {}) {
     // Convert or infer edges
     let edges = [];
     if (pmlModel.edges) {
-        edges = pmlModel.edges.map((e) => ({
-            id: `${e.source}>${e.target}`,
-            source: e.source,
-            target: e.target,
-            condition: e.condition,
-            label: e.label,
-            keyFlow: e.keyFlow,
-            loop: e.loop,
-            primary: e.primary,
-            ...resolveEdgeFlowDefaults(e),
-            revealGroup: e.revealGroup,
-            narrative: e.narrative,
-            metadata: e.metadata,
-            sourceRange: e.sourceRange,
-        }));
+        // Two distinct edges (different condition/label) can share a source+target —
+        // e.g. a gateway's labeled outcome and a separate unconditioned chain link
+        // between the same two nodes. The upstream parser dedupes by
+        // source>target:condition, not by this id, so it doesn't collapse them.
+        // Append a disambiguator past the first occurrence so id stays unique
+        // (this id is used as the React key for rendering — colliding ids there
+        // silently corrupt reconciliation instead of erroring).
+        const idOccurrences = new Map();
+        edges = pmlModel.edges.map((e) => {
+            const base = `${e.source}>${e.target}`;
+            const occurrence = (idOccurrences.get(base) ?? 0) + 1;
+            idOccurrences.set(base, occurrence);
+            return {
+                id: occurrence === 1 ? base : `${base}#${occurrence}`,
+                source: e.source,
+                target: e.target,
+                condition: e.condition,
+                label: e.label,
+                keyFlow: e.keyFlow,
+                loop: e.loop,
+                primary: e.primary,
+                ...resolveEdgeFlowDefaults(e),
+                revealGroup: e.revealGroup,
+                narrative: e.narrative,
+                metadata: e.metadata,
+                sourceRange: e.sourceRange,
+            };
+        });
     }
     const graph = {
         processId: pmlModel.id,
