@@ -2,7 +2,7 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useCallback, useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
 import Editor from '@monaco-editor/react';
-import { FolderOpen, ChevronDown, Save, AlertCircle, AlertTriangle, Info, ChevronUp, Wrench, Star } from 'lucide-react';
+import { FolderOpen, ChevronDown, Save, AlertCircle, AlertTriangle, Info, ChevronUp, Wrench, Star, FileText, Plus } from 'lucide-react';
 import { computeQualityScore } from '../core/diagnostics';
 function toDisplayName(filename) {
     const base = filename.split('/').pop()?.replace(/\.pml$/, '') ?? filename;
@@ -21,11 +21,12 @@ function groupFiles(files) {
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([folder, fs]) => ({ folder, files: fs.sort((a, b) => a.localeCompare(b)) }));
 }
-export const PmlEditorView = forwardRef(({ content, onChange, diagnostics = [] }, ref) => {
+export const PmlEditorView = forwardRef(({ content, onChange, diagnostics = [], files: projectFiles, activeFileId, onSelectFile, onCreateFile, }, ref) => {
+    const isProjectFileMode = projectFiles !== undefined;
     const monacoRef = useRef(null);
     const editorRef = useRef(null);
     const [showDropdown, setShowDropdown] = useState(false);
-    const [files, setFiles] = useState([]);
+    const [legacyFiles, setLegacyFiles] = useState([]);
     const [currentFile, setCurrentFile] = useState(null);
     const currentFileRef = useRef(null);
     const buttonRef = useRef(null);
@@ -80,11 +81,16 @@ export const PmlEditorView = forwardRef(({ content, onChange, diagnostics = [] }
         monaco.editor.setModelMarkers(model, 'pml', markers);
     }, [diagnostics, content]);
     const fetchFiles = async () => {
+        if (isProjectFileMode) {
+            // Caller already supplied the list — nothing to fetch.
+            setShowDropdown(true);
+            return;
+        }
         try {
             const res = await fetch('/processes/index.json');
             if (res.ok) {
                 const data = await res.json();
-                setFiles(data.files || []);
+                setLegacyFiles(data.files || []);
             }
         }
         catch {
@@ -191,7 +197,9 @@ export const PmlEditorView = forwardRef(({ content, onChange, diagnostics = [] }
         // See ProcessWorkspaceView for breadcrumb integration
         monaco.editor.setTheme('pmlTheme');
     }, []);
-    return (_jsxs("div", { style: { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflow: 'hidden' }, className: "bg-[#FAFAFA] border-r border-slate-200", children: [_jsxs("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 36, flexShrink: 0 }, className: "px-3 bg-slate-50 border-b border-slate-200", children: [_jsx("span", { className: "text-[11px] font-semibold uppercase tracking-widest text-slate-400 select-none", children: "PML Editor" }), _jsxs("div", { style: { display: 'flex', alignItems: 'center', gap: 2 }, children: [currentFile && (_jsx("button", { onClick: saveFile, title: "Save (Ctrl+S)", className: "flex items-center px-2 py-1 rounded text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors", children: _jsx(Save, { size: 13 }) })), _jsxs("div", { style: { position: 'relative' }, children: [_jsxs("button", { ref: buttonRef, onClick: () => showDropdown ? setShowDropdown(false) : fetchFiles(), title: "Open process file", className: "flex items-center gap-1 px-2 py-1 rounded text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors text-xs", children: [_jsx(FolderOpen, { size: 13 }), _jsx(ChevronDown, { size: 10 })] }), showDropdown && (_jsxs("div", { ref: dropdownRef, style: { position: 'absolute', right: 0, top: '100%', marginTop: 4, zIndex: 50, minWidth: 220 }, className: "bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden", children: [_jsx("div", { className: "px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400 bg-slate-50 border-b border-slate-100", children: "Processes" }), files.length === 0 && (_jsx("div", { className: "px-3 py-3 text-xs text-slate-400 italic", children: "No files found" })), groupFiles(files).map(({ folder, files: groupedFiles }) => (_jsxs("div", { children: [folder && (_jsx("div", { className: "px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400 bg-slate-50 border-b border-slate-100 border-t border-slate-100 mt-0.5 first:mt-0", children: folder })), groupedFiles.map(f => (_jsx("button", { onClick: () => loadFile(f), className: "w-full text-left px-3 py-1.5 text-[13px] text-slate-700 hover:bg-blue-50 hover:text-blue-700 border-b border-slate-50 last:border-0 transition-colors", children: toDisplayName(f) }, f)))] }, folder || '__root__')))] }))] })] })] }), _jsx("div", { style: { flex: 1, minHeight: 0, position: 'relative' }, children: _jsx("div", { style: { position: 'absolute', inset: 0 }, children: _jsx(Editor, { height: "100%", language: "pml", value: content, onChange: (v) => onChange(v ?? ''), onMount: handleEditorMount, options: {
+    return (_jsxs("div", { style: { display: 'flex', flexDirection: 'column', width: '100%', height: '100%', overflow: 'hidden' }, className: "bg-[#FAFAFA] border-r border-slate-200", children: [_jsxs("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 36, flexShrink: 0 }, className: "px-3 bg-slate-50 border-b border-slate-200", children: [_jsx("span", { className: "text-[11px] font-semibold uppercase tracking-widest text-slate-400 select-none", children: "PML Editor" }), _jsxs("div", { style: { display: 'flex', alignItems: 'center', gap: 2 }, children: [!isProjectFileMode && currentFile && (_jsx("button", { onClick: saveFile, title: "Save (Ctrl+S)", className: "flex items-center px-2 py-1 rounded text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors", children: _jsx(Save, { size: 13 }) })), _jsxs("div", { style: { position: 'relative' }, children: [_jsxs("button", { ref: buttonRef, onClick: () => showDropdown ? setShowDropdown(false) : fetchFiles(), title: isProjectFileMode ? 'Switch file' : 'Open process file', className: "flex items-center gap-1 px-2 py-1 rounded text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors text-xs", children: [_jsx(FolderOpen, { size: 13 }), _jsx(ChevronDown, { size: 10 })] }), showDropdown && isProjectFileMode && (_jsxs("div", { ref: dropdownRef, style: { position: 'absolute', right: 0, top: '100%', marginTop: 4, zIndex: 50, minWidth: 220 }, className: "bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden", children: [_jsx("div", { className: "px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400 bg-slate-50 border-b border-slate-100", children: "Files in this project" }), projectFiles.length === 0 && (_jsx("div", { className: "px-3 py-3 text-xs text-slate-400 italic", children: "No files found" })), projectFiles.map((f) => (_jsxs("button", { onClick: () => { onSelectFile?.(f.id); setShowDropdown(false); }, className: `flex w-full items-center gap-1.5 text-left px-3 py-1 text-[12px] leading-tight border-b border-slate-50 last:border-0 transition-colors ${f.id === activeFileId
+                                                    ? 'bg-teal/10 text-teal font-semibold'
+                                                    : 'text-slate-600 font-medium hover:bg-teal/10 hover:text-teal'}`, children: [_jsx(FileText, { size: 11, className: f.id === activeFileId ? 'text-teal shrink-0' : 'text-slate-400 shrink-0' }), _jsx("span", { className: "truncate", children: f.name })] }, f.id))), onCreateFile && (_jsxs("button", { onClick: () => { onCreateFile(); setShowDropdown(false); }, className: "flex w-full items-center gap-1.5 text-left px-3 py-1.5 text-[12px] font-medium text-teal hover:bg-teal/10 border-t border-slate-100 transition-colors", children: [_jsx(Plus, { size: 11, className: "shrink-0" }), "New file"] }))] })), showDropdown && !isProjectFileMode && (_jsxs("div", { ref: dropdownRef, style: { position: 'absolute', right: 0, top: '100%', marginTop: 4, zIndex: 50, minWidth: 220 }, className: "bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden", children: [_jsx("div", { className: "px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400 bg-slate-50 border-b border-slate-100", children: "Processes" }), legacyFiles.length === 0 && (_jsx("div", { className: "px-3 py-3 text-xs text-slate-400 italic", children: "No files found" })), groupFiles(legacyFiles).map(({ folder, files: groupedFiles }) => (_jsxs("div", { children: [folder && (_jsx("div", { className: "px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400 bg-slate-50 border-b border-slate-100 border-t border-slate-100 mt-0.5 first:mt-0", children: folder })), groupedFiles.map(f => (_jsx("button", { onClick: () => loadFile(f), className: "w-full text-left px-3 py-1.5 text-[13px] text-slate-700 hover:bg-blue-50 hover:text-blue-700 border-b border-slate-50 last:border-0 transition-colors", children: toDisplayName(f) }, f)))] }, folder || '__root__')))] }))] })] })] }), _jsx("div", { style: { flex: 1, minHeight: 0, position: 'relative' }, children: _jsx("div", { style: { position: 'absolute', inset: 0 }, children: _jsx(Editor, { height: "100%", language: "pml", value: content, onChange: (v) => onChange(v ?? ''), onMount: handleEditorMount, options: {
                             minimap: { enabled: false },
                             wordWrap: 'on',
                             fontSize: 13,

@@ -94,6 +94,12 @@ export class ProcessController {
         const overrides = {
             ...(this.state?.layoutSettingsOverrides ?? {}),
             routing: {
+                // Defaults on for the live editor — tries a sibling row-swap or
+                // gateway relocation when the base layout has a real edge crossing
+                // or an edge cutting through an unrelated node. Placed before the
+                // state override spread so an explicit false in
+                // layoutSettingsOverrides still wins.
+                autoRelocateToAvoidOverlap: true,
                 ...(this.state?.layoutSettingsOverrides?.routing ?? {}),
                 patternTable: this.state?.patternTable ?? [],
                 routingRules: this.state?.routingRules?.length > 0 ? this.state.routingRules : undefined,

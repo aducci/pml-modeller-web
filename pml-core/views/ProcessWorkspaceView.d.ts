@@ -11,6 +11,14 @@ export interface ProcessWorkspaceViewProps {
     onModeChange?: (mode: 'editor' | 'ai-assistant') => void;
     /** Optional AI assistant panel rendered in the left slot when mode='ai-assistant' */
     aiAssistantPanel?: React.ReactNode;
+    /** Files in the current project, for the editor's folder-dropdown file switcher. Omit to keep the legacy /processes/* file browser. */
+    files?: {
+        id: string;
+        name: string;
+    }[];
+    activeFileId?: string;
+    onSelectFile?: (fileId: string) => void;
+    onCreateFile?: () => void;
 }
 export declare const ProcessWorkspaceView: React.FC<ProcessWorkspaceViewProps>;
 //# sourceMappingURL=ProcessWorkspaceView.d.ts.map

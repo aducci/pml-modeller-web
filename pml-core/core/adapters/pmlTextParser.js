@@ -231,31 +231,42 @@ export function parsePmlTextToProcessModel(text) {
             .map((token) => token.trim().replace(/\?$/, ''))
             .filter((token) => token.length > 0);
     };
+    // Matches one or more trailing `key=value` / `key="value"` attribute tokens
+    // at the end of a chain line, e.g. "a > b keyFlow=true loop=false".
+    const TRAILING_EDGE_ATTRS_RE = /(?:\s+[A-Za-z][A-Za-z0-9]*=(?:"[^"]*"|\S+))+\s*$/;
     const pushEdgeChain = (chainLine, flags, lineIndex, rawLength) => {
-        const selfLoopMatch = chainLine.match(/^([A-Za-z0-9_-]+\??)\s+loop\s*(?:->|>)\s*\1$/i);
+        // Strip trailing inline attributes (e.g. "a > b keyFlow=true") before
+        // splitting into node tokens — parseChainNodes only understands node ids
+        // and previously left attribute text stuck onto the last node's id.
+        const attrTailMatch = chainLine.match(TRAILING_EDGE_ATTRS_RE);
+        const cleanChain = attrTailMatch ? chainLine.slice(0, attrTailMatch.index).trim() : chainLine;
+        const inlineAttrs = attrTailMatch ? parseEdgeAnnotationAttributes(attrTailMatch[0]) : {};
+        const selfLoopMatch = cleanChain.match(/^([A-Za-z0-9_-]+\??)\s+loop\s*(?:->|>)\s*\1$/i);
         if (selfLoopMatch) {
-            if (chainLine.includes('->')) {
+            if (cleanChain.includes('->')) {
                 emitDeprecation('DEPRECATED_ARROW', '-> is deprecated. Use > for flow connectors.', lineIndex ?? 0, rawLength || 1);
             }
             const { id: source } = parseTentative(selfLoopMatch[1]);
             edges.push({
+                ...inlineAttrs,
                 source,
                 target: source,
-                keyFlow: Boolean(flags?.keyFlow),
+                keyFlow: Boolean(flags?.keyFlow || inlineAttrs.keyFlow),
                 loop: true,
                 ...(lineIndex !== undefined ? { sourceRange: { startLine: lineIndex + 1, startColumn: 1, endLine: lineIndex + 1, endColumn: Math.max(1, rawLength || 1) } } : {}),
             });
             return [source];
         }
-        const nodes = parseChainNodes(chainLine);
+        const nodes = parseChainNodes(cleanChain);
         for (let i = 1; i < nodes.length; i++) {
             const source = nodes[i - 1];
             const target = nodes[i];
             edges.push({
+                ...inlineAttrs,
                 source,
                 target,
-                keyFlow: Boolean(flags?.keyFlow),
-                loop: false,
+                keyFlow: Boolean(flags?.keyFlow || inlineAttrs.keyFlow),
+                loop: Boolean(inlineAttrs.loop),
                 ...(lineIndex !== undefined ? { sourceRange: { startLine: lineIndex + 1, startColumn: 1, endLine: lineIndex + 1, endColumn: Math.max(1, rawLength || 1) } } : {}),
             });
         }
@@ -352,15 +363,18 @@ export function parsePmlTextToProcessModel(text) {
             processId = processName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || processId;
             continue;
         }
-        if (trimmed.startsWith('flow') || /^flow\s*\{$/.test(trimmed)) {
-            inFlowBlock = true;
-            inKeyFlowBlock = false;
-            activeDecisionId = null;
-            continue;
-        }
+        // The `flow key` check must run first — "flow key" also matches
+        // `startsWith('flow')`, so the generic branch below would otherwise
+        // always win and inKeyFlowBlock would never be set true.
         if (/^flow\s+key(?:\s*\{)?$/.test(trimmed)) {
             inFlowBlock = true;
             inKeyFlowBlock = true;
+            activeDecisionId = null;
+            continue;
+        }
+        if (trimmed.startsWith('flow') || /^flow\s*\{$/.test(trimmed)) {
+            inFlowBlock = true;
+            inKeyFlowBlock = false;
             activeDecisionId = null;
             continue;
         }
