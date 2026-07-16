@@ -12,6 +12,8 @@ export type RuleNodeType = 'task' | 'event' | 'gateway' | 'annotation' | 'subpro
 export type RuleLaneConfig = 'same-lane' | 'cross-lane-downward' | 'cross-lane-upward' | 'loopback' | 'self-loop' | '*';
 export type RuleFlowLayer = 'main' | 'alternate' | 'exception' | '*';
 export type RoutingTypeCode = 'STH' | 'STV' | 'SEH' | 'SEV' | 'DEH' | 'DEN' | 'DEF' | 'DEV' | 'DBL' | 'TEH' | 'TEV' | 'SLP' | 'POH' | 'POV' | 'AOT';
+/** Human-readable label per routing type code — single source shared by the admin theme panel and the properties inspector. */
+export declare const ROUTING_TYPE_LABELS: Record<RoutingTypeCode, string>;
 export type AlternateCondition = 'compact-mode' | 'path-blocked' | 'parallel-offset' | 'always';
 export interface AlternateRouting {
     type: RoutingTypeCode;

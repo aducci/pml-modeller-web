@@ -8,6 +8,24 @@
  * Rules are evaluated highest-priority-first; first enabled match wins.
  * '*' matches any value in any dimension.
  */
+/** Human-readable label per routing type code — single source shared by the admin theme panel and the properties inspector. */
+export const ROUTING_TYPE_LABELS = {
+    STH: 'Straight Horizontal',
+    STV: 'Straight Vertical',
+    SEH: 'Single Elbow H',
+    SEV: 'Single Elbow V',
+    DEH: 'Double Elbow H',
+    DEN: 'Double Elbow Near-Exit H',
+    DEF: 'Double Elbow Far-Exit H',
+    DEV: 'Double Elbow V',
+    DBL: 'Double Elbow Bottom→Left',
+    TEH: 'Triple Elbow H',
+    TEV: 'Triple Elbow V',
+    SLP: 'Self Loop',
+    POH: 'Parallel Offset H',
+    POV: 'Parallel Offset V',
+    AOT: 'Auto Orthogonal',
+};
 // ---------------------------------------------------------------------------
 // Default rule table
 //

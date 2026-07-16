@@ -119,31 +119,31 @@ export const DEFAULT_PROCESS_THEME = {
         },
     },
     edgeLabelPositions: {
-        defaults: { anchor: 'mid', side: 'above', offsetPx: 8, secondaryAnchor: 'end', secondarySide: 'above', secondaryOffsetPx: 8 },
+        defaults: { anchor: 'mid', side: 'above', offsetPx: 8 },
         perType: {
-            STH: { anchor: 'mid', side: 'above', offsetPx: 8, secondaryAnchor: 'end', secondarySide: 'above', secondaryOffsetPx: 8 },
-            STV: { anchor: 'mid', side: 'right', offsetPx: 8, secondaryAnchor: 'end', secondarySide: 'right', secondaryOffsetPx: 8 },
+            STH: { anchor: 'mid', side: 'above', offsetPx: 8 },
+            STV: { anchor: 'mid', side: 'right', offsetPx: 8 },
             // side: 'auto' mirrors the label onto whichever side its own local
             // elbow direction implies (above/below for a horizontal-ish segment,
             // left/right for a vertical-ish one), instead of every edge of this
             // routing type sharing one fixed side. That's what makes a decision's
             // "up" branch and "down" branch land on opposite, correctly-mirrored
             // sides of their own lines without any awareness of each other.
-            SEH: { anchor: 'elbow-1', side: 'auto', offsetPx: 8, secondaryAnchor: 'mid', secondarySide: 'auto', secondaryOffsetPx: 8 },
-            SEV: { anchor: 'elbow-1', side: 'auto', offsetPx: 8, secondaryAnchor: 'mid', secondarySide: 'auto', secondaryOffsetPx: 8 },
-            DEH: { anchor: 'elbow-1', side: 'auto', offsetPx: 8, secondaryAnchor: 'mid', secondarySide: 'auto', secondaryOffsetPx: 8 },
-            DEN: { anchor: 'elbow-1', side: 'auto', offsetPx: 8, secondaryAnchor: 'mid', secondarySide: 'auto', secondaryOffsetPx: 8 },
-            DEF: { anchor: 'elbow-2', side: 'auto', offsetPx: 8, secondaryAnchor: 'elbow-1', secondarySide: 'auto', secondaryOffsetPx: 8 },
-            DEV: { anchor: 'elbow-1', side: 'auto', offsetPx: 8, secondaryAnchor: 'mid', secondarySide: 'auto', secondaryOffsetPx: 8 },
+            SEH: { anchor: 'elbow-1', side: 'auto', offsetPx: 8 },
+            SEV: { anchor: 'elbow-1', side: 'auto', offsetPx: 8 },
+            DEH: { anchor: 'elbow-1', side: 'auto', offsetPx: 8 },
+            DEN: { anchor: 'elbow-1', side: 'auto', offsetPx: 8 },
+            DEF: { anchor: 'elbow-2', side: 'auto', offsetPx: 8 },
+            DEV: { anchor: 'elbow-1', side: 'auto', offsetPx: 8 },
             // DBL (boundary drop-out) intentionally stays fixed below: it's a
             // single always-downward escape route, not one of a mirrored pair.
-            DBL: { anchor: 'elbow-1', side: 'below', offsetPx: 8, secondaryAnchor: 'mid', secondarySide: 'below', secondaryOffsetPx: 8 },
-            TEH: { anchor: 'elbow-2', side: 'auto', offsetPx: 10, secondaryAnchor: 'mid', secondarySide: 'auto', secondaryOffsetPx: 10 },
-            TEV: { anchor: 'elbow-2', side: 'auto', offsetPx: 10, secondaryAnchor: 'mid', secondarySide: 'auto', secondaryOffsetPx: 10 },
-            SLP: { anchor: 'mid', side: 'above', offsetPx: 10, secondaryAnchor: 'end', secondarySide: 'above', secondaryOffsetPx: 10 },
-            POH: { anchor: 'elbow-1', side: 'auto', offsetPx: 8, secondaryAnchor: 'mid', secondarySide: 'auto', secondaryOffsetPx: 8 },
-            POV: { anchor: 'elbow-1', side: 'auto', offsetPx: 8, secondaryAnchor: 'mid', secondarySide: 'auto', secondaryOffsetPx: 8 },
-            AOT: { anchor: 'mid', side: 'center', offsetPx: 0, secondaryAnchor: 'end', secondarySide: 'center', secondaryOffsetPx: 0 },
+            DBL: { anchor: 'elbow-1', side: 'below', offsetPx: 8 },
+            TEH: { anchor: 'elbow-2', side: 'auto', offsetPx: 10 },
+            TEV: { anchor: 'elbow-2', side: 'auto', offsetPx: 10 },
+            SLP: { anchor: 'mid', side: 'above', offsetPx: 10 },
+            POH: { anchor: 'elbow-1', side: 'auto', offsetPx: 8 },
+            POV: { anchor: 'elbow-1', side: 'auto', offsetPx: 8 },
+            AOT: { anchor: 'mid', side: 'center', offsetPx: 0 },
         },
     },
     lanes: {

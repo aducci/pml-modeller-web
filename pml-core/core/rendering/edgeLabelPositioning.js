@@ -10,8 +10,8 @@ export function resolveEdgeLabelPosition(edge, positioning, padding) {
         : placement.side;
     const shifted = offsetFromPoint(anchorPoint, side, placement.offsetPx);
     return {
-        x: padding + shifted.x,
-        y: padding + shifted.y,
+        x: padding + shifted.x + (placement.nudgeX ?? 0),
+        y: padding + shifted.y + (placement.nudgeY ?? 0),
         side,
     };
 }

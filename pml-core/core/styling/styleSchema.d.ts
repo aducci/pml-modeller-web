@@ -114,9 +114,16 @@ export interface EdgeLabelPlacement {
     anchor: EdgeLabelAnchor;
     side: EdgeLabelSide;
     offsetPx: number;
-    secondaryAnchor: EdgeLabelAnchor;
-    secondarySide: EdgeLabelSide;
-    secondaryOffsetPx: number;
+    /**
+     * Independent fine-tune nudge applied on top of the side/offsetPx position,
+     * in raw screen pixels (+x = right, +y = down). Use these to correct one
+     * routing type's label without fighting the `side` axis it already uses —
+     * e.g. `side: 'above'` moves the label up via offsetPx, then `nudgeX: -6`
+     * shifts it slightly left as well, which side/offsetPx alone can't express
+     * since side only ever moves along one axis.
+     */
+    nudgeX?: number;
+    nudgeY?: number;
 }
 export interface EdgeLabelPositioning {
     defaults: EdgeLabelPlacement;
