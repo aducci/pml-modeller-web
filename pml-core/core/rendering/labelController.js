@@ -205,20 +205,40 @@ function separateEdgeLabel(label, occupied) {
     };
 }
 /**
+ * Automatic decluttering's job is a small nudge to reduce overlap, not a
+ * relocation — cap how far it's allowed to move a label in total. Resolving
+ * a second (or third) colliding box can require a much larger correction
+ * than the first, and that correction can point anywhere depending on which
+ * box was hit and which axis had the smaller overlap — a real discontinuity,
+ * not a bug in pushClear itself. Bounding the total shift turns "unbounded
+ * jump to wherever" into "small bounded nudge, or leave the residual overlap
+ * in place" — the latter reads far better than a label teleporting across
+ * the canvas because of a 1px change somewhere else.
+ */
+const MAX_SEPARATION_SHIFT_PX = 24;
+/**
  * Pushes `box` clear of every box in `occupied`, resolving one collision per
  * iteration via a minimum-translation vector (see pushClear). Continuous by
- * construction: as the box's starting position moves smoothly, the push
- * shrinks smoothly to zero as the overlap disappears — no jump between fixed
- * candidate positions, unlike the discrete offset list this replaced.
+ * construction within a single collision: as the box's starting position
+ * moves smoothly, the push shrinks smoothly to zero as the overlap
+ * disappears — no jump between fixed candidate positions, unlike the
+ * discrete offset list this replaced. See MAX_SEPARATION_SHIFT_PX for why
+ * that alone isn't sufficient once a second collision enters the picture.
  */
 function separateBox(box, occupied, clearance) {
     let current = box;
+    let totalShift = 0;
     const maxIterations = 8;
     for (let i = 0; i < maxIterations; i++) {
         const collision = occupied.find((other) => overlaps(current, other, clearance));
         if (!collision)
             return current;
-        current = pushClear(current, collision, clearance);
+        const next = pushClear(current, collision, clearance);
+        const stepShift = Math.abs(next.x - current.x) + Math.abs(next.y - current.y);
+        if (totalShift + stepShift > MAX_SEPARATION_SHIFT_PX)
+            return current;
+        totalShift += stepShift;
+        current = next;
     }
     return current;
 }
