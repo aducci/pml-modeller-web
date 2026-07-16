@@ -23,6 +23,21 @@ PML is a plain-text DSL for describing business processes. A process has:
 - Subprocesses (nested process references)
 - Flows (edges between nodes)
 
+**Outbound events are terminal — they must never have an outgoing edge.**
+An outbound event means "this process sends something out and that branch of
+the process ends there." If a step needs to lead to something afterward
+(another task, another event, anything downstream), it is not an outbound
+event — model it as a \`task\` instead (e.g. a \`task(service)\` for "send
+confirmation email"), and reserve outbound events for genuine end-of-process
+signals. A common mistake: modelling a mid-process notification (e.g. "send
+a confirmation email, then the user confirms on the web") as an outbound
+event with an edge leading to the next task — this fails contract validation
+(\`OUTBOUND_HAS_OUTGOING\`) every time. If two things need to both complete
+before the process ends (e.g. an email confirmation and a web confirmation),
+model them as two parallel edges from the same source task, each leading to
+its own task/terminal event — not as one outbound event chained into another
+step.
+
 ## Canonical Syntax Rules
 
 Always use these forms:
@@ -144,6 +159,21 @@ PML is a plain-text DSL for describing business processes. A process has:
 - Routes (enum-driven branching referencing shared enums)
 - Subprocesses (nested process references)
 - Flows (edges between nodes)
+
+**Outbound events are terminal — they must never have an outgoing edge.**
+An outbound event means "this process sends something out and that branch of
+the process ends there." If a step needs to lead to something afterward
+(another task, another event, anything downstream), it is not an outbound
+event — model it as a \`task\` instead (e.g. a \`task(service)\` for "send
+confirmation email"), and reserve outbound events for genuine end-of-process
+signals. A common mistake: modelling a mid-process notification (e.g. "send
+a confirmation email, then the user confirms on the web") as an outbound
+event with an edge leading to the next task — this fails contract validation
+(\`OUTBOUND_HAS_OUTGOING\`) every time. If two things need to both complete
+before the process ends (e.g. an email confirmation and a web confirmation),
+model them as two parallel edges from the same source task, each leading to
+its own task/terminal event — not as one outbound event chained into another
+step.
 
 ## Canonical Syntax Rules
 
