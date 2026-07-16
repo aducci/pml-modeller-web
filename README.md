@@ -2,13 +2,43 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+Run these commands from the `pml-modeller-web` folder:
 
 ```bash
+npm install
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## Starting the Server
+
+From the `pml-modeller-web` directory, install dependencies if needed and start the local development server:
+
+```bash
+npm install
+npm run dev
+```
+
+If you want to run the production server locally after building the app:
+
+```bash
+npm run build
+npm start
+```
+
+## Pushing to Git
+
+After making your changes, push them to the remote repository with:
+
+```bash
+git status
+git add .
+git commit -m "Describe your changes"
+git push origin main
+```
+
+If your branch is not `main`, replace it with your current branch name.
 
 ## Environment Variables
 

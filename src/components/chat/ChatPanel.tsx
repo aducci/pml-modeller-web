@@ -8,13 +8,13 @@ import { ConversationMessage } from './ConversationMessage';
 interface Props {
   /** Current PML snippet to provide as context for AI queries */
   pmlSnippet?: string;
-  /** Called when the user accepts a proposal — receives the patches */
-  onProposalAccept?: (patches: any[]) => void;
+  /** Called when the user accepts a proposal — receives the patches, returns whether the apply actually succeeded */
+  onProposalAccept?: (patches: any[]) => { success: boolean; error?: string };
   style?: React.CSSProperties;
 }
 
 export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
-  const { state, sendMessage, acceptProposal, rejectProposal, clearConversation, setMode } = useConversation();
+  const { state, sendMessage, acceptProposal, failProposal, rejectProposal, clearConversation, setMode } = useConversation();
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -57,13 +57,17 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
   }, []);
 
   const handleAccept = useCallback((proposalId: string) => {
-    acceptProposal(proposalId);
     const msg = state.messages.find(m => m.patches?.some(p => p.id === proposalId));
     const proposal = msg?.patches?.find(p => p.id === proposalId);
-    if (proposal && proposal.patches.length > 0) {
-      onProposalAccept?.(proposal.patches);
+    if (!proposal || proposal.patches.length === 0) return;
+
+    const result = onProposalAccept?.(proposal.patches);
+    if (!result || result.success) {
+      acceptProposal(proposalId);
+    } else {
+      failProposal(proposalId, result.error || 'Failed to apply changes');
     }
-  }, [acceptProposal, state.messages, onProposalAccept]);
+  }, [acceptProposal, failProposal, state.messages, onProposalAccept]);
 
   const handleReject = useCallback((proposalId: string) => {
     rejectProposal(proposalId);

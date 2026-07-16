@@ -22,6 +22,9 @@ export function createChatStream(messages: Array<{ role: 'user' | 'assistant' | 
     system: PML_CHAT_PROMPT,
     messages,
     temperature: 0.3,
+    // PML_CHAT_PROMPT is long and identical on every call — cache it so
+    // repeat turns in the same session don't re-pay for the same system prompt.
+    providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } },
   });
 }
 
@@ -49,12 +52,24 @@ export async function generatePatches(
       messages,
       temperature: 0.2,
       schema: aiResponseSchema,
+      // PML_SYSTEM_PROMPT is long and static across every propose call —
+      // cache it so back-to-back turns in a conversation don't re-pay for it.
+      providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } },
     });
 
     return object as AiResponse;
-  } catch (parseErr) {
+  } catch (parseErr: any) {
     console.error('AI response error:', parseErr);
-    throw new Error('Failed to generate AI patch operations');
+    const detail = parseErr instanceof Error ? parseErr.message : JSON.stringify(parseErr);
+    // Zod's validation issues (e.g. "patches: too_big") are the useful part
+    // when generateObject's schema check fails — keep them in the surfaced
+    // error so a future schema-cap mismatch is diagnosable without needing
+    // to dump the full raw model output.
+    const zodIssues = parseErr?.cause?.issues ?? parseErr?.cause?.cause?.issues;
+    throw new Error(
+      `Failed to generate AI patch operations: ${detail}` +
+      (zodIssues ? ` | issues: ${JSON.stringify(zodIssues)}` : '')
+    );
   }
 }
 
@@ -81,6 +96,7 @@ export async function resolveAmbiguity(
       ],
       temperature: 0.2,
       schema: aiResponseSchema,
+      providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } },
     });
 
     return object as AiResponse;

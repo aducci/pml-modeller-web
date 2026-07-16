@@ -46,23 +46,22 @@ function AiAssistantContent({ controller, state }: Props) {
   const laneCount = state.layoutResult?.lanes?.length ?? 0;
   const hasModel = nodeCount > 0;
 
-  const handleProposalAccept = useCallback((patches: any[]) => {
-    console.log('Proposal accepted:', patches);
-    if (!patches.length || !state.pmlContent) return;
+  const handleProposalAccept = useCallback((patches: any[]): { success: boolean; error?: string } => {
+    if (!patches.length || !state.pmlContent) {
+      return { success: false, error: 'No patches to apply' };
+    }
 
     try {
       const result = applyPatches(state.pmlContent, patches);
       if (result.success && result.pml) {
-        const newPml = result.pml;
-        // Patch the state.pmlContent via the controller
-        // We surface this through the controller by calling setPmlContent
-        controller.setPmlContent(newPml);
-        console.log('Patches applied successfully — canvas should update');
-      } else {
-        console.warn('Patch application failed:', result.error);
+        controller.setPmlContent(result.pml);
+        return { success: true };
       }
+      return { success: false, error: result.error || 'Failed to apply changes' };
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to apply changes';
       console.error('Error applying patches:', err);
+      return { success: false, error: message };
     }
   }, [state.pmlContent, controller]);
 

@@ -3,11 +3,19 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { FileText, FolderOpen } from 'lucide-react';
+
+type ProjectFileSummary = { id: string; name: string };
 
 type ProjectListItem = {
   id: string;
   name: string;
   updatedAt: string;
+  /** The project's most-recently-updated file — the dashboard card links here directly. */
+  defaultFileId: string | null;
+  /** Up to 4 most-recently-updated files, for the in-card file list. */
+  files: ProjectFileSummary[];
+  fileCount: number;
 };
 
 export function DashboardWorkspace() {
@@ -76,14 +84,14 @@ export function DashboardWorkspace() {
         return;
       }
 
-      const created = data?.project as ProjectListItem;
-      if (!created?.id) {
+      const createdFile = data?.file as { id: string } | undefined;
+      if (!createdFile?.id) {
         setError('Project created but response was incomplete.');
         return;
       }
 
       setIsModalOpen(false);
-      router.push(`/dashboard/${created.id}`);
+      router.push(`/dashboard/${createdFile.id}`);
     } catch {
       setError('Unable to create project.');
     } finally {
@@ -131,14 +139,44 @@ export function DashboardWorkspace() {
           ) : null}
 
           {projects.map((project) => (
-            <Link
+            <div
               key={project.id}
-              href={`/dashboard/${project.id}`}
-              className="rounded-xl border border-gray-200 bg-white p-6 hover:border-teal hover:shadow-sm transition-all"
+              className="group rounded-xl border border-gray-200 bg-white p-5 transition-all hover:border-teal/40 hover:shadow-sm"
             >
-              <p className="text-sm font-semibold text-gray-900">{project.name}</p>
-              <p className="mt-2 text-xs text-gray-500">Updated {new Date(project.updatedAt).toLocaleString()}</p>
-            </Link>
+              <Link
+                href={project.defaultFileId ? `/dashboard/${project.defaultFileId}` : '#'}
+                className={project.defaultFileId ? '' : 'pointer-events-none'}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="truncate text-[15px] font-semibold text-gray-900 group-hover:text-teal">{project.name}</p>
+                  <span className="shrink-0 rounded-full bg-teal/10 px-2 py-0.5 text-[11px] font-medium text-teal">
+                    {project.fileCount} {project.fileCount === 1 ? 'file' : 'files'}
+                  </span>
+                </div>
+                <p className="mt-1 text-[11px] text-gray-400">Updated {new Date(project.updatedAt).toLocaleString()}</p>
+              </Link>
+
+              {project.files.length > 0 ? (
+                <ul className="mt-3 space-y-0.5 border-t border-gray-100 pt-3">
+                  {project.files.map((file) => (
+                    <li key={file.id}>
+                      <Link
+                        href={`/dashboard/${file.id}`}
+                        className="flex items-center gap-1.5 rounded-md px-1.5 py-1 text-[12.5px] text-gray-600 transition-colors hover:bg-teal/5 hover:text-teal"
+                      >
+                        <FileText size={12} className="shrink-0 text-gray-400" />
+                        <span className="truncate">{file.name}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 flex items-center gap-1.5 border-t border-gray-100 pt-3 text-[12px] text-gray-400">
+                  <FolderOpen size={12} />
+                  No files yet
+                </p>
+              )}
+            </div>
           ))}
         </div>
       </div>

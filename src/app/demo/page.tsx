@@ -52,7 +52,8 @@ decision fulfil as "Fulfil Order"
 flow key
     order_placed > place_order > check_inventory > stock_check
 
-process_payment > fulfil > dispatch > order_fulfilled
+process_payment > fulfil
+dispatch > order_fulfilled
 notify_unavailable > order_cancelled
 
 ---context---

@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { OrganizationRole } from '@prisma/client';
 import { db } from '@/lib/db';
 import { getActiveUser, type ActiveUser } from '@/lib/activeUser';
@@ -16,9 +17,15 @@ export type ActiveTenant = {
   mode: 'personal' | 'organization';
 };
 
-export async function getActiveTenant(options?: {
+// Wrapped in React's cache() for request-level memoization — if this is
+// called more than once within the same request (e.g. a shared layout and
+// the page both resolving the tenant), later calls reuse the first result
+// instead of re-querying. Only dedupes calls with the same argument
+// reference/shape (effectively: repeated no-arg calls, the common case);
+// calls passing different preferredOrganizationId values still each query.
+export const getActiveTenant = cache(async (options?: {
   preferredOrganizationId?: string | null;
-}): Promise<ActiveTenant | null> {
+}): Promise<ActiveTenant | null> => {
   const user = await getActiveUser();
   if (!user) return null;
 
@@ -45,7 +52,7 @@ export async function getActiveTenant(options?: {
     role: selectedMembership.role,
     mode: selectedMembership.organization.isPersonal ? 'personal' : 'organization',
   };
-}
+});
 
 async function ensureMemberships(user: ActiveUser) {
   let memberships = await listMemberships(user.id);

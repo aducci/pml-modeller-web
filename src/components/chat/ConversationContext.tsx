@@ -23,8 +23,10 @@ export interface PatchProposal {
   patches: PmlPatch[];
   description: string;
   confidence: 'high' | 'medium' | 'low';
-  status: 'pending' | 'applied' | 'rejected' | 'modified';
+  status: 'pending' | 'applied' | 'rejected' | 'modified' | 'failed';
   createdAt: number;
+  /** Set when status is 'failed' — why applyPatches/validation rejected it. */
+  error?: string;
 }
 
 export interface ConversationMessage {
@@ -58,7 +60,7 @@ type ConversationAction =
   | { type: 'UPDATE_MESSAGE_CONTENT'; payload: { messageId: string; content: string } }
   | { type: 'SET_PROCESSING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
-  | { type: 'UPDATE_PROPOSAL'; payload: { proposalId: string; status: PatchProposal['status'] } }
+  | { type: 'UPDATE_PROPOSAL'; payload: { proposalId: string; status: PatchProposal['status']; error?: string } }
   | { type: 'CLEAR_CONVERSATION' }
   | { type: 'SET_MODE'; payload: AssistantMode };
 
@@ -87,7 +89,9 @@ function conversationReducer(state: ConversationState, action: ConversationActio
         messages: state.messages.map((msg) => ({
           ...msg,
           patches: msg.patches?.map((p) =>
-            p.id === action.payload.proposalId ? { ...p, status: action.payload.status } : p
+            p.id === action.payload.proposalId
+              ? { ...p, status: action.payload.status, error: action.payload.error }
+              : p
           ),
         })),
       };
@@ -123,6 +127,7 @@ interface ConversationContextValue {
   state: ConversationState;
   sendMessage: (content: string, pmlSnippet?: string, focusType?: GraphFocusType, focusId?: string) => Promise<void>;
   acceptProposal: (proposalId: string) => void;
+  failProposal: (proposalId: string, error: string) => void;
   rejectProposal: (proposalId: string) => void;
   clearConversation: () => void;
   setMode: (mode: AssistantMode) => void;
@@ -162,6 +167,21 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
     const effectiveFocusType = overrideFocusType || focusType;
     const effectiveFocusId = overrideFocusId || focusId;
 
+    // Build conversation history from prior turns (before this message is
+    // added) so the AI has memory of what it already proposed/discussed —
+    // otherwise every turn is stateless and the model can re-propose changes
+    // that were already applied. Capped to the last 12 turns to bound token
+    // growth. Assistant turns with a proposal card use the card's own
+    // description as content, since that's set to '' in the message bubble.
+    const conversationHistory = state.messages
+      .filter((m) => m.role === 'user' || m.role === 'assistant')
+      .map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content || m.patches?.[0]?.description || '',
+      }))
+      .filter((m) => m.content.trim().length > 0)
+      .slice(-12);
+
     // Add user message
     const userMsg: ConversationMessage = {
       id: generateId(),
@@ -181,6 +201,7 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
       const requestBody: Record<string, any> = {
         message: content,
         pmlSnippet: pmlSnippet ?? '',
+        conversationHistory,
       };
       if (effectiveFocusType && effectiveFocusType !== 'full') {
         requestBody.focusType = effectiveFocusType;
@@ -198,19 +219,25 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
         // Structured patch response
         const data = await response.json();
 
-        const proposals: PatchProposal[] = (data.patches || []).map((patch: any, i: number) => ({
-          id: `${generateId()}-prop-${i}`,
-          patches: [patch],
-          description: data.explanation || 'Proposed change',
-          confidence: data.confidence || 'medium',
-          status: 'pending' as const,
-          createdAt: Date.now(),
-        }));
+        // All patches from one AI response are one proposal (one Apply/Dismiss
+        // decision for the whole change set) — not one card per patch op.
+        const proposals: PatchProposal[] = (data.patches?.length ?? 0) > 0
+          ? [{
+              id: `${generateId()}-prop`,
+              patches: data.patches,
+              description: data.explanation || 'Proposed change',
+              confidence: data.confidence || 'medium',
+              status: 'pending' as const,
+              createdAt: Date.now(),
+            }]
+          : [];
 
         const assistantMsg: ConversationMessage = {
           id: generateId(),
           role: 'assistant',
-          content: data.explanation || 'Here are my suggestions:',
+          // When a proposal card is attached, its own description already
+          // shows this same explanation — don't repeat it in the bubble too.
+          content: proposals.length > 0 ? '' : (data.explanation || 'Here are my suggestions:'),
           timestamp: Date.now(),
           patches: proposals.length > 0 ? proposals : undefined,
         };
@@ -276,6 +303,10 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
     dispatch({ type: 'UPDATE_PROPOSAL', payload: { proposalId, status: 'applied' } });
   }, []);
 
+  const failProposal = useCallback((proposalId: string, error: string) => {
+    dispatch({ type: 'UPDATE_PROPOSAL', payload: { proposalId, status: 'failed', error } });
+  }, []);
+
   const rejectProposal = useCallback((proposalId: string) => {
     dispatch({ type: 'UPDATE_PROPOSAL', payload: { proposalId, status: 'rejected' } });
   }, []);
@@ -320,19 +351,22 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
         if (response.ok) {
           const data = await response.json();
           if (data.explanation || (data.patches?.length ?? 0) > 0) {
+            const hasPatches = (data.patches?.length ?? 0) > 0;
             const analysisMsg: ConversationMessage = {
               id: generateId(),
               role: 'assistant',
-              content: data.explanation || 'Here are my observations:',
+              content: hasPatches ? '' : (data.explanation || 'Here are my observations:'),
               timestamp: Date.now(),
-              patches: (data.patches || []).map((patch: any, i: number) => ({
-                id: `${generateId()}-prop-${i}`,
-                patches: [patch],
-                description: data.explanation || 'Suggested improvement',
-                confidence: data.confidence || 'medium',
-                status: 'pending' as const,
-                createdAt: Date.now(),
-              })),
+              patches: hasPatches
+                ? [{
+                    id: `${generateId()}-prop`,
+                    patches: data.patches,
+                    description: data.explanation || 'Suggested improvement',
+                    confidence: data.confidence || 'medium',
+                    status: 'pending' as const,
+                    createdAt: Date.now(),
+                  }]
+                : undefined,
             };
             dispatch({ type: 'ADD_MESSAGE', payload: analysisMsg });
           }
@@ -346,7 +380,7 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   return (
-    <ConversationContext.Provider value={{ state, sendMessage, acceptProposal, rejectProposal, clearConversation, setMode, setFocus, startInterview, focusType, focusId }}>
+    <ConversationContext.Provider value={{ state, sendMessage, acceptProposal, failProposal, rejectProposal, clearConversation, setMode, setFocus, startInterview, focusType, focusId }}>
       {children}
     </ConversationContext.Provider>
   );

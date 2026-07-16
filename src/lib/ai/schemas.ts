@@ -32,7 +32,10 @@ const updateNodeSchema = z.object({
   op: z.literal('update-node'),
   nodeId: z.string().min(1),
   field: z.enum(['label', 'actor', 'scope', 'taskType', 'direction', 'eventType', 'metadata']),
-  value: z.any(),
+  // Must be a concrete (non-empty) schema — Anthropic's structured-output API
+  // rejects the whole request schema if any branch resolves to an
+  // unconstrained `{}` (which is what z.any()/z.unknown() produce).
+  value: z.union([z.string(), z.number(), z.boolean(), z.record(z.string(), z.string())]),
 });
 
 const removeNodeSchema = z.object({
@@ -98,7 +101,11 @@ const observationSchema = z.object({
 
 export const aiResponseSchema = z.object({
   explanation: z.string().min(1),
-  patches: z.array(pmlPatchSchema).max(20).default([]),
+  // 20 was too low for a genuine full-model rewrite (e.g. restructuring a
+  // 2-node template into a multi-actor, multi-step process easily needs
+  // 20+ ops) — the whole response was rejected by Zod with no partial
+  // recovery, silently falling back to the prose-only chat route.
+  patches: z.array(pmlPatchSchema).max(60).default([]),
   observations: z.array(observationSchema).max(30).default([]),
   confidence: z.enum(['high', 'medium', 'low']),
 });

@@ -28,12 +28,30 @@ export async function GET(request: NextRequest) {
       id: true,
       name: true,
       updatedAt: true,
+      files: {
+        orderBy: { updatedAt: 'desc' },
+        take: 4,
+        select: { id: true, name: true },
+      },
+      _count: { select: { files: true } },
     },
     take: 50,
   });
 
+  // Dashboard cards link straight to a file (the editor route is keyed by
+  // file id, not project id — see /dashboard/[fileId]), so resolve each
+  // project's most-recently-updated file here rather than making the client
+  // do a second round trip. Also surface a few files directly so the
+  // dashboard shows what's inside a project, not just its name.
+  const projectsWithDefaultFile = projects.map(({ files, _count, ...project }) => ({
+    ...project,
+    defaultFileId: files[0]?.id ?? null,
+    files,
+    fileCount: _count.files,
+  }));
+
   return NextResponse.json({
-    projects,
+    projects: projectsWithDefaultFile,
     tenant: {
       id: tenant.organization.id,
       name: tenant.organization.name,
@@ -60,21 +78,36 @@ export async function POST(request: NextRequest) {
 
   const pmlSource = buildTemplateSource(template, name);
 
-  const project = await db.project.create({
-    data: {
-      userId: tenant.user.id,
-      organizationId: tenant.organization.id,
-      name,
-      pmlSource,
-    },
-    select: {
-      id: true,
-      name: true,
-      updatedAt: true,
-    },
+  // A project is a workspace — it always starts with one file ("Main").
+  // Created in the same transaction so there's never a moment where a
+  // project exists with zero files (the dashboard always has a file to
+  // link to, and the backfill script only needs to handle pre-existing rows).
+  const file = await db.$transaction(async (tx) => {
+    const project = await tx.project.create({
+      data: {
+        userId: tenant.user.id,
+        organizationId: tenant.organization.id,
+        name,
+        pmlSource,
+        createdByUserId: tenant.user.id,
+        updatedByUserId: tenant.user.id,
+      },
+      select: { id: true },
+    });
+
+    return tx.projectFile.create({
+      data: {
+        projectId: project.id,
+        name: 'Main',
+        pmlSource,
+        createdByUserId: tenant.user.id,
+        updatedByUserId: tenant.user.id,
+      },
+      select: { id: true, name: true, updatedAt: true },
+    });
   });
 
-  return NextResponse.json({ project }, { status: 201 });
+  return NextResponse.json({ file }, { status: 201 });
 }
 
 function buildTemplateSource(template: string, name: string) {

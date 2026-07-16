@@ -17,6 +17,22 @@ const confidenceConfig = {
 };
 
 export function PatchProposalCard({ proposal, onAccept, onReject }: Props) {
+  if (proposal.status === 'failed') {
+    return (
+      <div style={{
+        marginTop: 8, padding: '8px 12px', borderRadius: 8,
+        background: '#FEF2F2', border: '1px solid #FECACA',
+        fontSize: 12, color: '#DC2626',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
+          <AlertTriangle size={14} />
+          Apply failed — model unchanged
+        </div>
+        <div style={{ marginTop: 4, color: '#7F1D1D' }}>{proposal.error}</div>
+      </div>
+    );
+  }
+
   if (proposal.status !== 'pending') {
     const statusLabel = proposal.status === 'applied' ? 'Applied' : 'Rejected';
     const statusColor = proposal.status === 'applied' ? '#059669' : '#9CA3AF';

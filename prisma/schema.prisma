@@ -18,6 +18,8 @@ model User {
   projects      Project[]  @relation("ProjectOwner")
   projectsCreated Project[] @relation("ProjectCreatedBy")
   projectsUpdated Project[] @relation("ProjectUpdatedBy")
+  projectFilesCreated ProjectFile[] @relation("ProjectFileCreatedBy")
+  projectFilesUpdated ProjectFile[] @relation("ProjectFileUpdatedBy")
   subscription  Subscription?
   usage         UsageRecord[]
   organizationMemberships OrganizationMember[]
@@ -70,8 +72,30 @@ model Project {
   isPublic    Boolean   @default(false)
   snapshots   Snapshot[]
   conversations Conversation[]
+  files       ProjectFile[]
 
   @@index([organizationId, updatedAt])
+}
+
+// Project.pmlSource above is deprecated as of the ProjectFile model — a
+// project is now a workspace containing one or more files, each with its
+// own pmlSource. Left in place (unused going forward) rather than dropped,
+// since dropping a column is irreversible; a follow-up migration can remove
+// it once this model has been live and verified.
+model ProjectFile {
+  id              String    @id @default(cuid())
+  projectId       String
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name            String
+  pmlSource       String    @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdByUserId String?
+  updatedByUserId String?
+  createdByUser   User?     @relation("ProjectFileCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  updatedByUser   User?     @relation("ProjectFileUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, updatedAt])
 }
 
 model Snapshot {

@@ -11,14 +11,15 @@
  * counts low and preventing hallucination of structure outside the window.
  *
  * Request body:
- *   { message: string, pmlSnippet: string, focusType?: string, focusId?: string }
+ *   { message: string, pmlSnippet: string, focusType?: string, focusId?: string,
+ *     conversationHistory?: Array<{ role: 'user'|'assistant', content: string }> }
  *
  * Response:
  *   { explanation: string, patches: PmlPatchOp[], confidence: 'high'|'medium'|'low' }
  */
 
 import { NextRequest } from 'next/server';
-import { pmlToNormalizedGraph, extractGraphWindow, serializeWindow } from 'pml-core';
+import { parsePml, extractGraphWindow, serializeWindow } from 'pml-core';
 import { generatePatches, isAiAvailable } from '@/lib/ai/client';
 
 export async function POST(req: NextRequest) {
@@ -35,6 +36,12 @@ export async function POST(req: NextRequest) {
     let pmlSnippet = typeof body.pmlSnippet === 'string' ? body.pmlSnippet : '';
     const focusType: string | undefined = typeof body.focusType === 'string' ? body.focusType : undefined;
     const focusId: string | undefined = typeof body.focusId === 'string' ? body.focusId : undefined;
+    const conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> | undefined =
+      Array.isArray(body.conversationHistory)
+        ? body.conversationHistory.filter(
+            (m: any) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string'
+          )
+        : undefined;
 
     if (!message.trim()) {
       return new Response(
@@ -55,8 +62,11 @@ export async function POST(req: NextRequest) {
     // subgraph window so the AI reasons over a focused slice.
     if (focusType && focusId && focusType !== 'full') {
       try {
-        // Parse the snippet into a normalized graph
-        const graph = pmlToNormalizedGraph(pmlSnippet);
+        // Parse the snippet into a normalized graph. pmlToNormalizedGraph
+        // expects an already-parsed PmlProcessModel, not raw text — calling
+        // it directly on the string silently produced an empty graph (no
+        // error, no warning), so windowing never actually scoped anything.
+        const { graph } = parsePml(pmlSnippet, { validationMode: 'loose' });
         // Extract a focused subgraph window
         const window = extractGraphWindow(graph, {
           focusType: focusType as 'actor' | 'decision' | 'flow-path' | 'full',
@@ -79,7 +89,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const result = await generatePatches(message, pmlSnippet);
+    const result = await generatePatches(message, pmlSnippet, conversationHistory);
 
     return new Response(JSON.stringify(result), {
       status: 200,
