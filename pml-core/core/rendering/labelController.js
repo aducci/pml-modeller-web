@@ -16,9 +16,9 @@ export function buildProcessLabelControllerResult(nodes, edges, theme, padding) 
         const label = resolveNodeLabel(node, activeAnchorsByNode.get(node.id) ?? new Set(), theme, padding);
         if (!label)
             continue;
-        const nudged = nudgeNodeLabel(label, occupiedBoxes);
-        nodeLabels.set(node.id, nudged);
-        occupiedBoxes.push(toNodeBox(nudged));
+        const placed = separateNodeLabel(label, occupiedBoxes);
+        nodeLabels.set(node.id, placed);
+        occupiedBoxes.push(toNodeBox(placed));
         const secondaryLabel = resolveSecondaryLabel(node, theme, padding);
         if (!secondaryLabel)
             continue;
@@ -30,13 +30,9 @@ export function buildProcessLabelControllerResult(nodes, edges, theme, padding) 
         const label = resolveEdgeLabel(edge, theme, padding);
         if (!label)
             continue;
-        // An explicit manual nudge is a deliberate placement choice — respect it
-        // rather than letting the automatic overlap-avoidance pass silently
-        // relocate it (its discrete ±12/14px escape jumps otherwise fight the
-        // user's own fine-tuning the moment the nudged box grazes another label).
-        const nudged = label.hasManualNudge ? label : nudgeEdgeLabel(label, occupiedBoxes);
-        edgeLabels.set(edge.id, nudged);
-        occupiedBoxes.push(toEdgeBox(nudged));
+        const placed = label.avoidOverlap ? separateEdgeLabel(label, occupiedBoxes) : label;
+        edgeLabels.set(edge.id, placed);
+        occupiedBoxes.push(toEdgeBox(placed));
     }
     return { activeAnchorsByNode, nodeLabels, secondaryLabels, edgeLabels };
 }
@@ -171,8 +167,7 @@ function resolveEdgeLabel(edge, theme, padding) {
         fill: edgeLabelStyle.fill,
         haloFill: edgeLabelStyle.haloColor ?? theme.lanes.bodyFill,
         haloWidth: edgeLabelStyle.haloWidth,
-        side: position.side,
-        hasManualNudge: position.hasManualNudge,
+        avoidOverlap: position.avoidOverlap,
     };
 }
 function toNodeBox(label) {
@@ -193,23 +188,24 @@ function toEdgeBox(label) {
         height: label.height,
     };
 }
-function nudgeNodeLabel(label, occupied) {
-    const box = nudgeBox(toNodeBox(label), occupied, NODE_CLEARANCE);
+function separateNodeLabel(label, occupied) {
+    const box = separateBox(toNodeBox(label), occupied, NODE_CLEARANCE);
     return {
         ...label,
         x: box.x + box.width / 2,
         y: box.y + label.fontSize / 1.5,
     };
 }
-function nudgeEdgeLabel(label, occupied) {
-    const box = nudgeBox(toEdgeBox(label), occupied, EDGE_CLEARANCE);
+function separateEdgeLabel(label, occupied) {
+    const box = separateBox(toEdgeBox(label), occupied, EDGE_CLEARANCE);
     return {
         ...label,
         x: box.x + box.width / 2,
         y: box.y + box.height / 2,
     };
 }
-function nudgeBox(box, occupied, clearance) {
+/** Tries a small set of discrete escape offsets, returning the first that clears every occupied box. */
+function separateBox(box, occupied, clearance) {
     const offsets = [
         { dx: 0, dy: 0 },
         { dx: 0, dy: 12 },

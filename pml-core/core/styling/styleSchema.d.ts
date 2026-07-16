@@ -108,22 +108,32 @@ export interface EdgeStyle {
     };
 }
 export type EdgeLabelAnchor = 'start' | 'mid' | 'end' | 'elbow-1' | 'elbow-2' | 'elbow-3';
-/** 'auto' mirrors above/below or left/right from the anchor's own local segment direction — see edgeLabelPositioning.ts. */
-export type EdgeLabelSide = 'above' | 'center' | 'below' | 'left' | 'right' | 'auto';
+/**
+ * Which axis this routing type's label offset mirrors per edge instance.
+ * 'vertical' flips the offset's y sign (above/below) — used by the
+ * horizontal-bend routing types, where a gateway's up-branch and
+ * down-branch need to land on opposite sides without knowing about each
+ * other. 'horizontal' flips x (left/right) — used by the vertical-bend
+ * types. 'none' skips mirroring; the offset is a fixed vector for every
+ * edge of that type. See edgeLabelPositioning.ts's applyMirror().
+ */
+export type EdgeLabelMirrorAxis = 'none' | 'vertical' | 'horizontal';
 export interface EdgeLabelPlacement {
+    /** Which point on the routed path the offset is measured from. */
     anchor: EdgeLabelAnchor;
-    side: EdgeLabelSide;
-    offsetPx: number;
+    /** Raw pixel offset from the anchor point (+x = right, +y = down). The only placement mechanism — always linear, always both axes. */
+    offset: {
+        x: number;
+        y: number;
+    };
+    mirrorAxis: EdgeLabelMirrorAxis;
     /**
-     * Independent fine-tune nudge applied on top of the side/offsetPx position,
-     * in raw screen pixels (+x = right, +y = down). Use these to correct one
-     * routing type's label without fighting the `side` axis it already uses —
-     * e.g. `side: 'above'` moves the label up via offsetPx, then `nudgeX: -6`
-     * shifts it slightly left as well, which side/offsetPx alone can't express
-     * since side only ever moves along one axis.
+     * Whether this label participates in automatic overlap avoidance with
+     * other labels (labelController.ts's separateEdgeLabel). Default true.
+     * Set false once you've deliberately placed a label via `offset` and
+     * want it guaranteed to stay exactly there.
      */
-    nudgeX?: number;
-    nudgeY?: number;
+    avoidOverlap: boolean;
 }
 export interface EdgeLabelPositioning {
     defaults: EdgeLabelPlacement;

@@ -1,6 +1,5 @@
 import { LayoutEdge, LayoutNode } from '../processLayout/layoutTypes';
 import { ProcessThemeSchema } from '../styling/styleSchema';
-import { type EdgeLabelPlacement } from './edgeLabelPositioning';
 interface ResolvedNodeLabel {
     nodeId: string;
     lines: string[];
@@ -34,8 +33,7 @@ interface ResolvedEdgeLabel {
     fill: string;
     haloFill: string;
     haloWidth: number;
-    side: EdgeLabelPlacement['side'];
-    hasManualNudge: boolean;
+    avoidOverlap: boolean;
 }
 export interface LabelControllerResult {
     activeAnchorsByNode: Map<string, Set<string>>;

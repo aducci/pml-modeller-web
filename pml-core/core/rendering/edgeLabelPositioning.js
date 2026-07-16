@@ -5,15 +5,11 @@ export function resolveEdgeLabelPosition(edge, positioning, padding) {
     const routingType = (edge.routing?.routingType ?? 'AOT');
     const placement = positioning.perType[routingType] ?? positioning.defaults;
     const { point: anchorPoint, index: anchorIndex } = getAnchorPoint(waypoints, placement.anchor);
-    const side = placement.side === 'auto'
-        ? resolveAutoSide(waypoints, anchorIndex)
-        : placement.side;
-    const shifted = offsetFromPoint(anchorPoint, side, placement.offsetPx);
+    const offset = applyMirror(placement.offset, placement.mirrorAxis, waypoints, anchorIndex);
     return {
-        x: padding + shifted.x + (placement.nudgeX ?? 0),
-        y: padding + shifted.y + (placement.nudgeY ?? 0),
-        side,
-        hasManualNudge: Boolean(placement.nudgeX || placement.nudgeY),
+        x: padding + anchorPoint.x + offset.x,
+        y: padding + anchorPoint.y + offset.y,
+        avoidOverlap: placement.avoidOverlap,
     };
 }
 function getAnchorPoint(waypoints, anchor) {
@@ -45,39 +41,30 @@ function getAnchorPoint(waypoints, anchor) {
     }
 }
 /**
- * Picks 'above'/'below' or 'left'/'right' from the anchor's own local
- * geometry, instead of a routing-type-wide fixed side. Two branches leaving
- * the same gateway on opposite trajectories (one curving up, one curving
- * down) get their own direction from their own waypoints, so they naturally
- * mirror onto opposite sides of their respective lines without needing to
- * know about each other.
+ * Flips the placement's baseline offset per edge instance so two branches
+ * leaving the same gateway on opposite trajectories (one curving up, one
+ * curving down) land mirrored on opposite sides of their own lines, without
+ * either edge needing to know about the other.
  *
- * The anchor is a corner where one segment is horizontal-ish and the other
- * vertical-ish (that's what makes it an elbow at all). The *incoming*
- * segment decides which axis the label sits beside — if you're approaching
- * the corner horizontally, the label reads naturally offset vertically
- * (above/below that horizontal run), and vice versa. The *outgoing*
- * segment's direction decides which side of that axis: a corner about to
- * turn upward puts the label above (on the outside of the turn); a corner
- * about to turn downward mirrors it below.
+ * `mirrorAxis` (declared once, per routing type, in the theme) says WHICH
+ * axis this routing type's labels mirror on — 'vertical' for the
+ * horizontal-bend types (above/below), 'horizontal' for the vertical-bend
+ * types (left/right). Only the SIGN is resolved dynamically here, from the
+ * anchor's own outgoing segment direction; a corner about to turn toward
+ * the offset's baseline direction keeps it, one turning the other way
+ * flips it. 'none' skips this entirely — the offset is used as-is.
  */
-function resolveAutoSide(waypoints, anchorIndex) {
-    const prev = waypoints[Math.max(0, anchorIndex - 1)];
+function applyMirror(offset, axis, waypoints, anchorIndex) {
+    if (axis === 'none')
+        return offset;
     const curr = waypoints[anchorIndex];
     const next = waypoints[Math.min(waypoints.length - 1, anchorIndex + 1)];
-    const inDx = curr.x - prev.x;
-    const inDy = curr.y - prev.y;
-    const outDx = next.x - curr.x;
-    const outDy = next.y - curr.y;
-    const incomingHorizontal = Math.abs(inDx) >= Math.abs(inDy);
-    if (incomingHorizontal) {
-        if (Math.abs(outDy) < 0.5)
-            return 'above';
-        return outDy < 0 ? 'above' : 'below';
+    if (axis === 'vertical') {
+        const outDy = next.y - curr.y;
+        return { x: offset.x, y: outDy > 0 ? -offset.y : offset.y };
     }
-    if (Math.abs(outDx) < 0.5)
-        return 'right';
-    return outDx < 0 ? 'left' : 'right';
+    const outDx = next.x - curr.x;
+    return { x: outDx < 0 ? -offset.x : offset.x, y: offset.y };
 }
 function findElbows(waypoints) {
     const elbows = [];
@@ -102,19 +89,4 @@ function isDirectionChange(a, b, c) {
         return false;
     const cross = (dxIn / inMag) * (dyOut / outMag) - (dyIn / inMag) * (dxOut / outMag);
     return Math.abs(cross) > 0.15;
-}
-function offsetFromPoint(point, side, offsetPx) {
-    switch (side) {
-        case 'above':
-            return { x: point.x, y: point.y - offsetPx };
-        case 'below':
-            return { x: point.x, y: point.y + offsetPx };
-        case 'left':
-            return { x: point.x - offsetPx, y: point.y };
-        case 'right':
-            return { x: point.x + offsetPx, y: point.y };
-        case 'center':
-        default:
-            return { x: point.x, y: point.y };
-    }
 }

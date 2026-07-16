@@ -119,31 +119,32 @@ export const DEFAULT_PROCESS_THEME = {
         },
     },
     edgeLabelPositions: {
-        defaults: { anchor: 'mid', side: 'above', offsetPx: 8 },
+        defaults: { anchor: 'mid', offset: { x: 0, y: -8 }, mirrorAxis: 'none', avoidOverlap: true },
         perType: {
-            STH: { anchor: 'mid', side: 'above', offsetPx: 8 },
-            STV: { anchor: 'mid', side: 'right', offsetPx: 8 },
-            // side: 'auto' mirrors the label onto whichever side its own local
-            // elbow direction implies (above/below for a horizontal-ish segment,
-            // left/right for a vertical-ish one), instead of every edge of this
-            // routing type sharing one fixed side. That's what makes a decision's
-            // "up" branch and "down" branch land on opposite, correctly-mirrored
-            // sides of their own lines without any awareness of each other.
-            SEH: { anchor: 'elbow-1', side: 'auto', offsetPx: 8 },
-            SEV: { anchor: 'elbow-1', side: 'auto', offsetPx: 8 },
-            DEH: { anchor: 'elbow-1', side: 'auto', offsetPx: 8 },
-            DEN: { anchor: 'elbow-1', side: 'auto', offsetPx: 8 },
-            DEF: { anchor: 'elbow-2', side: 'auto', offsetPx: 8 },
-            DEV: { anchor: 'elbow-1', side: 'auto', offsetPx: 8 },
+            STH: { anchor: 'mid', offset: { x: 0, y: -8 }, mirrorAxis: 'none', avoidOverlap: true },
+            STV: { anchor: 'mid', offset: { x: 8, y: 0 }, mirrorAxis: 'none', avoidOverlap: true },
+            // mirrorAxis: 'vertical'/'horizontal' flips the offset onto whichever
+            // side its own local elbow direction implies (above/below for a
+            // horizontal-bend routing type, left/right for a vertical-bend one),
+            // instead of every edge of this routing type sharing one fixed side.
+            // That's what makes a decision's "up" branch and "down" branch land
+            // on opposite, correctly-mirrored sides of their own lines without
+            // any awareness of each other. See edgeLabelPositioning.ts's applyMirror().
+            SEH: { anchor: 'elbow-1', offset: { x: 0, y: -8 }, mirrorAxis: 'vertical', avoidOverlap: true },
+            SEV: { anchor: 'elbow-1', offset: { x: 8, y: 0 }, mirrorAxis: 'horizontal', avoidOverlap: true },
+            DEH: { anchor: 'elbow-1', offset: { x: 0, y: -8 }, mirrorAxis: 'vertical', avoidOverlap: true },
+            DEN: { anchor: 'elbow-1', offset: { x: 0, y: -8 }, mirrorAxis: 'vertical', avoidOverlap: true },
+            DEF: { anchor: 'elbow-2', offset: { x: 0, y: -8 }, mirrorAxis: 'vertical', avoidOverlap: true },
+            DEV: { anchor: 'elbow-1', offset: { x: 8, y: 0 }, mirrorAxis: 'horizontal', avoidOverlap: true },
             // DBL (boundary drop-out) intentionally stays fixed below: it's a
             // single always-downward escape route, not one of a mirrored pair.
-            DBL: { anchor: 'elbow-1', side: 'below', offsetPx: 8 },
-            TEH: { anchor: 'elbow-2', side: 'auto', offsetPx: 10 },
-            TEV: { anchor: 'elbow-2', side: 'auto', offsetPx: 10 },
-            SLP: { anchor: 'mid', side: 'above', offsetPx: 10 },
-            POH: { anchor: 'elbow-1', side: 'auto', offsetPx: 8 },
-            POV: { anchor: 'elbow-1', side: 'auto', offsetPx: 8 },
-            AOT: { anchor: 'mid', side: 'center', offsetPx: 0 },
+            DBL: { anchor: 'elbow-1', offset: { x: 0, y: 8 }, mirrorAxis: 'none', avoidOverlap: true },
+            TEH: { anchor: 'elbow-2', offset: { x: 0, y: -10 }, mirrorAxis: 'vertical', avoidOverlap: true },
+            TEV: { anchor: 'elbow-2', offset: { x: 10, y: 0 }, mirrorAxis: 'horizontal', avoidOverlap: true },
+            SLP: { anchor: 'mid', offset: { x: 0, y: -10 }, mirrorAxis: 'none', avoidOverlap: true },
+            POH: { anchor: 'elbow-1', offset: { x: 0, y: -8 }, mirrorAxis: 'vertical', avoidOverlap: true },
+            POV: { anchor: 'elbow-1', offset: { x: 8, y: 0 }, mirrorAxis: 'horizontal', avoidOverlap: true },
+            AOT: { anchor: 'mid', offset: { x: 0, y: 0 }, mirrorAxis: 'none', avoidOverlap: true },
         },
     },
     lanes: {
