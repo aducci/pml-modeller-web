@@ -13,6 +13,7 @@ export function resolveEdgeLabelPosition(edge, positioning, padding) {
         x: padding + shifted.x + (placement.nudgeX ?? 0),
         y: padding + shifted.y + (placement.nudgeY ?? 0),
         side,
+        hasManualNudge: Boolean(placement.nudgeX || placement.nudgeY),
     };
 }
 function getAnchorPoint(waypoints, anchor) {

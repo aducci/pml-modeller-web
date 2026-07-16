@@ -35,6 +35,7 @@ interface ResolvedEdgeLabel {
     haloFill: string;
     haloWidth: number;
     side: EdgeLabelPlacement['side'];
+    hasManualNudge: boolean;
 }
 export interface LabelControllerResult {
     activeAnchorsByNode: Map<string, Set<string>>;

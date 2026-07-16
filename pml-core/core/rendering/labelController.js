@@ -30,7 +30,11 @@ export function buildProcessLabelControllerResult(nodes, edges, theme, padding) 
         const label = resolveEdgeLabel(edge, theme, padding);
         if (!label)
             continue;
-        const nudged = nudgeEdgeLabel(label, occupiedBoxes);
+        // An explicit manual nudge is a deliberate placement choice — respect it
+        // rather than letting the automatic overlap-avoidance pass silently
+        // relocate it (its discrete ±12/14px escape jumps otherwise fight the
+        // user's own fine-tuning the moment the nudged box grazes another label).
+        const nudged = label.hasManualNudge ? label : nudgeEdgeLabel(label, occupiedBoxes);
         edgeLabels.set(edge.id, nudged);
         occupiedBoxes.push(toEdgeBox(nudged));
     }
@@ -168,6 +172,7 @@ function resolveEdgeLabel(edge, theme, padding) {
         haloFill: edgeLabelStyle.haloColor ?? theme.lanes.bodyFill,
         haloWidth: edgeLabelStyle.haloWidth,
         side: position.side,
+        hasManualNudge: position.hasManualNudge,
     };
 }
 function toNodeBox(label) {
