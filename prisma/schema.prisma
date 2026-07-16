@@ -13,6 +13,8 @@ model User {
   name          String?
   image         String?
   createdAt     DateTime  @default(now())
+  accounts      Account[]
+  sessions      Session[]
   plan          Plan      @default(FREE)
   stripeId      String?   @unique
   projects      Project[]  @relation("ProjectOwner")
@@ -24,6 +26,43 @@ model User {
   usage         UsageRecord[]
   organizationMemberships OrganizationMember[]
   ownedOrganizations      Organization[]      @relation("OrganizationOwner")
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 model Organization {
