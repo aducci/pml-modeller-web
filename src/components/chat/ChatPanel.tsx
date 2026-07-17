@@ -14,7 +14,7 @@ interface Props {
 }
 
 export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
-  const { state, sendMessage, acceptProposal, failProposal, rejectProposal, clearConversation } = useConversation();
+  const { state, sendMessage, acceptProposal, failProposal, rejectProposal, clearConversation, startInterview } = useConversation();
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -72,6 +72,19 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
   const handleReject = useCallback((proposalId: string) => {
     rejectProposal(proposalId);
   }, [rejectProposal]);
+
+  // Phase 3 entry points (docs/FINAL/07_AI_Engine_Review_and_Enhancements.md
+  // §7.4 step 2) — startInterview() already had the right shape (welcome
+  // message + optional existing-model analysis) but no caller anywhere in
+  // the app. These two buttons are that caller: one for "start fresh /
+  // continue" (interview), one for "review what's here" (review).
+  const handleStartInterview = useCallback(() => {
+    startInterview(pmlSnippet);
+  }, [startInterview, pmlSnippet]);
+
+  const handleReviewModel = useCallback(() => {
+    sendMessage('Review this process model for completeness and quality. Point out the most significant gap first.', pmlSnippet);
+  }, [sendMessage, pmlSnippet]);
 
   const hasMessages = state.messages.length > 0;
   const isEmpty = !hasMessages && !state.isProcessing && !state.error;
@@ -132,9 +145,35 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
             <p style={{ fontSize: 14, fontWeight: 600, color: '#6B7280', marginBottom: 4 }}>
               How can I help with your process model?
             </p>
-            <p style={{ fontSize: 12, color: '#9CA3AF', maxWidth: 280 }}>
+            <p style={{ fontSize: 12, color: '#9CA3AF', maxWidth: 280, marginBottom: 16 }}>
               I can analyse your PML for completeness, suggest improvements, or help build a new model from scratch.
             </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={handleStartInterview}
+                style={{
+                  padding: '7px 14px', borderRadius: 8, border: '1px solid #6366F1',
+                  background: '#6366F1', color: '#fff', fontSize: 12, fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#4F46E5'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#6366F1'; }}
+              >
+                Start guided interview
+              </button>
+              <button
+                onClick={handleReviewModel}
+                style={{
+                  padding: '7px 14px', borderRadius: 8, border: '1px solid #E5E7EB',
+                  background: '#fff', color: '#374151', fontSize: 12, fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#F9FAFB'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#fff'; }}
+              >
+                Review this model
+              </button>
+            </div>
           </div>
         )}
 
