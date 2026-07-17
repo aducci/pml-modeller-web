@@ -107,6 +107,7 @@ export function ProcessWorkspaceShell({
         if (!response.ok) throw new Error('Save failed');
         lastSavedRef.current = content;
         setSaveStatus('saved');
+        controller.markSaved();
       } catch {
         setSaveStatus('error');
       }

@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import {
-  Bot, PanelRightClose, PanelRightOpen, Sparkles,
+  Bot, PanelRightClose, PanelRightOpen,
   MessageSquare, Lightbulb, FileCode, X,
 } from 'lucide-react';
 import { applyPatches, generatePml } from 'pml-core';
@@ -42,8 +42,6 @@ function AiAssistantContent({ controller, state }: Props) {
 
   const pmlSnippet = state.pmlContent || '';
   const nodeCount = state.layoutResult?.nodes?.filter((n: any) => n.x !== undefined).length ?? 0;
-  const edgeCount = state.layoutResult?.edges?.length ?? 0;
-  const laneCount = state.layoutResult?.lanes?.length ?? 0;
   const hasModel = nodeCount > 0;
 
   const handleProposalAccept = useCallback((patches: any[]): { success: boolean; error?: string } => {
@@ -115,19 +113,6 @@ function AiAssistantContent({ controller, state }: Props) {
           AI Assistant
         </span>
 
-        {/* Model summary badge */}
-        {hasModel && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 4,
-            padding: '2px 8px', borderRadius: 4,
-            background: '#F0FDF4', border: '1px solid #BBF7D0',
-            fontSize: 11, color: '#166534',
-          }}>
-            <Sparkles size={11} />
-            {nodeCount} nodes · {edgeCount} edges · {laneCount} lane{laneCount !== 1 ? 's' : ''}
-          </div>
-        )}
-
         {/* Toggle PML source button */}
         <button
           onClick={() => setShowPmlSource(!showPmlSource)}
@@ -172,20 +157,13 @@ function AiAssistantContent({ controller, state }: Props) {
         </button>
       </div>
 
-      {/* ── Status line — model summary ──────────────────── */}
+      {/* ── Status line — model quality ─────────────────────── */}
       {hasModel && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 6,
           padding: '4px 12px', borderBottom: '1px solid #E5E7EB',
           background: '#F9FAFB', fontSize: 11, color: '#6B7280', flexShrink: 0,
         }}>
-          <span style={{ fontWeight: 600, color: '#374151' }}>Model:</span>
-          <span>{nodeCount} nodes</span>
-          <span style={{ color: '#D1D5DB' }}>·</span>
-          <span>{edgeCount} edges</span>
-          <span style={{ color: '#D1D5DB' }}>·</span>
-          <span>{laneCount} lane{laneCount !== 1 ? 's' : ''}</span>
-          <span style={{ color: '#D1D5DB' }}>·</span>
           <span>Quality: <span style={{ fontWeight: 600, color: observations.length === 0 ? '#059669' : '#F59E0B' }}>
             {observations.length === 0 ? '✓ Complete' : `${observations.length} issue${observations.length > 1 ? 's' : ''}`}
           </span></span>
