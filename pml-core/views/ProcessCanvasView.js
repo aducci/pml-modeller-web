@@ -10,7 +10,7 @@ import { deepMerge } from '../core/deepMerge';
 // zoom calculation) reads better than a centered fit — purely an aesthetic
 // constant, not something a user needs to tune, so it stays a literal here.
 const FIT_VIEW_GOLDEN_RATIO = 1.618;
-export const ProcessCanvasView = ({ state, onZoom, onPan, onSetViewport, onSelect, onResetView, onToggleLanes, onToggleLaneMode, viewAsActor, flowVisibility, connectorStyle, curtainsOn = true, }) => {
+export const ProcessCanvasView = ({ state, onZoom, onPan, onSetViewport, onSelect, onDoubleClickElement, onResetView, onToggleLanes, onToggleLaneMode, viewAsActor, flowVisibility, connectorStyle, curtainsOn = true, }) => {
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const containerRef = useRef(null);
     const lastFittedLayoutRef = useRef(null);
@@ -145,7 +145,7 @@ export const ProcessCanvasView = ({ state, onZoom, onPan, onSetViewport, onSelec
                     fontSize: 11, fontWeight: 600, color: '#94A3B8',
                     letterSpacing: '0.03em', userSelect: 'none', pointerEvents: 'none',
                     textTransform: 'uppercase',
-                }, children: state.processName })), _jsx(ProcessCanvas, { layoutResult: state.layoutResult, zoom: state.zoom, panX: state.panX, panY: state.panY, viewportWidth: dimensions.width || 800, viewportHeight: dimensions.height || 600, theme: resolvedTheme, interactionMode: interactionMode, onZoomRequest: (delta) => onZoom(Math.max(zoomBounds.zoomMin, Math.min(zoomBounds.zoomMax, state.zoom + delta))), onPanRequest: onPan, selectedElement: state.selectedElement, onElementSelect: onSelect, showLanes: showLanes, viewAsActor: viewAsActor, flowVisibility: flowVisibility, connectorStyle: connectorStyle, curtainsOn: curtainsOn }), state.layoutResult && (() => {
+                }, children: state.processName })), _jsx(ProcessCanvas, { layoutResult: state.layoutResult, zoom: state.zoom, panX: state.panX, panY: state.panY, viewportWidth: dimensions.width || 800, viewportHeight: dimensions.height || 600, theme: resolvedTheme, interactionMode: interactionMode, onZoomRequest: (delta) => onZoom(Math.max(zoomBounds.zoomMin, Math.min(zoomBounds.zoomMax, state.zoom + delta))), onPanRequest: onPan, selectedElement: state.selectedElement, onElementSelect: onSelect, onElementDoubleClick: onDoubleClickElement, showLanes: showLanes, viewAsActor: viewAsActor, flowVisibility: flowVisibility, connectorStyle: connectorStyle, curtainsOn: curtainsOn }), state.layoutResult && (() => {
                 const nodeCount = (state.layoutResult.nodes ?? []).filter((n) => n.x !== undefined).length;
                 const edgeCount = (state.layoutResult.edges ?? []).length;
                 const laneCount = (state.layoutResult.lanes ?? []).length;

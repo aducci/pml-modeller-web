@@ -15,6 +15,9 @@ export interface ActivityPropertiesViewProps {
     onClose: () => void;
     onUpdateNode?: UpdateNodeFn;
     onRenameNode?: (oldId: string, newId: string) => boolean;
+    onRenameActor?: (oldId: string, newId: string) => boolean;
+    /** Element id to drop straight into rename-editing mode for (e.g. after a canvas double-click). */
+    autoEditId?: string | null;
     onAddOutcome?: (decisionId: string, name: string, target: string) => void;
     onUpdateOutcome?: (decisionId: string, name: string, patch: {
         name?: string;

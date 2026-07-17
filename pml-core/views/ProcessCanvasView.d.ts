@@ -8,6 +8,7 @@ export interface ProcessCanvasViewProps {
     onPan: (dx: number, dy: number) => void;
     onSetViewport: (zoom: number, panX: number, panY: number) => void;
     onSelect: (type: SelectedElement['type'], id: string) => void;
+    onDoubleClickElement?: (type: 'node' | 'lane', id: string) => void;
     onResetView: () => void;
     onToggleLanes?: () => void;
     onToggleLaneMode?: () => void;

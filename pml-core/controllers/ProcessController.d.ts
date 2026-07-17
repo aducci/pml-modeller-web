@@ -20,6 +20,12 @@ export declare class ProcessController {
      * empty, invalid, or already used by another node.
      */
     renameNodeId(oldId: string, newId: string): boolean;
+    /**
+     * Renames an actor's id and rewrites every node's `actor` reference plus
+     * the view-panel's viewAsActor/pinnedActor pointers — mirrors
+     * renameNodeId's "change all occurrences" behavior for the lane/actor axis.
+     */
+    renameActorId(oldId: string, newId: string): boolean;
     /** Adds a new outcome edge from a decision node to a target. */
     addDecisionOutcome(decisionId: string, outcomeName: string, target: string): void;
     /** Patches an existing outcome edge (rename, retarget, toggle primary/loop). */

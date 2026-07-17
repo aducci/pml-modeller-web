@@ -113,17 +113,24 @@ export class ProcessController {
     }
     setPmlContent(content) {
         const { graph, diagnostics, processInterfaces } = parsePml(content, { flowClassification: 'inferred', validationMode: 'loose' });
-        this.cachedGraph = graph;
+        // A failed parse (graph === null) means the edit is mid-typo, e.g. an
+        // unfinished "as" clause. Keep rendering the last good graph/layout
+        // instead of blanking the canvas — only the diagnostics/pmlContent
+        // reflect the broken state until the user finishes the edit.
+        if (graph) {
+            this.cachedGraph = graph;
+        }
+        const effectiveGraph = graph ?? this.cachedGraph;
         this.state = {
             ...this.state,
             pmlContent: content,
             processName: graph?.processName ?? this.state.processName,
             isDirty: true,
             diagnostics: diagnostics || [],
-            layoutResult: graph ? this.recomputeLayout(graph) : null,
+            layoutResult: effectiveGraph ? this.recomputeLayout(effectiveGraph) : null,
             processInterfaces: processInterfaces || [],
-            catalogs: graph?.catalogs,
-            graphEdges: graph?.edges,
+            catalogs: effectiveGraph?.catalogs,
+            graphEdges: effectiveGraph?.edges,
         };
         this.emit();
     }
@@ -179,6 +186,44 @@ export class ProcessController {
             layoutResult: this.recomputeLayout(this.cachedGraph),
             selectedElement,
             graphEdges: this.cachedGraph.edges,
+        };
+        this.emit();
+        return true;
+    }
+    /**
+     * Renames an actor's id and rewrites every node's `actor` reference plus
+     * the view-panel's viewAsActor/pinnedActor pointers — mirrors
+     * renameNodeId's "change all occurrences" behavior for the lane/actor axis.
+     */
+    renameActorId(oldId, newId) {
+        if (!this.cachedGraph)
+            return false;
+        if (!/^[A-Za-z0-9_-]+$/.test(newId))
+            return false;
+        if (oldId === newId)
+            return true;
+        if (this.cachedGraph.actors.some((a) => a.id === newId))
+            return false;
+        this.cachedGraph = {
+            ...this.cachedGraph,
+            actors: this.cachedGraph.actors.map((actor) => (actor.id === oldId ? { ...actor, id: newId } : actor)),
+            nodes: this.cachedGraph.nodes.map((node) => (node.actor === oldId ? { ...node, actor: newId } : node)),
+        };
+        const pmlContent = generatePml(this.cachedGraph);
+        const selectedElement = this.state.selectedElement?.type === 'lane' && this.state.selectedElement.id === oldId
+            ? { ...this.state.selectedElement, id: newId }
+            : this.state.selectedElement;
+        this.state = {
+            ...this.state,
+            pmlContent,
+            isDirty: true,
+            layoutResult: this.recomputeLayout(this.cachedGraph),
+            selectedElement,
+            viewPanel: {
+                ...this.state.viewPanel,
+                viewAsActor: this.state.viewPanel.viewAsActor === oldId ? newId : this.state.viewPanel.viewAsActor,
+                pinnedActor: this.state.viewPanel.pinnedActor === oldId ? newId : this.state.viewPanel.pinnedActor,
+            },
         };
         this.emit();
         return true;

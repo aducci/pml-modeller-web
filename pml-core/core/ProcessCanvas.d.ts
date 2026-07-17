@@ -21,6 +21,8 @@ interface ProcessCanvasProps {
         id: string;
     } | null;
     onElementSelect?: (type: 'node' | 'edge' | 'lane', id: string) => void;
+    /** Double-clicking a task/event/decision node or a lane (actor) header — used to jump straight into rename-with-propagation. */
+    onElementDoubleClick?: (type: 'node' | 'lane', id: string) => void;
     showLanes?: boolean;
     viewAsActor?: string | null;
     flowVisibility?: {
@@ -32,6 +34,6 @@ interface ProcessCanvasProps {
     connectorStyle?: ConnectorStyle;
     curtainsOn?: boolean;
 }
-export default function ProcessCanvas({ layoutResult, zoom, panX, panY, viewportWidth, viewportHeight, theme, interactionMode, onZoomRequest, onPanRequest, selectedElement, onElementSelect, showLanes, viewAsActor, flowVisibility, connectorStyle, curtainsOn, }: ProcessCanvasProps): React.JSX.Element;
+export default function ProcessCanvas({ layoutResult, zoom, panX, panY, viewportWidth, viewportHeight, theme, interactionMode, onZoomRequest, onPanRequest, selectedElement, onElementSelect, onElementDoubleClick, showLanes, viewAsActor, flowVisibility, connectorStyle, curtainsOn, }: ProcessCanvasProps): React.JSX.Element;
 export {};
 //# sourceMappingURL=ProcessCanvas.d.ts.map

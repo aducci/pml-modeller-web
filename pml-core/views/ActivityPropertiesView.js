@@ -45,7 +45,7 @@ const EVENT_TYPE_OPTIONS = [
     { value: 'timer', label: 'Timer' },
     { value: 'state', label: 'State' },
 ];
-export const ActivityPropertiesView = ({ selectedElement, elementData, allNodes = [], allEdges = [], appCatalog = [], onClose, onUpdateNode, onRenameNode, onAddOutcome, onUpdateOutcome, onRemoveOutcome, onSelectNode, onAddAppCatalogEntry, }) => {
+export const ActivityPropertiesView = ({ selectedElement, elementData, allNodes = [], allEdges = [], appCatalog = [], onClose, onUpdateNode, onRenameNode, onRenameActor, autoEditId, onAddOutcome, onUpdateOutcome, onRemoveOutcome, onSelectNode, onAddAppCatalogEntry, }) => {
     const node = elementData;
     const typeMeta = node ? TYPE_ACCENT[node.type] : undefined;
     const accent = typeMeta?.color ?? '#64748B';
@@ -67,12 +67,12 @@ export const ActivityPropertiesView = ({ selectedElement, elementData, allNodes 
             metadata.queried = true;
         onUpdateNode(selectedElement.id, 'metadata', metadata);
     };
-    return (_jsxs("div", { style: { display: 'flex', flexDirection: 'column', height: '100%', minWidth: 260, background: '#fff', color: INK, borderLeft: `1px solid ${BORDER}`, boxShadow: '-2px 0 8px rgba(15,23,42,0.04)' }, children: [_jsxs("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, background: SURFACE, flexShrink: 0 }, children: [_jsxs("h3", { style: { margin: 0, fontSize: 12, fontWeight: 600, color: LABEL, display: 'flex', alignItems: 'center', gap: 6 }, children: [_jsx(SlidersHorizontal, { size: 12 }), "Properties"] }), _jsx("button", { onClick: onClose, title: "Close", style: iconButtonStyle(), children: _jsx(X, { size: 13 }) })] }), _jsx("div", { style: { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflowY: 'auto' }, children: !node ? (_jsx("div", { style: { padding: 20, fontSize: 12, color: MUTED, fontStyle: 'italic', textAlign: 'center' }, children: "Select a node to inspect" })) : selectedElement.type === 'edge' ? (_jsx(EdgeView, { edge: node })) : node.type === 'task' || node.type === 'decision' || node.type === 'event' ? (_jsxs(_Fragment, { children: [_jsx(PanelHeader, { accent: accent, icon: typeMeta.icon, typeLabel: node.type === 'decision' ? 'Gateway' : node.type[0].toUpperCase() + node.type.slice(1), node: node, onRenameNode: onRenameNode, onToggleQueried: handleToggleQueried }), _jsxs(Section, { children: [_jsx(Field, { label: "Label", children: _jsx(TextInput, { value: node.label || '', onChange: handleLabelChange, accent: accent }) }), _jsx(Field, { label: "Description", alignTop: true, children: _jsx(TextArea, { value: node.metadata?.description || '', onChange: handleDescriptionChange, accent: accent }) })] }), node.type === 'decision' && (_jsx(GatewaySection, { node: node, accent: accent, allNodes: allNodes, allEdges: allEdges, onUpdateNode: onUpdateNode, onAddOutcome: onAddOutcome, onUpdateOutcome: onUpdateOutcome, onRemoveOutcome: onRemoveOutcome })), node.type === 'event' && (_jsx(EventSection, { node: node, accent: accent, allEdges: allEdges, onUpdateNode: onUpdateNode, onSelectNode: onSelectNode })), _jsx(GenericMetadataSection, { node: node, accent: accent, onUpdateNode: onUpdateNode, selectedElement: selectedElement, appCatalog: appCatalog, onAddAppCatalogEntry: onAddAppCatalogEntry })] })) : (_jsx(FallbackView, { node: node })) })] }));
+    return (_jsxs("div", { style: { display: 'flex', flexDirection: 'column', height: '100%', minWidth: 260, background: '#fff', color: INK, borderLeft: `1px solid ${BORDER}`, boxShadow: '-2px 0 8px rgba(15,23,42,0.04)' }, children: [_jsxs("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: `1px solid ${BORDER}`, background: SURFACE, flexShrink: 0 }, children: [_jsxs("h3", { style: { margin: 0, fontSize: 12, fontWeight: 600, color: LABEL, display: 'flex', alignItems: 'center', gap: 6 }, children: [_jsx(SlidersHorizontal, { size: 12 }), "Properties"] }), _jsx("button", { onClick: onClose, title: "Close", style: iconButtonStyle(), children: _jsx(X, { size: 13 }) })] }), _jsx("div", { style: { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflowY: 'auto' }, children: !node ? (_jsx("div", { style: { padding: 20, fontSize: 12, color: MUTED, fontStyle: 'italic', textAlign: 'center' }, children: "Select a node to inspect" })) : selectedElement.type === 'edge' ? (_jsx(EdgeView, { edge: node })) : selectedElement.type === 'lane' ? (_jsx(LaneView, { node: node, onRenameActor: onRenameActor, autoEdit: autoEditId === node.id })) : node.type === 'task' || node.type === 'decision' || node.type === 'event' ? (_jsxs(_Fragment, { children: [_jsx(PanelHeader, { accent: accent, icon: typeMeta.icon, typeLabel: node.type === 'decision' ? 'Gateway' : node.type[0].toUpperCase() + node.type.slice(1), node: node, onRenameNode: onRenameNode, onToggleQueried: handleToggleQueried, autoEdit: autoEditId === node.id }), _jsxs(Section, { children: [_jsx(Field, { label: "Label", children: _jsx(TextInput, { value: node.label || '', onChange: handleLabelChange, accent: accent }) }), _jsx(Field, { label: "Description", alignTop: true, children: _jsx(TextArea, { value: node.metadata?.description || '', onChange: handleDescriptionChange, accent: accent }) })] }), node.type === 'decision' && (_jsx(GatewaySection, { node: node, accent: accent, allNodes: allNodes, allEdges: allEdges, onUpdateNode: onUpdateNode, onAddOutcome: onAddOutcome, onUpdateOutcome: onUpdateOutcome, onRemoveOutcome: onRemoveOutcome })), node.type === 'event' && (_jsx(EventSection, { node: node, accent: accent, allEdges: allEdges, onUpdateNode: onUpdateNode, onSelectNode: onSelectNode })), _jsx(GenericMetadataSection, { node: node, accent: accent, onUpdateNode: onUpdateNode, selectedElement: selectedElement, appCatalog: appCatalog, onAddAppCatalogEntry: onAddAppCatalogEntry })] })) : (_jsx(FallbackView, { node: node })) })] }));
 };
 // ---------------------------------------------------------------------------
 // Shared header: {Type} - {id}, editable id, status pill top-right
 // ---------------------------------------------------------------------------
-function PanelHeader({ accent, icon, typeLabel, node, onRenameNode, onToggleQueried, }) {
+function PanelHeader({ accent, icon, typeLabel, node, onRenameNode, onToggleQueried, autoEdit, }) {
     const [editingId, setEditingId] = useState(false);
     const [idDraft, setIdDraft] = useState(node.id);
     const [idError, setIdError] = useState(null);
@@ -82,6 +82,11 @@ function PanelHeader({ accent, icon, typeLabel, node, onRenameNode, onToggleQuer
         setIdDraft(node.id);
         setIdError(null);
     }, [node.id]);
+    useEffect(() => {
+        if (autoEdit)
+            setEditingId(true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [autoEdit, node.id]);
     const commitId = () => {
         const trimmed = idDraft.trim();
         if (trimmed === node.id) {
@@ -297,6 +302,49 @@ function EdgeView({ edge }) {
     const routingLabel = routingType ? ROUTING_TYPE_LABELS[routingType] : undefined;
     const metadata = Object.entries(edge.metadata || {}).filter(([k]) => !NON_USER_METADATA_KEYS.has(k));
     return (_jsxs(Section, { children: [_jsx(Field, { label: "Connector", children: _jsx("span", { style: { fontSize: 10, color: MUTED, fontFamily: 'monospace' }, children: routingType ? `${routingType} — ${routingLabel ?? 'Unknown'}` : 'Not yet routed' }) }), _jsx(Field, { label: "From \u2192 To", children: _jsxs("span", { style: { fontSize: 12, color: INK, fontFamily: 'monospace' }, children: [edge.source, " \u2192 ", edge.target] }) }), _jsx(Field, { label: "ID", children: _jsx("span", { style: { fontSize: 12, fontFamily: 'monospace', color: LABEL }, children: edge.id }) }), edge.condition && _jsx(Field, { label: "Condition", children: _jsx("span", { style: { fontSize: 12, color: INK }, children: edge.condition }) }), metadata.map(([key, value]) => (_jsx(Field, { label: key, children: _jsx("span", { style: { fontSize: 12, color: LABEL }, children: Array.isArray(value) ? JSON.stringify(value) : String(value) }) }, key)))] }));
+}
+/**
+ * Actor (lane) view — id is editable and propagates via renameActorId
+ * (rewrites every node's `actor` reference), mirroring PanelHeader's node-id
+ * rename-with-propagation behavior.
+ */
+function LaneView({ node, onRenameActor, autoEdit, }) {
+    const accent = '#64748B';
+    const [editingId, setEditingId] = useState(false);
+    const [idDraft, setIdDraft] = useState(node.id);
+    const [idError, setIdError] = useState(null);
+    useEffect(() => {
+        setIdDraft(node.id);
+        setIdError(null);
+    }, [node.id]);
+    useEffect(() => {
+        if (autoEdit)
+            setEditingId(true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [autoEdit, node.id]);
+    const commitId = () => {
+        const trimmed = idDraft.trim();
+        if (trimmed === node.id) {
+            setEditingId(false);
+            return;
+        }
+        const applied = onRenameActor?.(node.id, trimmed) ?? false;
+        if (applied) {
+            setEditingId(false);
+            setIdError(null);
+        }
+        else
+            setIdError('ID already in use or invalid');
+    };
+    return (_jsxs(Section, { children: [_jsx(SectionLabel, { accent: accent, children: "Actor" }), _jsx(Field, { label: "ID", children: editingId ? (_jsx("input", { autoFocus: true, value: idDraft, onChange: (e) => setIdDraft(e.target.value), onBlur: commitId, onKeyDown: (e) => {
+                        if (e.key === 'Enter')
+                            commitId();
+                        if (e.key === 'Escape') {
+                            setIdDraft(node.id);
+                            setEditingId(false);
+                            setIdError(null);
+                        }
+                    }, style: { width: '100%', fontSize: 12, fontFamily: 'monospace', padding: '5px 8px', border: `1px solid ${accent}`, borderRadius: 6, background: '#fff', color: accent, outline: 'none' } })) : (_jsx("span", { onClick: () => setEditingId(true), title: "Click to rename \u2014 updates every reference", style: { fontSize: 12, fontFamily: 'monospace', color: INK, cursor: 'text', borderBottom: `1px dashed ${accent}66` }, children: node.id })) }), idError && _jsx("div", { style: { fontSize: 10, color: '#DC2626' }, children: idError }), node.label && _jsx(Field, { label: "Label", children: _jsx("span", { style: { fontSize: 12, color: INK }, children: node.label }) })] }));
 }
 function FallbackView({ node }) {
     const metadata = Object.entries(node.metadata || {}).filter(([k]) => !NON_USER_METADATA_KEYS.has(k));

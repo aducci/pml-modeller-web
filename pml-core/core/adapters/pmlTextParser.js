@@ -490,7 +490,7 @@ export function parsePmlTextToProcessModel(text) {
             const toPeer = eventShortMatch[5];
             let direction = dirKeyword === 'outbound' ? 'outbound' : dirKeyword === 'internal' ? 'internal' : dirKeyword === 'inbound' ? 'inbound' : undefined;
             let extras = eventShortMatch[6] || '';
-            const asLabelMatch = extras.match(/\bas\s+"([^"]+)"/);
+            const asLabelMatch = extras.match(/(?:\bas\s+)?"([^"]+)"/);
             const { id: eventId, tentative: queried } = parseTentative(eventShortMatch[2]);
             events.push({
                 id: eventId,
@@ -520,11 +520,11 @@ export function parsePmlTextToProcessModel(text) {
         if (eventVerboseMatch && !scoped.statement.startsWith('event(')) {
             const { id: eventId, tentative: queried } = parseTentative(eventVerboseMatch[1]);
             const rest = eventVerboseMatch[2] || '';
-            const verboseAsMatch = rest.match(/\bas\s+"([^"]+)"/);
+            const verboseAsMatch = rest.match(/(?:\bas\s+)?"([^"]+)"/);
             const dirMatch = rest.match(/\b(inbound|outbound|internal)\b/);
             const direction = dirMatch?.[1];
             const extra = rest
-                .replace(/\bas\s+"[^"]+"\s*/g, '')
+                .replace(/(?:\bas\s+)?"[^"]+"\s*/g, '')
                 .replace(/\b(?:inbound|outbound|internal)\b\s*/, '');
             events.push({
                 id: eventId,
