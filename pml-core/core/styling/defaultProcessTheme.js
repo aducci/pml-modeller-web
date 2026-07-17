@@ -189,4 +189,10 @@ export const DEFAULT_PROCESS_THEME = {
         visualBoundsPadding: _layoutDefaults.visualBoundsPadding,
         labelContainerWidth: _layoutDefaults.labelContainerWidth,
     },
+    // Shadow defaults on (matches the appearance every diagram already has);
+    // gradient defaults off (a new opt-in look, not a behavior change).
+    nodeEffects: {
+        shadow: true,
+        gradient: false,
+    },
 };

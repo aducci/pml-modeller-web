@@ -145,6 +145,12 @@ export interface ProcessThemeCanvasTokens {
     visualBoundsPadding: number;
     labelContainerWidth: number;
 }
+export interface ProcessNodeEffects {
+    /** Drop shadow behind every node shape (the feDropShadow filter already used for depth). */
+    shadow: boolean;
+    /** Subtle top-to-bottom gradient (derived from each shape's own fill) instead of a flat fill. */
+    gradient: boolean;
+}
 /**
  * `decision` and `route` node types both resolve to the `gateway` style token.
  * Use getElementStyle() — it handles the mapping automatically.
@@ -170,6 +176,7 @@ export interface ProcessThemeSchema {
     edgeLabelPositions: EdgeLabelPositioning;
     typography: ProcessThemeTypography;
     canvasTokens: ProcessThemeCanvasTokens;
+    nodeEffects: ProcessNodeEffects;
     lanes: LaneStyle;
     curtains: {
         inbound: CurtainStyle;
