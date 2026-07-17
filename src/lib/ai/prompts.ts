@@ -122,6 +122,22 @@ Change the process header.
   "value": "..."
 }
 
+## Structural Rules That Reject Patches
+
+Beyond the outbound/inbound event rules above, these are the other contract
+violations most likely to make \`applyPatches()\` fail on AI-authored
+patches specifically (as opposed to rules the JSON schema already prevents,
+like an invalid \`scope\` or \`flowLayer\` value — those can't be expressed
+in a patch in the first place):
+
+- **Reference actors that already exist, or create them in the same patch set.** A \`task\`'s \`actor\` field must name an actor that's already in the model or is being added earlier in this same set of patches — not a task actor id you're introducing for the first time without a matching \`add-node\` of type \`actor\`.
+- **Decisions need at least one outcome at creation.** An \`add-node\` for a \`decision\` with an empty or missing \`outcomes\` array fails immediately — always include at least one \`{ name, target }\` outcome.
+- **Subprocess nodes need a \`process\` field.** An \`add-node\` for type \`subprocess\` without \`process\` set fails — it must name the process being referenced.
+- **Edge endpoints must resolve to real node ids.** An \`add-edge\`'s \`source\`/\`target\` must match a node id already in the model or added earlier in this same patch set — check for typos and ordering, not just that the ids "look right."
+- **Don't leave new nodes disconnected.** Every node must be reachable from an inbound event via edges you're proposing (or that already exist) — adding a node without also adding the edge(s) that connect it to the rest of the flow fails validation.
+- **Avoid the \`route\` node type in patches.** It requires an enum reference this patch schema has no field for — any \`route\` node created through a patch will fail validation. Use \`decision\` for branching instead.
+- **A process needs at least one inbound and one outbound event overall.** Don't propose removing the last one of either without adding a replacement in the same patch set.
+
 ## Behavioural Rules
 
 1. **Two modes — tell them apart:**
@@ -237,6 +253,13 @@ export const PML_RESOLVE_PROMPT = `You are a PML (Process Modelling Language) qu
 - Check every event for a direction (inbound/outbound/internal)
 - Check decisions have at least two named outcomes
 - Check for disconnected nodes (no inbound or outbound flow)
+
+## Structural rules your patches must not violate
+- Outbound events are terminal — never give one an outgoing edge (\`OUTBOUND_HAS_OUTGOING\`). Inbound events are entry points — never give one an incoming edge (\`INBOUND_HAS_INCOMING\`).
+- A \`decision\` add-node needs at least one outcome; a \`subprocess\` add-node needs a \`process\` field.
+- Every edge's \`source\`/\`target\` must reference a node id that already exists or is added earlier in the same patch set.
+- Don't leave a node you add disconnected — it must be reachable from an inbound event via edges in this patch set (or already existing ones).
+- Don't propose the \`route\` node type — this patch schema has no field for its required enum reference. Use \`decision\` instead.
 
 ## Response format
 Respond with a valid JSON object:
