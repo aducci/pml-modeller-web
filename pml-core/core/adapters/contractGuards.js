@@ -234,6 +234,38 @@ export function validateNormalizedGraphContract(graph, mode = 'strict') {
 export function validatePmlAndGraph(pmlModel, graph, mode = 'strict') {
     return mergeResults(validatePmlModelInput(pmlModel, mode), validateNormalizedGraphContract(graph, mode));
 }
+// ---------------------------------------------------------------------------
+// Suggestions — structured, addressable facts fed to the AI as context
+// (Phase 2 of docs/FINAL/06_AI_Modelling_Engine.md, §2.C / §3 principle 7:
+// "the AI reasons over what the validator already found — it doesn't
+// re-derive it"). Deliberately separate from validateNormalizedGraphContract:
+// that function's job is pass/fail (errors/warnings gate applyPatches),
+// this function's job is proactive, informational findings about the
+// *current* model, regardless of validation mode. A node can be
+// suggestion-worthy without the model being invalid.
+//
+// Scoped intentionally to one rule for this pass (OUTBOUND_HAS_OUTGOING) —
+// see 07_AI_Engine_Review_and_Enhancements.md §7.3 for why this one was
+// chosen first and the plan for porting the rest once this round-trips.
+// ---------------------------------------------------------------------------
+export function computeProcessSuggestions(graph) {
+    const suggestions = [];
+    const outgoingCount = new Map();
+    for (const edge of graph.edges) {
+        outgoingCount.set(edge.source, (outgoingCount.get(edge.source) || 0) + 1);
+    }
+    for (const node of graph.nodes) {
+        if (isOutboundEvent(node) && (outgoingCount.get(node.id) || 0) > 0) {
+            suggestions.push({
+                code: 'OUTBOUND_HAS_OUTGOING',
+                message: `Outbound event "${node.id}" has an outgoing edge — outbound events are terminal and must not lead anywhere else. Model the downstream step as a task instead, or split into two parallel edges from the source task.`,
+                severity: 'suggestion',
+                data: { nodeId: node.id },
+            });
+        }
+    }
+    return suggestions;
+}
 export function assertNoValidationErrors(result) {
     if (result.errors.length === 0) {
         return;

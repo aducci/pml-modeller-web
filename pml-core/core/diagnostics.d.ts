@@ -1,4 +1,4 @@
-export type DiagnosticSeverity = 'error' | 'warning' | 'info';
+export type DiagnosticSeverity = 'error' | 'warning' | 'info' | 'suggestion';
 export interface DiagnosticSourceRange {
     startLine: number;
     startColumn: number;

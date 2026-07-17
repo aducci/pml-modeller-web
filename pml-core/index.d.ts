@@ -27,6 +27,7 @@ export * from './core/diagnostics';
 export * from './core/graphContext/index';
 export * from './core/pmlPatch';
 export * from './core/flowClassification';
+export * from './core/adapters/contractGuards';
 export * from './views/ProcessWorkspaceView';
 export * from './views/ProcessCanvasView';
 export * from './views/PmlEditorView';

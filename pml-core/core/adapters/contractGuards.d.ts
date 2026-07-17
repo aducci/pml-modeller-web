@@ -11,5 +11,6 @@ export interface ValidationResult {
 export declare function validatePmlModelInput(pmlModel: PmlProcessModel, mode?: ValidationMode): ValidationResult;
 export declare function validateNormalizedGraphContract(graph: NormalizedProcessGraph, mode?: ValidationMode): ValidationResult;
 export declare function validatePmlAndGraph(pmlModel: PmlProcessModel, graph: NormalizedProcessGraph, mode?: ValidationMode): ValidationResult;
+export declare function computeProcessSuggestions(graph: NormalizedProcessGraph): ProcessDiagnostic[];
 export declare function assertNoValidationErrors(result: ValidationResult): void;
 //# sourceMappingURL=contractGuards.d.ts.map
