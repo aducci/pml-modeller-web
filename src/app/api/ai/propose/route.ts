@@ -10,6 +10,11 @@
  * not raw text. This gives the AI meaningful context while keeping token
  * counts low and preventing hallucination of structure outside the window.
  *
+ * Also computes contractGuards.ts's computeProcessSuggestions() on whichever
+ * graph is in scope (windowed or full) and passes it to generatePatches —
+ * the AI reasons over the validator's structured findings instead of
+ * re-scanning raw PML for the same gaps.
+ *
  * Request body:
  *   { message: string, pmlSnippet: string, focusType?: string, focusId?: string,
  *     conversationHistory?: Array<{ role: 'user'|'assistant', content: string }> }
@@ -19,8 +24,8 @@
  */
 
 import { NextRequest } from 'next/server';
-import { parsePml, extractGraphWindow, serializeWindow } from 'pml-core';
-import { generatePatches, isAiAvailable } from '@/lib/ai/client';
+import { parsePml, extractGraphWindow, serializeWindow, computeProcessSuggestions } from 'pml-core';
+import { generatePatches, isAiAvailable, type ProcessSuggestion } from '@/lib/ai/client';
 
 export async function POST(req: NextRequest) {
   try {
@@ -57,17 +62,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Graph context windowing ──────────────────────────────────────
-    // If focusType + focusId are provided, scope the PML snippet to a
-    // subgraph window so the AI reasons over a focused slice.
-    if (focusType && focusId && focusType !== 'full') {
-      try {
-        // Parse the snippet into a normalized graph. pmlToNormalizedGraph
-        // expects an already-parsed PmlProcessModel, not raw text — calling
-        // it directly on the string silently produced an empty graph (no
-        // error, no warning), so windowing never actually scoped anything.
-        const { graph } = parsePml(pmlSnippet, { validationMode: 'loose' });
-        // Extract a focused subgraph window
+    // ── Graph context windowing + validator suggestions ──────────────
+    // Parse once, reused for both: (a) if focusType + focusId are provided,
+    // scope the PML snippet to a subgraph window so the AI reasons over a
+    // focused slice; (b) always compute the validator's structured
+    // "suggestion" facts (contractGuards.ts) for whichever graph ends up in
+    // scope — windowed if focus was given, full otherwise — so the AI gets
+    // known issues as data instead of re-deriving them from raw text (Phase
+    // 2, docs/FINAL/06_AI_Modelling_Engine.md §2.C).
+    let suggestions: ProcessSuggestion[] | undefined;
+    try {
+      // pmlToNormalizedGraph expects an already-parsed PmlProcessModel, not
+      // raw text — calling it directly on the string silently produced an
+      // empty graph (no error, no warning), so this must go through parsePml.
+      const { graph } = parsePml(pmlSnippet, { validationMode: 'loose' });
+      let scopedGraph = graph;
+
+      if (focusType && focusId && focusType !== 'full') {
         const window = extractGraphWindow(graph, {
           focusType: focusType as 'actor' | 'decision' | 'flow-path' | 'full',
           focusId,
@@ -82,14 +93,22 @@ export async function POST(req: NextRequest) {
           showTrimNote: true,
           includeHeader: true,
         });
+        scopedGraph = window.graph;
         console.log(`Context windowed: ${focusType}='${focusId}' → ${window.nodeCount} nodes, ${window.edgeCount} edges`);
-      } catch (err) {
-        console.warn('Graph windowing failed, falling back to full snippet:', err);
-        // Fall through with the original pmlSnippet
       }
+
+      suggestions = computeProcessSuggestions(scopedGraph).map((s) => ({
+        code: s.code,
+        message: s.message,
+        nodeId: s.data?.nodeId as string | undefined,
+        edgeId: s.data?.edgeId as string | undefined,
+      }));
+    } catch (err) {
+      console.warn('Graph windowing/suggestions failed, falling back to raw snippet:', err);
+      // Fall through with the original pmlSnippet and no suggestions
     }
 
-    const result = await generatePatches(message, pmlSnippet, conversationHistory);
+    const result = await generatePatches(message, pmlSnippet, conversationHistory, suggestions);
 
     return new Response(JSON.stringify(result), {
       status: 200,

@@ -29,19 +29,46 @@ export function createChatStream(messages: Array<{ role: 'user' | 'assistant' | 
 }
 
 /**
+ * Structured, addressable fact from the validator (contractGuards.ts's
+ * computeProcessSuggestions) — the AI reasons over these instead of
+ * re-scanning raw PML for the same gaps. See
+ * PML_DSL/docs/FINAL/06_AI_Modelling_Engine.md §2.C / §3 principle 7.
+ */
+export interface ProcessSuggestion {
+  code: string;
+  message: string;
+  nodeId?: string;
+  edgeId?: string;
+}
+
+// Mirrors the "one gap per turn" doctrine (02_PML_AI_Skill.md) — the AI
+// doesn't need every outstanding issue, just the handful relevant to this turn.
+const MAX_SUGGESTIONS_PER_TURN = 8;
+
+function formatSuggestions(suggestions?: ProcessSuggestion[]): string {
+  if (!suggestions || suggestions.length === 0) return '';
+  const lines = suggestions
+    .slice(0, MAX_SUGGESTIONS_PER_TURN)
+    .map((s) => `- [${s.code}]${s.nodeId ? ` node "${s.nodeId}"` : ''}${s.edgeId ? ` edge "${s.edgeId}"` : ''}: ${s.message}`)
+    .join('\n');
+  return `\n\nKnown issues (already found by the validator — resolve or account for these; don't re-derive them by re-reading the PML):\n${lines}`;
+}
+
+/**
  * Generate a structured AI response with patch operations.
  * Used by the /api/ai/propose route.
  */
 export async function generatePatches(
   userMessage: string,
   pmlSnippet: string,
-  conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
+  conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>,
+  suggestions?: ProcessSuggestion[]
 ): Promise<AiResponse> {
   const messages = [
     ...(conversationHistory ?? []).map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
     {
       role: 'user' as const,
-      content: `Current process context (PML):\n\`\`\`pml\n${pmlSnippet}\n\`\`\`\n\nUser request: ${userMessage}`,
+      content: `Current process context (PML):\n\`\`\`pml\n${pmlSnippet}\n\`\`\`${formatSuggestions(suggestions)}\n\nUser request: ${userMessage}`,
     },
   ];
 
