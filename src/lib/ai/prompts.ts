@@ -38,6 +38,18 @@ model them as two parallel edges from the same source task, each leading to
 its own task/terminal event — not as one outbound event chained into another
 step.
 
+**Inbound events are entry points — they must never have an incoming edge.**
+An inbound event means "this is where the process starts, triggered by
+something outside it" — nothing internal to the process should point into
+one. When building a process from scratch, the inbound event is always the
+first node with no predecessor, not something a task or another event flows
+into. A common mistake when generating a new process: creating the inbound
+event and then wiring an edge from some earlier step into it (as if it were
+a regular receiving step) — this fails contract validation
+(\`INBOUND_HAS_INCOMING\`) every time. If you need to model "something
+external happens, then the process reacts," the inbound event *is* that
+reaction point — start the flow there, don't lead into it.
+
 ## Canonical Syntax Rules
 
 Always use these forms:
@@ -183,6 +195,18 @@ before the process ends (e.g. an email confirmation and a web confirmation),
 model them as two parallel edges from the same source task, each leading to
 its own task/terminal event — not as one outbound event chained into another
 step.
+
+**Inbound events are entry points — they must never have an incoming edge.**
+An inbound event means "this is where the process starts, triggered by
+something outside it" — nothing internal to the process should point into
+one. When building a process from scratch, the inbound event is always the
+first node with no predecessor, not something a task or another event flows
+into. A common mistake when generating a new process: creating the inbound
+event and then wiring an edge from some earlier step into it (as if it were
+a regular receiving step) — this fails contract validation
+(\`INBOUND_HAS_INCOMING\`) every time. If you need to model "something
+external happens, then the process reacts," the inbound event *is* that
+reaction point — start the flow there, don't lead into it.
 
 ## Canonical Syntax Rules
 
