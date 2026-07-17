@@ -16,7 +16,7 @@ export const DEFAULT_PROCESS_THEME = {
         event: {
             shape: 'circle',
             appearance: { fill: '#E6F1FB', stroke: '#378ADD', label: '#0C447C', strokeWidth: 1 },
-            text: { fontSizePx: 10, weight: 500, maxLines: 2, wrap: 'clamp' },
+            text: { fontSizePx: 10, weight: 500, maxLines: 3, wrap: 'clamp' },
             labelPlacement: 'auto',
             infoPolicy: { primaryField: 'label', placement: 'hidden' },
             interaction: { selectedStroke: '#378ADD', selectedStrokeWidth: 2.5 },
@@ -62,7 +62,7 @@ export const DEFAULT_PROCESS_THEME = {
         task: {
             shape: 'rounded-rect',
             appearance: { fill: '#F1EFE8', stroke: '#888780', label: '#2C2C2A', strokeWidth: 1, cornerRadiusPx: 6 },
-            text: { fontSizePx: 10, weight: 500, maxLines: 2, wrap: 'clamp' },
+            text: { fontSizePx: 10, weight: 500, maxLines: 3, wrap: 'clamp' },
             labelPlacement: 'inside',
             infoPolicy: {
                 primaryField: 'label',

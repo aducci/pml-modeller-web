@@ -3,6 +3,14 @@ import { formatLabel, toLetterSpacing } from './labelFormatter';
 import { resolveEdgeLabelPosition } from './edgeLabelPositioning';
 import { isEventNodeKind, isGatewayNodeKind } from '../nodeKinds';
 const NODE_CLEARANCE = 6;
+// Yields 17 characters per line at the event label's charWidthPx (5.2), so
+// text over 17 characters wraps onto a second line by default.
+const EVENT_LABEL_WIDTH_PX = 100;
+// Task labels shrink toward this floor before the formatter falls back to
+// an ellipsis, trading a smaller font for fitting more of the real text.
+const TASK_LABEL_MIN_FONT_PX = 7;
+const TASK_LABEL_BASE_FONT_PX = 10;
+const TASK_LABEL_BASE_CHAR_WIDTH_PX = 5.8;
 export function buildProcessLabelControllerResult(nodes, edges, theme, padding) {
     const activeAnchorsByNode = buildActiveAnchorsByNode(edges);
     const nodeLabels = new Map();
@@ -72,8 +80,11 @@ function resolveNodeLabel(node, activeAnchors, theme, padding) {
     let lines;
     let y;
     let fontWeight = style.text.weight;
+    let fontSize = style.text.fontSizePx;
     if (isEvent) {
-        const formatted = formatLabel(node.label, style.text, { availableWidthPx: 200, charWidthPx: 5.2 });
+        // Capped at ~19 characters wide so a 2-3 word label wraps onto a second
+        // line by default instead of running the full width of the canvas.
+        const formatted = formatLabel(node.label, style.text, { availableWidthPx: EVENT_LABEL_WIDTH_PX, charWidthPx: 5.2 });
         lines = formatted.lines;
         y = bottomY + 10;
         fontWeight = Math.min(fontWeight, 500);
@@ -92,23 +103,44 @@ function resolveNodeLabel(node, activeAnchors, theme, padding) {
     }
     else {
         const availableWidthPx = node.width - 12;
-        const formatted = formatLabel(node.label, style.text, { availableWidthPx });
-        lines = formatted.lines;
+        const fitted = node.type === 'task'
+            ? fitTaskLabel(node.label, style.text, availableWidthPx)
+            : { lines: formatLabel(node.label, style.text, { availableWidthPx }).lines, fontSize: style.text.fontSizePx };
+        lines = fitted.lines;
+        fontSize = fitted.fontSize;
         const hasSecondary = style.infoPolicy.placement !== 'hidden' &&
             (style.infoPolicy.secondaryFields?.length ?? 0) > 0;
         const secondaryOffset = hasSecondary ? -3 : 0;
-        y = centerY - ((lines.length - 1) * (style.text.fontSizePx + 1)) / 2 + secondaryOffset;
+        y = centerY - ((lines.length - 1) * (fontSize + 1)) / 2 + secondaryOffset;
     }
     return {
         nodeId: node.id,
         lines,
         x: centerX,
         y,
-        fontSize: style.text.fontSizePx,
+        fontSize,
         fontWeight,
         fill: style.appearance.label,
-        lineSpacing: style.text.fontSizePx + 1,
+        lineSpacing: fontSize + 1,
     };
+}
+/**
+ * Shrinks a task label's font size in 1px steps toward TASK_LABEL_MIN_FONT_PX
+ * before accepting an ellipsis-truncated result — trades a smaller font for
+ * fitting more of the real text, per the "resize before truncate" spec.
+ */
+function fitTaskLabel(label, style, availableWidthPx) {
+    let fontSize = style.fontSizePx;
+    for (; fontSize >= TASK_LABEL_MIN_FONT_PX; fontSize--) {
+        const charWidthPx = TASK_LABEL_BASE_CHAR_WIDTH_PX * (fontSize / TASK_LABEL_BASE_FONT_PX);
+        const formatted = formatLabel(label, style, { availableWidthPx, charWidthPx });
+        if (!formatted.truncated || fontSize === TASK_LABEL_MIN_FONT_PX) {
+            return { lines: formatted.lines, fontSize };
+        }
+    }
+    // Unreachable — loop always returns at TASK_LABEL_MIN_FONT_PX.
+    const charWidthPx = TASK_LABEL_BASE_CHAR_WIDTH_PX * (TASK_LABEL_MIN_FONT_PX / TASK_LABEL_BASE_FONT_PX);
+    return { lines: formatLabel(label, style, { availableWidthPx, charWidthPx }).lines, fontSize: TASK_LABEL_MIN_FONT_PX };
 }
 function resolveSecondaryLabel(node, theme, padding) {
     const style = getElementStyle(theme, node.type);
