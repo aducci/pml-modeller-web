@@ -244,21 +244,67 @@ export function validatePmlAndGraph(pmlModel, graph, mode = 'strict') {
 // *current* model, regardless of validation mode. A node can be
 // suggestion-worthy without the model being invalid.
 //
-// Scoped intentionally to one rule for this pass (OUTBOUND_HAS_OUTGOING) —
-// see 07_AI_Engine_Review_and_Enhancements.md §7.3 for why this one was
-// chosen first and the plan for porting the rest once this round-trips.
+// First ported 2026-07-17 with one rule (OUTBOUND_HAS_OUTGOING) — see
+// 07_AI_Engine_Review_and_Enhancements.md §7.3 for why it was chosen first.
+// Three more ported same day once that one round-tripped clean end-to-end
+// (unit tests + live wiring into /api/ai/propose): DECISION_SINGLE_OUTCOME,
+// TASK_NO_ACTOR, NODE_ORPHANED. See §7.6 for the next candidates and the
+// selection reasoning for this batch.
 // ---------------------------------------------------------------------------
 export function computeProcessSuggestions(graph) {
     const suggestions = [];
     const outgoingCount = new Map();
+    const incomingCount = new Map();
     for (const edge of graph.edges) {
         outgoingCount.set(edge.source, (outgoingCount.get(edge.source) || 0) + 1);
+        incomingCount.set(edge.target, (incomingCount.get(edge.target) || 0) + 1);
     }
     for (const node of graph.nodes) {
         if (isOutboundEvent(node) && (outgoingCount.get(node.id) || 0) > 0) {
             suggestions.push({
                 code: 'OUTBOUND_HAS_OUTGOING',
                 message: `Outbound event "${node.id}" has an outgoing edge — outbound events are terminal and must not lead anywhere else. Model the downstream step as a task instead, or split into two parallel edges from the source task.`,
+                severity: 'suggestion',
+                data: { nodeId: node.id },
+            });
+        }
+        // A decision with exactly one outcome isn't structurally invalid (that's
+        // DECISION_NO_OUTCOMES, a hard error for zero) but it's a near-certain
+        // sign the alternate/exception branch hasn't been modelled yet — a
+        // single-outcome gateway isn't really a decision.
+        if (node.type === 'decision' && (node.outcomes?.length ?? 0) === 1) {
+            suggestions.push({
+                code: 'DECISION_SINGLE_OUTCOME',
+                message: `Decision "${node.id}" has only one outcome ("${node.outcomes[0]}") — a decision with a single branch usually means the alternate or exception path hasn't been modelled yet.`,
+                severity: 'suggestion',
+                data: { nodeId: node.id },
+            });
+        }
+        // Actor assignment is exactly the kind of gap PML_SYSTEM_PROMPT already
+        // asks the AI to infer from context (behavioral rule 7) — surfacing it
+        // as a suggestion means the AI sees it as a known fact, not something it
+        // has to notice by re-reading the whole snippet.
+        if (node.type === 'task' && !node.actor) {
+            suggestions.push({
+                code: 'TASK_NO_ACTOR',
+                message: `Task "${node.id}" has no actor assigned.`,
+                severity: 'suggestion',
+                data: { nodeId: node.id },
+            });
+        }
+        // A node with zero edges in either direction is disconnected from the
+        // rest of the process entirely — distinct from NODE_CANNOT_REACH_TERMINAL
+        // (validateNormalizedGraphContract), which flags nodes that connect to
+        // something but can't reach an outbound/terminal event. This is the
+        // stricter, cheaper "is it wired up to anything at all" case — a very
+        // common mid-edit state (a node just added, not yet connected) worth
+        // surfacing as a nudge rather than a validation failure.
+        if ((node.type === 'task' || node.type === 'decision' || node.type === 'event') &&
+            (outgoingCount.get(node.id) || 0) === 0 &&
+            (incomingCount.get(node.id) || 0) === 0) {
+            suggestions.push({
+                code: 'NODE_ORPHANED',
+                message: `${node.type[0].toUpperCase()}${node.type.slice(1)} "${node.id}" has no incoming or outgoing edges — it isn't connected to the rest of the process yet.`,
                 severity: 'suggestion',
                 data: { nodeId: node.id },
             });
