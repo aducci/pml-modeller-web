@@ -38,14 +38,11 @@ export interface ConversationMessage {
   observations?: ModelObservation[];
 }
 
-export type AssistantMode = 'guided' | 'exploratory';
-
 /** Focus type for scoping AI context to a subgraph window. */
 export type GraphFocusType = 'actor' | 'decision' | 'flow-path' | 'full';
 
 export interface ConversationState {
   id: string;
-  mode: AssistantMode;
   messages: ConversationMessage[];
   isProcessing: boolean;
   error: string | null;
@@ -61,8 +58,7 @@ type ConversationAction =
   | { type: 'SET_PROCESSING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'UPDATE_PROPOSAL'; payload: { proposalId: string; status: PatchProposal['status']; error?: string } }
-  | { type: 'CLEAR_CONVERSATION' }
-  | { type: 'SET_MODE'; payload: AssistantMode };
+  | { type: 'CLEAR_CONVERSATION' };
 
 // ---------------------------------------------------------------------------
 // Reducer
@@ -97,8 +93,6 @@ function conversationReducer(state: ConversationState, action: ConversationActio
       };
     case 'CLEAR_CONVERSATION':
       return createInitialState();
-    case 'SET_MODE':
-      return { ...state, mode: action.payload };
     default:
       return state;
   }
@@ -112,7 +106,6 @@ function generateId(): string {
 function createInitialState(): ConversationState {
   return {
     id: generateId(),
-    mode: 'guided',
     messages: [],
     isProcessing: false,
     error: null,
@@ -130,7 +123,6 @@ interface ConversationContextValue {
   failProposal: (proposalId: string, error: string) => void;
   rejectProposal: (proposalId: string) => void;
   clearConversation: () => void;
-  setMode: (mode: AssistantMode) => void;
   setFocus: (type: GraphFocusType, id: string) => void;
   startInterview: (pmlSnippet?: string) => void;
   focusType: GraphFocusType;
@@ -315,10 +307,6 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
     dispatch({ type: 'CLEAR_CONVERSATION' });
   }, []);
 
-  const setMode = useCallback((mode: AssistantMode) => {
-    dispatch({ type: 'SET_MODE', payload: mode });
-  }, []);
-
   const startInterview = useCallback(async (pmlSnippet?: string) => {
     // Add welcome message
     const welcomeMsg: ConversationMessage = {
@@ -380,7 +368,7 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   return (
-    <ConversationContext.Provider value={{ state, sendMessage, acceptProposal, failProposal, rejectProposal, clearConversation, setMode, setFocus, startInterview, focusType, focusId }}>
+    <ConversationContext.Provider value={{ state, sendMessage, acceptProposal, failProposal, rejectProposal, clearConversation, setFocus, startInterview, focusType, focusId }}>
       {children}
     </ConversationContext.Provider>
   );

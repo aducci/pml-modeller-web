@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Bot, Send, Trash2, AlertCircle } from 'lucide-react';
-import { useConversation, type AssistantMode } from './ConversationContext';
+import { useConversation } from './ConversationContext';
 import { ConversationMessage } from './ConversationMessage';
 
 interface Props {
@@ -14,7 +14,7 @@ interface Props {
 }
 
 export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
-  const { state, sendMessage, acceptProposal, failProposal, rejectProposal, clearConversation, setMode } = useConversation();
+  const { state, sendMessage, acceptProposal, failProposal, rejectProposal, clearConversation } = useConversation();
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -91,20 +91,6 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
         <span style={{ fontSize: 14, fontWeight: 700, color: '#111827', flex: 1 }}>
           AI Assistant
         </span>
-
-        {/* Mode toggle */}
-        <select
-          value={state.mode}
-          onChange={(e) => setMode(e.target.value as AssistantMode)}
-          style={{
-            fontSize: 11, padding: '2px 6px', borderRadius: 4,
-            border: '1px solid #E5E7EB', background: '#F9FAFB',
-            color: '#6B7280', cursor: 'pointer',
-          }}
-        >
-          <option value="guided">Guided</option>
-          <option value="exploratory">Exploratory</option>
-        </select>
 
         {/* Clear */}
         {hasMessages && (

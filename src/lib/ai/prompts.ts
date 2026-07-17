@@ -68,7 +68,7 @@ Change a field on an existing node.
 {
   "op": "update-node",
   "nodeId": "...",
-  "field": "label|actor|scope|taskType|direction|status",
+  "field": "label|actor|scope|taskType|direction",
   "value": "..."
 }
 
@@ -84,6 +84,15 @@ Create a flow connection between two nodes.
 {
   "op": "add-edge",
   "edge": { "source": "...", "target": "...", "condition": "optional", "label": "optional", "keyFlow": false, "loop": false }
+}
+
+### update-edge
+Change a field on an existing edge (identify it by edgeId).
+{
+  "op": "update-edge",
+  "edgeId": "...",
+  "field": "condition|label|keyFlow|loop|flowLayer|semanticRole",
+  "value": "..."
 }
 
 ### remove-edge

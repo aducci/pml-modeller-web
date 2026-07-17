@@ -53,13 +53,22 @@ const addEdgeSchema = z.object({
     keyFlow: z.boolean().optional(),
     loop: z.boolean().optional(),
     flowLayer: z.enum(['main', 'alternate', 'message', 'annotation', 'hidden']).optional(),
+    semanticRole: z.enum(['normalFlow', 'messageFlow', 'exceptionFlow', 'compensationFlow', 'eventEscalation', 'boundaryInterrupt']).optional(),
   }),
+});
+
+const updateEdgeSchema = z.object({
+  op: z.literal('update-edge'),
+  edgeId: z.string().min(1),
+  field: z.enum(['condition', 'label', 'keyFlow', 'loop', 'flowLayer', 'semanticRole']),
+  value: z.union([z.string(), z.number(), z.boolean()]),
 });
 
 const removeEdgeSchema = z.object({
   op: z.literal('remove-edge'),
-  source: z.string().min(1),
-  target: z.string().min(1),
+  edgeId: z.string().min(1).optional(),
+  source: z.string().min(1).optional(),
+  target: z.string().min(1).optional(),
   condition: z.string().optional(),
 });
 
@@ -74,6 +83,7 @@ export const pmlPatchSchema = z.discriminatedUnion('op', [
   updateNodeSchema,
   removeNodeSchema,
   addEdgeSchema,
+  updateEdgeSchema,
   removeEdgeSchema,
   updateProcessSchema,
 ]);
