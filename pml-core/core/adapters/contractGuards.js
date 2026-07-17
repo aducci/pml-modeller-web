@@ -248,8 +248,11 @@ export function validatePmlAndGraph(pmlModel, graph, mode = 'strict') {
 // 07_AI_Engine_Review_and_Enhancements.md §7.3 for why it was chosen first.
 // Three more ported same day once that one round-tripped clean end-to-end
 // (unit tests + live wiring into /api/ai/propose): DECISION_SINGLE_OUTCOME,
-// TASK_NO_ACTOR, NODE_ORPHANED. See §7.6 for the next candidates and the
-// selection reasoning for this batch.
+// TASK_NO_ACTOR, NODE_ORPHANED. INBOUND_HAS_INCOMING added the same day
+// after a live incident (§7.7): the AI proposed a fresh inbound event with
+// an edge routed into it when asked to build a process from scratch — the
+// prompt taught the outbound-terminal rule but never its inbound sibling.
+// See §7.4 for further candidates and the selection reasoning for each batch.
 // ---------------------------------------------------------------------------
 export function computeProcessSuggestions(graph) {
     const suggestions = [];
@@ -264,6 +267,16 @@ export function computeProcessSuggestions(graph) {
             suggestions.push({
                 code: 'OUTBOUND_HAS_OUTGOING',
                 message: `Outbound event "${node.id}" has an outgoing edge — outbound events are terminal and must not lead anywhere else. Model the downstream step as a task instead, or split into two parallel edges from the source task.`,
+                severity: 'suggestion',
+                data: { nodeId: node.id },
+            });
+        }
+        // Sibling of OUTBOUND_HAS_OUTGOING above — an inbound event is a process
+        // entry point and must not have anything internal pointing into it.
+        if (isInboundEvent(node) && (incomingCount.get(node.id) || 0) > 0) {
+            suggestions.push({
+                code: 'INBOUND_HAS_INCOMING',
+                message: `Inbound event "${node.id}" has an incoming edge — inbound events are entry points and must not be led into by another step. Start the flow at this event instead of routing something into it.`,
                 severity: 'suggestion',
                 data: { nodeId: node.id },
             });
