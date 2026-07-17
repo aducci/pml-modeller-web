@@ -84,6 +84,10 @@ export class ProcessController {
             };
         }
     }
+    markSaved() {
+        this.state = { ...this.state, isDirty: false };
+        this.emit();
+    }
     subscribe(listener) {
         this.listeners.add(listener);
         listener(this.state);

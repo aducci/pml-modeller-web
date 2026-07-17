@@ -7,6 +7,7 @@ export declare class ProcessController {
     private layoutEngine;
     private cachedGraph;
     constructor(initialContent?: string, patternTableController?: PatternTableController);
+    markSaved(): void;
     subscribe(listener: (state: WorkspaceState) => void): () => void;
     private emit;
     private recomputeLayout;
