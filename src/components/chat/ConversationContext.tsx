@@ -1,7 +1,22 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useCallback, useRef, useState } from 'react';
+import { parsePml, computeProcessSuggestions } from 'pml-core';
 import type { PmlPatch } from 'pml-core';
+
+// Coverage-driven interview lookup (docs/FINAL/07_AI_Engine_Review_and_Enhancements.md
+// §7.5 step 3): most-severe-first ordering over computeProcessSuggestions'
+// codes. Not stored anywhere — recomputed fresh against the current PML on
+// every startInterview() call, per docs/FINAL/06_AI_Modelling_Engine.md §5's
+// "coverage is a query against the validator, not a second store" decision.
+const SUGGESTION_PRIORITY = [
+  'OUTBOUND_HAS_OUTGOING',
+  'INBOUND_HAS_INCOMING',
+  'NODE_ORPHANED',
+  'TASK_NO_ACTOR',
+  'DECISION_SINGLE_OUTCOME',
+  'IMPLICIT_PARALLEL_FORK',
+];
 
 // ---------------------------------------------------------------------------
 // Types
@@ -326,12 +341,37 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
     // If there's existing PML, analyse it
     if (pmlSnippet?.trim()) {
       dispatch({ type: 'SET_PROCESSING', payload: true });
+
+      // Coverage-driven lookup: pick the single highest-priority unresolved
+      // suggestion instead of asking the AI to re-derive "what's the gap"
+      // from scratch on an open-ended prompt — converges the interview
+      // toward one topic per turn instead of one "analyse everything" pass.
+      let targetMessage = 'Analyse this process model for completeness and quality. List any gaps or issues.';
+      try {
+        const { graph } = parsePml(pmlSnippet, { validationMode: 'loose' });
+        if (graph) {
+          const suggestions = computeProcessSuggestions(graph);
+          const topSuggestion = suggestions
+            .slice()
+            .sort((a, b) => SUGGESTION_PRIORITY.indexOf(a.code) - SUGGESTION_PRIORITY.indexOf(b.code))[0];
+          if (topSuggestion) {
+            targetMessage = `Focus on this one issue only: ${topSuggestion.message} Ask me a clarifying question about it if the fix isn't obvious from context, or propose a fix directly if it is. Don't raise any other issues this turn.`;
+            const nodeId = topSuggestion.data?.nodeId as string | undefined;
+            const node = nodeId ? graph.nodes.find((n: any) => n.id === nodeId) : undefined;
+            if (node?.actor) setFocus('actor', node.actor);
+          }
+        }
+      } catch {
+        // Fall through with the generic analysis message — a parse failure
+        // here shouldn't block the interview from starting.
+      }
+
       try {
         const response = await fetch('/api/ai/propose', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            message: 'Analyse this process model for completeness and quality. List any gaps or issues.',
+            message: targetMessage,
             pmlSnippet,
           }),
         });
