@@ -5,7 +5,7 @@
 // TODO: Split validatePmlModelInput into small helpers (tasks/events/decisions/routes/imports/edges) to keep it maintainable.
 // TODO: Revisit NODE_CANNOT_REACH_TERMINAL severity and behavior for different flowLayers/semanticRoles (main vs exception).```
 import { isInboundEvent, isOutboundEvent, } from '../normalizedGraph';
-import { getNodeDirection, isEventNodeKind, isInboundDirection } from '../nodeKinds';
+import { getNodeDirection, isEventNodeKind, isGatewayNodeKind, isInboundDirection } from '../nodeKinds';
 function emptyResult() {
     return { errors: [], warnings: [] };
 }
@@ -277,6 +277,23 @@ export function computeProcessSuggestions(graph) {
             suggestions.push({
                 code: 'INBOUND_HAS_INCOMING',
                 message: `Inbound event "${node.id}" has an incoming edge — inbound events are entry points and must not be led into by another step. Start the flow at this event instead of routing something into it.`,
+                severity: 'suggestion',
+                data: { nodeId: node.id },
+            });
+        }
+        // A non-gateway node with 2+ outgoing edges is a modelling-convention
+        // smell, not a structural error: PML's documented mechanism for genuine
+        // concurrency is an explicit `decision(AND)` gateway (whose branches all
+        // render as equally-weighted main flow — see 01_PML_Language_Specification.md
+        // §"flow classification"), not a plain task/event with multiple outgoing
+        // edges. Left implicit, flow classification treats one edge as the "main"
+        // continuation and the rest as alternates (same rule it applies to a
+        // decision's non-primary outcomes) — misleading if the branches are
+        // actually meant to happen together, and ambiguous either way to a reader.
+        if (!isGatewayNodeKind(node.type) && (outgoingCount.get(node.id) || 0) > 1) {
+            suggestions.push({
+                code: 'IMPLICIT_PARALLEL_FORK',
+                message: `"${node.id}" has ${outgoingCount.get(node.id)} outgoing edges but isn't a gateway. If these happen concurrently, model as an explicit "decision(AND)" gateway (branches render as equally-weighted main flow, not one main + alternates); if they're mutually exclusive, model as a "decision" with named outcomes.`,
                 severity: 'suggestion',
                 data: { nodeId: node.id },
             });

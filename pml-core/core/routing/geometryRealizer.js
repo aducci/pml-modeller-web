@@ -15,20 +15,37 @@ import { routeCrossLaneDownFromBottomToLeft, routeCrossLaneDownFromRightToLeft, 
 export function realizeWaypoints(portResolution, scenario, source, target, rule, context, channel, laneTopBufferPx, selectedGeometryMode) {
     const sourceGeom = calculateNodeGeometry(source);
     const targetGeom = calculateNodeGeometry(target);
-    const srcAnchor = resolveAnchorPoint(sourceGeom.bounds, portResolution.sourceSelected);
-    const tgtAnchor = resolveAnchorPoint(targetGeom.bounds, portResolution.targetSelected);
+    // Loopback waypoints manage their own channel-based rail spacing
+    // (buildLoopbackWaypoints's railOffset) — anchors stay exactly centered
+    // on the port for that path. Every other path fans multiple same-side,
+    // same-direction edges apart at the anchor itself (see resolveAnchorPoint's
+    // offset param): without this, two edges leaving the same node on the
+    // same side collapse onto an identical first segment — not a crossing
+    // (nothing to detect/nudge downstream), a literal coincident overlap,
+    // since every edge on a given side previously anchored to that side's one
+    // exact center point regardless of how many edges shared it.
+    const anchorOffset = scenario.isLoopback ? 0 : channel * ANCHOR_FAN_OUT_PX;
+    const srcAnchor = resolveAnchorPoint(sourceGeom.bounds, portResolution.sourceSelected, anchorOffset);
+    const tgtAnchor = resolveAnchorPoint(targetGeom.bounds, portResolution.targetSelected, anchorOffset);
     if (scenario.isLoopback && scenario.isSameLane) {
         return buildLoopbackWaypoints(sourceGeom.bounds, targetGeom.bounds, srcAnchor, tgtAnchor, portResolution.sourceSelected, portResolution.targetSelected, channel);
     }
     if (selectedGeometryMode) {
-        return buildCrossLaneWaypoints(sourceGeom.bounds, targetGeom.bounds, srcAnchor, tgtAnchor, portResolution.sourceSelected, portResolution.targetSelected, rule, scenario, selectedGeometryMode, channel, context, laneTopBufferPx);
+        return buildCrossLaneWaypoints(srcAnchor, tgtAnchor, portResolution.sourceSelected, portResolution.targetSelected, rule, scenario, selectedGeometryMode, channel, context, laneTopBufferPx);
     }
-    return buildStandardWaypoints(sourceGeom.bounds, targetGeom.bounds, srcAnchor, tgtAnchor, portResolution.sourceSelected, portResolution.targetSelected, rule, channel, context);
+    return buildStandardWaypoints(srcAnchor, tgtAnchor, portResolution.sourceSelected, portResolution.targetSelected, rule, channel, context);
 }
+// Small perpendicular nudge per channel unit — enough to visually separate
+// same-source/same-side edges (a node's ports each have exactly one anchor
+// point regardless of edge count), far smaller than node dimensions or
+// inter-channel spacing elsewhere (e.g. loopback's 20px rail spacing), so it
+// never competes with those for meaning. channel is 0 for the vast majority
+// of edges (see channelAllocation.ts), so this is a no-op for them.
+const ANCHOR_FAN_OUT_PX = 5;
 // ---------------------------------------------------------------------------
 // Standard (same-lane and non-modal cross-lane) waypoints
 // ---------------------------------------------------------------------------
-function buildStandardWaypoints(srcBounds, tgtBounds, srcAnchor, tgtAnchor, srcSide, tgtSide, rule, channel, context) {
+function buildStandardWaypoints(srcAnchor, tgtAnchor, srcSide, tgtSide, rule, channel, context) {
     const elbowY = resolveElbowY(rule.elbowYPolicy, srcAnchor, tgtAnchor, channel, rule.elbowYFixedValue);
     let waypoints;
     let bendType;
@@ -89,7 +106,7 @@ function buildStandardWaypoints(srcBounds, tgtBounds, srcAnchor, tgtAnchor, srcS
         waypoints = routeStandardHorizontalFirst({ src: srcAnchor, tgt: tgtAnchor }, elbowY, useMidpointBridgeY, overrideBridgeX);
         bendType = useMidpointBridgeY ? 'h-v-h' : 'h-first';
     }
-    const contract = enforceHardSideContract(srcBounds, tgtBounds, srcSide, tgtSide, waypoints);
+    const contract = enforceHardSideContract(srcAnchor, tgtAnchor, waypoints);
     validateOrthogonalWaypoints(contract.waypoints, srcSide);
     return {
         waypoints: contract.waypoints,
@@ -103,7 +120,7 @@ function buildStandardWaypoints(srcBounds, tgtBounds, srcAnchor, tgtAnchor, srcS
 // ---------------------------------------------------------------------------
 // Cross-lane geometry modes
 // ---------------------------------------------------------------------------
-function buildCrossLaneWaypoints(srcBounds, tgtBounds, srcAnchor, tgtAnchor, srcSide, tgtSide, rule, scenario, mode, channel, context, laneTopBufferPx) {
+function buildCrossLaneWaypoints(srcAnchor, tgtAnchor, srcSide, tgtSide, rule, scenario, mode, channel, context, laneTopBufferPx) {
     let waypoints;
     let bendType;
     switch (mode) {
@@ -163,7 +180,7 @@ function buildCrossLaneWaypoints(srcBounds, tgtBounds, srcAnchor, tgtAnchor, src
             throw new Error(`Unsupported cross-lane geometry mode: ${mode}`);
         }
     }
-    const contract = enforceHardSideContract(srcBounds, tgtBounds, srcSide, tgtSide, waypoints);
+    const contract = enforceHardSideContract(srcAnchor, tgtAnchor, waypoints);
     validateOrthogonalWaypoints(contract.waypoints, srcSide);
     return {
         waypoints: contract.waypoints,
@@ -211,7 +228,7 @@ function buildLoopbackWaypoints(srcBounds, tgtBounds, srcAnchor, tgtAnchor, srcS
         ];
         bendType = 'h-first';
     }
-    const contract = enforceHardSideContract(srcBounds, tgtBounds, srcSide, tgtSide, waypoints);
+    const contract = enforceHardSideContract(srcAnchor, tgtAnchor, waypoints);
     validateOrthogonalWaypoints(contract.waypoints, srcSide);
     return {
         waypoints: contract.waypoints,
@@ -247,15 +264,31 @@ function resolveElbowY(policy, srcAnchor, tgtAnchor, channel, fixedValue) {
 // ---------------------------------------------------------------------------
 // Anchor resolution and hard-side contract
 // ---------------------------------------------------------------------------
-function resolveAnchorPoint(bounds, side) {
-    return rectAnchors(bounds)[side];
+/**
+ * `offset` nudges the anchor along the side's perpendicular axis (x for
+ * top/bottom, y for left/right) — used to fan out multiple edges sharing
+ * the same (node, side), which otherwise all resolve to this one exact
+ * center point regardless of how many edges touch that side.
+ */
+function resolveAnchorPoint(bounds, side, offset = 0) {
+    const base = rectAnchors(bounds)[side];
+    if (offset === 0)
+        return base;
+    return (side === 'top' || side === 'bottom')
+        ? { x: base.x + offset, y: base.y }
+        : { x: base.x, y: base.y + offset };
 }
-function enforceHardSideContract(srcBounds, tgtBounds, srcSide, tgtSide, waypoints) {
+/**
+ * Validates the route's first/last waypoint against the exact anchor points
+ * the caller resolved (and used to build the route) — not re-derived from
+ * bounds+side here, so any per-edge offset baked into those anchors (see
+ * resolveAnchorPoint's offset param) is honored instead of being snapped
+ * back to a bare, unoffset center point.
+ */
+function enforceHardSideContract(expectedSrc, expectedTgt, waypoints) {
     if (waypoints.length < 2)
         return { waypoints, corrected: false };
     const corrected = [...waypoints];
-    const expectedSrc = resolveAnchorPoint(srcBounds, srcSide);
-    const expectedTgt = resolveAnchorPoint(tgtBounds, tgtSide);
     let changed = false;
     if (corrected[0].x !== expectedSrc.x || corrected[0].y !== expectedSrc.y) {
         corrected[0] = expectedSrc;
