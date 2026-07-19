@@ -5,10 +5,12 @@ import {
   Bot, PanelRightClose, PanelRightOpen,
   MessageSquare, Lightbulb, FileCode, X,
 } from 'lucide-react';
-import { applyPatches, generatePml } from 'pml-core';
 import type { ProcessController, WorkspaceState } from 'pml-core';
 import { ChatPanel } from './ChatPanel';
-import { ConversationProvider, useConversation } from './ConversationContext';
+import { ConversationProvider, useConversation, findingKey, type TurnMode } from './ConversationContext';
+import { FindingCard } from './FindingCard';
+import { commit as controlPlaneCommit } from '@/lib/ai/controlPlane';
+import { findUnresolvedIssues } from '@/lib/ai/findings';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -24,7 +26,7 @@ interface Props {
 // ---------------------------------------------------------------------------
 
 function AiAssistantContent({ controller, state }: Props) {
-  const { sendMessage, focusType, focusId } = useConversation();
+  const { sendMessage, focusType, focusId, highlightedNodeIds, dismissedFindingKeys } = useConversation();
   const [showPmlSource, setShowPmlSource] = useState(false);
   const [showObservations, setShowObservations] = useState(true);
 
@@ -34,28 +36,50 @@ function AiAssistantContent({ controller, state }: Props) {
   // derived fresh from the current focus every render, never persisted.
   // Only 'actor' focus has a direct canvas primitive today; decision/flow-path
   // scoping would need a new equivalent and is left for a follow-up.
+  //
+  // highlightNodeIds is the sibling primitive for Finding evidence
+  // (docs/FINAL/13_Phase_E_Findings_Drive_Canvas_Plan.md E.1) — independent
+  // of focusType/focusId, since a finding's evidence set is not the same
+  // concept as the AI's reasoning scope (an actor/decision/flow-path
+  // window). Both can be active at once; buildNodeRenderModels.ts composes
+  // them (a node needs to pass both filters to render at full opacity).
   React.useEffect(() => {
     controller.updateViewPanel({
       viewAsActor: focusType === 'actor' && focusId ? focusId : null,
+      highlightNodeIds: highlightedNodeIds,
     });
-  }, [controller, focusType, focusId]);
+  }, [controller, focusType, focusId, highlightedNodeIds]);
 
   const pmlSnippet = state.pmlContent || '';
   const nodeCount = state.layoutResult?.nodes?.filter((n: any) => n.x !== undefined).length ?? 0;
   const hasModel = nodeCount > 0;
 
-  const handleProposalAccept = useCallback((patches: any[]): { success: boolean; error?: string } => {
+  const handleProposalAccept = useCallback((proposalId: string, mode: TurnMode, patches: any[], turnId: string, originalPml: string): { success: boolean; error?: string } => {
     if (!patches.length || !state.pmlContent) {
       return { success: false, error: 'No patches to apply' };
     }
 
     try {
-      const result = applyPatches(state.pmlContent, patches);
-      if (result.success && result.pml) {
-        controller.setPmlContent(result.pml);
-        return { success: true };
-      }
-      return { success: false, error: result.error || 'Failed to apply changes' };
+      // Routes through the control plane (12_AI_Layer_Reconciliation_and_Build_Plan.md
+      // Phase C) instead of calling applyPatches() directly — authorize()
+      // re-checks the mode permission table and validate() dry-runs the
+      // patch before controller.setPmlContent (the real document mutation)
+      // is ever called. Both still ultimately call pml-core's existing
+      // applyPatches(); this is composition, not a new validator. turnId
+      // (Phase D) lets commit()'s emitted events attribute back to the turn
+      // that produced this proposal, not just the proposal id. originalPml
+      // (E.4's reconciliation protocol) lets commit() detect whether the
+      // user made a conflicting direct edit while this proposal sat pending.
+      const outcome = controlPlaneCommit({
+        proposalId,
+        mode,
+        currentPml: state.pmlContent,
+        patches,
+        onCommit: (newPml) => controller.setPmlContent(newPml),
+        turnId,
+        originalPml,
+      });
+      return outcome;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to apply changes';
       console.error('Error applying patches:', err);
@@ -63,42 +87,16 @@ function AiAssistantContent({ controller, state }: Props) {
     }
   }, [state.pmlContent, controller]);
 
-  // Compute initial observations
-  const observations = React.useMemo(() => {
-    const obs: Array<{ type: string; severity: string; label: string; description: string }> = [];
-    if (!hasModel) return obs;
-
-    const nodes: any[] = state.layoutResult?.nodes ?? [];
-    const edges: any[] = state.layoutResult?.edges ?? [];
-
-    // Check for unassigned nodes
-    const unassigned = nodes.filter((n: any) => !n.actor && n.type === 'task');
-    if (unassigned.length > 0) {
-      obs.push({
-        type: 'gap', severity: 'warning', label: 'Unassigned tasks',
-        description: `${unassigned.length} task${unassigned.length > 1 ? 's' : ''} ha${unassigned.length > 1 ? 've' : 's'} no actor assigned.`,
-      });
-    }
-
-    // Check for missing outbound event
-    const hasOutbound = nodes.some((n: any) => n.type === 'event' && n.metadata?.direction === 'outbound');
-    if (!hasOutbound) {
-      obs.push({
-        type: 'quality', severity: 'warning', label: 'No outbound event',
-        description: 'Your process has no defined end. Consider adding an outbound event.',
-      });
-    }
-
-    // Check node count
-    if (nodeCount <= 2) {
-      obs.push({
-        type: 'gap', severity: 'info', label: 'Simple process',
-        description: 'Only 2 nodes identified. You may want to add more detail.',
-      });
-    }
-
-    return obs;
-  }, [state.layoutResult, hasModel, nodeCount]);
+  // Real findings from the deterministic engine (computeProcessSuggestions
+  // via findUnresolvedIssues), not the three hand-rolled ad-hoc checks this
+  // used to run inline against raw layoutResult.nodes — that duplicated
+  // exactly what computeProcessSuggestions already does more completely
+  // (e.g. TASK_NO_ACTOR alone supersedes the old "unassigned tasks" check).
+  // See docs/FINAL/13_Phase_E_Findings_Drive_Canvas_Plan.md E.2, step 4.
+  const findings = React.useMemo(() => {
+    if (!hasModel) return [];
+    return findUnresolvedIssues(pmlSnippet).filter((f) => !dismissedFindingKeys.has(findingKey(f)));
+  }, [pmlSnippet, hasModel, dismissedFindingKeys]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', overflow: 'hidden' }}>
@@ -144,14 +142,14 @@ function AiAssistantContent({ controller, state }: Props) {
           }}
         >
           <Lightbulb size={13} />
-          {observations.length > 0 && (
+          {findings.length > 0 && (
             <span style={{
               width: 16, height: 16, borderRadius: '50%',
               background: '#F59E0B', color: '#fff',
               fontSize: 9, fontWeight: 700, display: 'flex',
               alignItems: 'center', justifyContent: 'center',
             }}>
-              {observations.length}
+              {findings.length}
             </span>
           )}
         </button>
@@ -164,8 +162,8 @@ function AiAssistantContent({ controller, state }: Props) {
           padding: '4px 12px', borderBottom: '1px solid #E5E7EB',
           background: '#F9FAFB', fontSize: 11, color: '#6B7280', flexShrink: 0,
         }}>
-          <span>Quality: <span style={{ fontWeight: 600, color: observations.length === 0 ? '#059669' : '#F59E0B' }}>
-            {observations.length === 0 ? '✓ Complete' : `${observations.length} issue${observations.length > 1 ? 's' : ''}`}
+          <span>Quality: <span style={{ fontWeight: 600, color: findings.length === 0 ? '#059669' : '#F59E0B' }}>
+            {findings.length === 0 ? '✓ Complete' : `${findings.length} issue${findings.length > 1 ? 's' : ''}`}
           </span></span>
         </div>
       )}
@@ -177,27 +175,18 @@ function AiAssistantContent({ controller, state }: Props) {
           flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column',
           position: 'relative', overflow: 'hidden',
         }}>
-          {/* Observations banner */}
-          {showObservations && observations.length > 0 && (
+          {/* Findings panel — real Finding cards (computeProcessSuggestions
+              via findUnresolvedIssues), each independently actionable
+              (Show in model / Explain / Suggest fixes / Dismiss), not the
+              old static text-pill "observations" banner. */}
+          {showObservations && findings.length > 0 && (
             <div style={{
               padding: '8px 12px', borderBottom: '1px solid #E5E7EB',
-              background: '#FFFBEB', display: 'flex', flexWrap: 'wrap', gap: 6,
+              background: '#FEFCE8', overflowY: 'auto', maxHeight: '40%',
               flexShrink: 0,
             }}>
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#92400E', width: '100%', marginBottom: 2 }}>
-                <Lightbulb size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                Model observations
-              </span>
-              {observations.map((obs, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', gap: 4,
-                  padding: '3px 8px', borderRadius: 4,
-                  background: obs.severity === 'warning' ? '#FEF2C7' : '#EFF6FF',
-                  border: '1px solid', borderColor: obs.severity === 'warning' ? '#FDE68A' : '#BFDBFE',
-                  fontSize: 11, color: obs.severity === 'warning' ? '#92400E' : '#1E40AF',
-                }}>
-                  {obs.label}
-                </div>
+              {findings.map((finding, i) => (
+                <FindingCard key={findingKey(finding) + i} finding={finding} />
               ))}
             </div>
           )}

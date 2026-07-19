@@ -11,7 +11,7 @@
  *   { pmlSnippet: string, focusType?: string, focusId?: string }
  *
  * Response:
- *   { explanation: string, patches: PmlPatchOp[], observations: Obs[], confidence: 'high'|'medium'|'low' }
+ *   { explanation: string, patches: PmlPatchOp[], confidence: 'high'|'medium'|'low', question?: ClarifyingQuestion }
  */
 
 import { NextRequest } from 'next/server';
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   try {
     if (!isAiAvailable()) {
       return new Response(
-        JSON.stringify({ error: 'AI is not configured. Set ANTHROPIC_API_KEY.', patches: [], observations: [] }),
+        JSON.stringify({ error: 'AI is not configured. Set ANTHROPIC_API_KEY.', patches: [] }),
         { status: 503, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
     if (!pmlSnippet.trim()) {
       return new Response(
-        JSON.stringify({ error: 'PML snippet is required', patches: [], observations: [] }),
+        JSON.stringify({ error: 'PML snippet is required', patches: [] }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -51,7 +51,6 @@ export async function POST(req: NextRequest) {
         error: 'AI resolution failed',
         detail: err instanceof Error ? err.message : 'Unknown error',
         patches: [],
-        observations: [],
       }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

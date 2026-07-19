@@ -102,6 +102,9 @@ export async function POST(req: NextRequest) {
         message: s.message,
         nodeId: s.data?.nodeId as string | undefined,
         edgeId: s.data?.edgeId as string | undefined,
+        category: s.category,
+        status: s.status,
+        evidence: s.evidence,
       }));
     } catch (err) {
       console.warn('Graph windowing/suggestions failed, falling back to raw snippet:', err);

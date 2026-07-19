@@ -4,14 +4,16 @@ import React from 'react';
 import { Bot, User, Sparkles } from 'lucide-react';
 import type { ConversationMessage as MessageType } from './ConversationContext';
 import { PatchProposalCard } from './PatchProposalCard';
+import { QuestionCard } from './QuestionCard';
 
 interface Props {
   message: MessageType;
   onAcceptProposal: (id: string) => void;
   onRejectProposal: (id: string) => void;
+  pmlSnippet?: string;
 }
 
-export function ConversationMessage({ message, onAcceptProposal, onRejectProposal }: Props) {
+export function ConversationMessage({ message, onAcceptProposal, onRejectProposal, pmlSnippet }: Props) {
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
 
@@ -62,6 +64,11 @@ export function ConversationMessage({ message, onAcceptProposal, onRejectProposa
             onReject={onRejectProposal}
           />
         ))}
+
+        {/* Clarifying question */}
+        {message.question && (
+          <QuestionCard messageId={message.id} question={message.question} pmlSnippet={pmlSnippet} />
+        )}
       </div>
     </div>
   );

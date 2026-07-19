@@ -39,6 +39,28 @@ export interface ProcessSuggestion {
   message: string;
   nodeId?: string;
   edgeId?: string;
+  /**
+   * Rule taxonomy and lifecycle, mirrored from pml-core's ProcessDiagnostic
+   * (docs/FINAL/12_AI_Layer_Reconciliation_and_Build_Plan.md Phase A). Not
+   * yet surfaced in formatSuggestions()'s compact prompt line — category is
+   * for future filtering/prioritisation (e.g. per-mode scoping, §3.1 of
+   * 11_AI_Conversational_Layer_Discussion.md), and status will matter once
+   * a finding can be dismissed/resolved independent of the AI proposing a
+   * fix. Carried through now so the shape doesn't need a second migration.
+   */
+  category?: 'structural' | 'semantic' | 'completeness' | 'risk' | 'quality';
+  status?: 'open' | 'accepted' | 'dismissed' | 'resolved' | 'not-applicable';
+  /**
+   * All nodes/edges this finding is actually about — drives canvas
+   * highlighting directly (docs/FINAL/13_Phase_E_Findings_Drive_Canvas_Plan.md
+   * E.1) via ConversationContext's highlightedNodeIds state, independent of
+   * the single-id nodeId/edgeId fields above (kept for the existing prompt
+   * formatting in formatSuggestions()).
+   */
+  evidence?: {
+    nodeIds: string[];
+    edgeIds: string[];
+  };
 }
 
 // Mirrors the "one gap per turn" doctrine (02_PML_AI_Skill.md) — the AI
@@ -132,7 +154,6 @@ export async function resolveAmbiguity(
     return {
       explanation: 'Failed to analyse model',
       patches: [],
-      observations: [],
       confidence: 'low',
     };
   }

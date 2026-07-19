@@ -1,15 +1,16 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Bot, Send, Trash2, AlertCircle } from 'lucide-react';
-import { useConversation } from './ConversationContext';
+import { Bot, Send, Trash2, AlertCircle, Compass } from 'lucide-react';
+import { useConversation, type TurnMode } from './ConversationContext';
 import { ConversationMessage } from './ConversationMessage';
+import { emit } from '@/lib/ai/eventLog';
 
 interface Props {
   /** Current PML snippet to provide as context for AI queries */
   pmlSnippet?: string;
-  /** Called when the user accepts a proposal — receives the patches, returns whether the apply actually succeeded */
-  onProposalAccept?: (patches: any[]) => { success: boolean; error?: string };
+  /** Called when the user accepts a proposal — receives the proposal id, mode, patches, the turnId that produced it, and the PML the patches were generated against (for reconciliation); returns whether the commit actually succeeded */
+  onProposalAccept?: (proposalId: string, mode: TurnMode, patches: any[], turnId: string, originalPml: string) => { success: boolean; error?: string };
   style?: React.CSSProperties;
 }
 
@@ -19,6 +20,11 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  // Explicit mode toggle (11_...md §3.1/§3.2) — Explore is opt-in per turn
+  // rather than a separate persistent screen, since a user typically wants
+  // to switch back to editing mid-conversation. Point-and-edit remains the
+  // default for free-text input, unchanged from today's behavior.
+  const [exploreMode, setExploreMode] = useState(false);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -39,9 +45,10 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
 
   const handleSend = useCallback(() => {
     if (!input.trim() || state.isProcessing) return;
-    sendMessage(input.trim(), pmlSnippet);
+    const mode: TurnMode = exploreMode ? 'explore' : 'point-edit';
+    sendMessage(input.trim(), pmlSnippet, { mode });
     setInput('');
-  }, [input, state.isProcessing, sendMessage, pmlSnippet]);
+  }, [input, state.isProcessing, sendMessage, pmlSnippet, exploreMode]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -61,7 +68,7 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
     const proposal = msg?.patches?.find(p => p.id === proposalId);
     if (!proposal || proposal.patches.length === 0) return;
 
-    const result = onProposalAccept?.(proposal.patches);
+    const result = onProposalAccept?.(proposalId, proposal.mode, proposal.patches, proposal.turnId, proposal.originalPml);
     if (!result || result.success) {
       acceptProposal(proposalId);
     } else {
@@ -70,8 +77,18 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
   }, [acceptProposal, failProposal, state.messages, onProposalAccept]);
 
   const handleReject = useCallback((proposalId: string) => {
+    const msg = state.messages.find(m => m.patches?.some(p => p.id === proposalId));
+    const proposal = msg?.patches?.find(p => p.id === proposalId);
+    // A user-chosen Reject is a resolved turn, not a failure — records
+    // UserRejected + TurnComplete (not TurnFailed) so acceptance-rate
+    // metrics (11_...md §8) can distinguish "AI got it wrong" from
+    // "the model successfully completed and the answer was no."
+    if (proposal) {
+      emit({ type: 'UserRejected', turnId: proposal.turnId, mode: proposal.mode, proposalId, timestamp: Date.now() });
+      emit({ type: 'TurnComplete', turnId: proposal.turnId, mode: proposal.mode, timestamp: Date.now() });
+    }
     rejectProposal(proposalId);
-  }, [rejectProposal]);
+  }, [rejectProposal, state.messages]);
 
   // Phase 3 entry points (docs/FINAL/07_AI_Engine_Review_and_Enhancements.md
   // §7.4 step 2) — startInterview() already had the right shape (welcome
@@ -83,7 +100,11 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
   }, [startInterview, pmlSnippet]);
 
   const handleReviewModel = useCallback(() => {
-    sendMessage('Review this process model for completeness and quality. Point out the most significant gap first.', pmlSnippet);
+    sendMessage(
+      'Review this process model for completeness and quality. Point out the most significant gap first.',
+      pmlSnippet,
+      { mode: 'review', source: 'chat' }
+    );
   }, [sendMessage, pmlSnippet]);
 
   const hasMessages = state.messages.length > 0;
@@ -184,6 +205,7 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
             message={msg}
             onAcceptProposal={handleAccept}
             onRejectProposal={handleReject}
+            pmlSnippet={pmlSnippet}
           />
         ))}
 
@@ -237,13 +259,31 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
         display: 'flex', gap: 8, padding: '10px 14px',
         borderTop: '1px solid #E5E7EB', background: '#fff',
       }}>
+        {/* Explore toggle (11_...md §3.1) — when on, this turn is read-only:
+            the AI can explain/highlight but structurally cannot propose a
+            patch (enforced in ConversationContext.sendMessage via
+            canModePropose, not just by prompt wording). */}
+        <button
+          onClick={() => setExploreMode(v => !v)}
+          title={exploreMode ? 'Explore mode: AI cannot change the model this turn' : 'Switch to Explore mode (read-only)'}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 36, height: 36, borderRadius: 8,
+            border: '1px solid', borderColor: exploreMode ? '#6366F1' : '#E5E7EB',
+            background: exploreMode ? '#EEF2FF' : '#fff',
+            color: exploreMode ? '#4338CA' : '#9CA3AF',
+            cursor: 'pointer', flexShrink: 0,
+          }}
+        >
+          <Compass size={15} />
+        </button>
         <input
           ref={inputRef}
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask about your process model..."
+          placeholder={exploreMode ? 'Ask a question (read-only)...' : 'Ask about your process model...'}
           disabled={state.isProcessing}
           style={{
             flex: 1, padding: '8px 12px', borderRadius: 8,

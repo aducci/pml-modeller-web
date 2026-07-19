@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { Check, X, Sparkles, AlertTriangle, HelpCircle } from 'lucide-react';
-import type { PatchProposal } from './ConversationContext';
+import { useConversation, type PatchProposal } from './ConversationContext';
+import { extractAffectedNodeIds } from '@/lib/ai/affectedNodes';
 
 interface Props {
   proposal: PatchProposal;
@@ -17,6 +18,30 @@ const confidenceConfig = {
 };
 
 export function PatchProposalCard({ proposal, onAccept, onReject }: Props) {
+  const { setHighlightedNodeIds } = useConversation();
+
+  // Minimal preview effect (docs/FINAL/13_Phase_E_Findings_Drive_Canvas_Plan.md
+  // E.4): while this proposal is pending, spotlight the nodes it would
+  // touch using the same highlightNodeIds primitive E.1 built for Finding
+  // evidence — not true ghost nodes/edges (that needs new canvas rendering
+  // primitives, out of scope for this pass). Cleared once the proposal
+  // resolves (Accept/Reject) or the card unmounts, so it never lingers on a
+  // stale selection.
+  // Depend on proposal.id + status only, not proposal.patches — the patches
+  // array's *contents* for a given proposal never change after creation, but
+  // its reference can (e.g. an unrelated Accept/Reject elsewhere in the
+  // conversation previously rebuilt every message's patches array; that's
+  // fixed now too, but this effect shouldn't re-run on reference churn
+  // regardless of what the reducer does elsewhere — id+status is the actual
+  // semantic trigger for "should this card be highlighting right now".
+  React.useEffect(() => {
+    if (proposal.status !== 'pending') return;
+    const affected = extractAffectedNodeIds(proposal.patches);
+    if (affected.length > 0) setHighlightedNodeIds(affected);
+    return () => setHighlightedNodeIds(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proposal.id, proposal.status, setHighlightedNodeIds]);
+
   if (proposal.status === 'failed') {
     return (
       <div style={{
@@ -34,7 +59,14 @@ export function PatchProposalCard({ proposal, onAccept, onReject }: Props) {
   }
 
   if (proposal.status !== 'pending') {
-    const statusLabel = proposal.status === 'applied' ? 'Applied' : 'Rejected';
+    // 'superseded' (Phase E reconciliation, not produced anywhere yet) reads
+    // as its own label rather than falling into the generic "Rejected" case
+    // — a proposal superseded by a conflicting direct user edit is a
+    // different outcome from the user explicitly clicking Reject.
+    const statusLabel =
+      proposal.status === 'applied' ? 'Applied'
+      : proposal.status === 'superseded' ? 'Superseded by a manual edit'
+      : 'Rejected';
     const statusColor = proposal.status === 'applied' ? '#059669' : '#9CA3AF';
     return (
       <div style={{
