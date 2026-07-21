@@ -12,6 +12,12 @@ import { deepMerge } from '../core/deepMerge';
 // Raised from 1.618 (golden ratio) to pin the diagram closer to the
 // top-left corner rather than leaving a wide, near-centered gutter.
 const FIT_VIEW_GOLDEN_RATIO = 4;
+// Extra leftward pull beyond FIT_VIEW_GOLDEN_RATIO's margin shrink — applied
+// as a straight screen-pixel offset (~96dpi, ~37.8px/cm) rather than a
+// further ratio, since "closer to the corner" needed a bigger horizontal
+// nudge than vertical. Vertical shift is half the horizontal one.
+const FIT_VIEW_EXTRA_LEFT_PX = 113; // ~3cm at 96dpi
+const FIT_VIEW_EXTRA_UP_PX = FIT_VIEW_EXTRA_LEFT_PX / 2;
 export const ProcessCanvasView = ({ state, onZoom, onPan, onSetViewport, onSelect, onDoubleClickElement, onResetView, onToggleLanes, onToggleLaneMode, viewAsActor, highlightNodeIds, flowVisibility, connectorStyle, curtainsOn = true, }) => {
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const containerRef = useRef(null);
@@ -53,8 +59,8 @@ export const ProcessCanvasView = ({ state, onZoom, onPan, onSetViewport, onSelec
         const margin = viewport.fitMarginPx;
         const zoom = Math.min((vw - margin * 2) / fullW, (vh - margin * 2) / fullH, viewport.fitMaxZoom);
         const topLeftMargin = margin / FIT_VIEW_GOLDEN_RATIO;
-        const panX = topLeftMargin;
-        const panY = topLeftMargin;
+        const panX = topLeftMargin - FIT_VIEW_EXTRA_LEFT_PX;
+        const panY = topLeftMargin - FIT_VIEW_EXTRA_UP_PX;
         return { zoom, panX, panY };
     }, [dimensions]);
     const fitToView = useCallback(() => {
