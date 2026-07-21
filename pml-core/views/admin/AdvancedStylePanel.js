@@ -2,7 +2,7 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useCallback, useMemo } from 'react';
 import { DEFAULT_PROCESS_THEME } from '../../core/styling/defaultProcessTheme';
-import { deepMerge } from '../../core/deepMerge';
+import { resolveTheme } from '../../core/styling/resolveTheme';
 import { ROUTING_TYPE_LABELS } from '../../core/routing/routingRuleDefinition';
 import { Field, Section, Num, Select } from './controls';
 const ANCHOR_OPTIONS = [
@@ -38,7 +38,7 @@ function setPath(obj, path, value) {
  * a clickable element.
  */
 export const AdvancedStylePanel = ({ overrides, onChange }) => {
-    const theme = useMemo(() => deepMerge(DEFAULT_PROCESS_THEME, overrides), [overrides]);
+    const theme = useMemo(() => resolveTheme(overrides), [overrides]);
     const set_ = useCallback((path, value) => {
         onChange(setPath(overrides, path, value));
     }, [overrides, onChange]);

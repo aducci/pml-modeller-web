@@ -3,9 +3,8 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import ProcessCanvas from '../core/ProcessCanvas';
 import { CanvasToolbar } from './CanvasToolbar';
-import { DEFAULT_PROCESS_THEME } from '../core/styling/defaultProcessTheme';
 import { DEFAULT_LAYOUT_SETTINGS } from '../core/processLayout/layoutTypes';
-import { deepMerge } from '../core/deepMerge';
+import { resolveTheme } from '../core/styling/resolveTheme';
 // Asymmetric top-left margin on fit-to-view (vs. the even margin used for the
 // zoom calculation) reads better than a centered fit — purely an aesthetic
 // constant, not something a user needs to tune, so it stays a literal here.
@@ -131,7 +130,7 @@ export const ProcessCanvasView = ({ state, onZoom, onPan, onSetViewport, onSelec
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [state.zoom, onZoom, onResetView, fitToView, onToggleLanes, zoomBounds]);
-    const resolvedTheme = useMemo(() => deepMerge(DEFAULT_PROCESS_THEME, state.themeOverrides), [state.themeOverrides]);
+    const resolvedTheme = useMemo(() => resolveTheme(state.themeOverrides), [state.themeOverrides]);
     const handleExportSvg = useCallback(() => {
         const svg = containerRef.current?.querySelector('svg');
         if (!svg)

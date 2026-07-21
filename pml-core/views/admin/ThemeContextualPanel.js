@@ -2,8 +2,7 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React, { useCallback } from 'react';
 import { MousePointerClick } from 'lucide-react';
-import { DEFAULT_PROCESS_THEME } from '../../core/styling/defaultProcessTheme';
-import { deepMerge } from '../../core/deepMerge';
+import { resolveTheme } from '../../core/styling/resolveTheme';
 import { Field, ColorInput, Num, Select, Toggle } from './controls';
 const DASH_OPTIONS = [
     { value: '', label: 'Solid' },
@@ -27,7 +26,7 @@ function setPath(obj, path, value) {
  * "Advanced Style" tab instead.
  */
 export const ThemeContextualPanel = ({ target, overrides, onChange }) => {
-    const theme = React.useMemo(() => deepMerge(DEFAULT_PROCESS_THEME, overrides), [overrides]);
+    const theme = React.useMemo(() => resolveTheme(overrides), [overrides]);
     const set_ = useCallback((path, value) => {
         onChange(setPath(overrides, path, value));
     }, [overrides, onChange]);

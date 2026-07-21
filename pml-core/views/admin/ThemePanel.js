@@ -5,6 +5,7 @@ import { DEFAULT_PROCESS_THEME } from '../../core/styling/defaultProcessTheme';
 import { ResetBtn } from './controls';
 import { ThemePreviewCanvas } from './ThemePreviewCanvas';
 import { ThemeContextualPanel } from './ThemeContextualPanel';
+import { ThemeColorsPanel } from './ThemeColorsPanel';
 import { resolveThemeSelectionTarget } from './themeSelectionTarget';
 /**
  * Theme tab — a live preview on the left, and a right-hand editor scoped to
@@ -22,7 +23,7 @@ export const ThemePanel = ({ overrides, onChange }) => {
         setSelected({ type, id });
     }, []);
     const target = selected && previewState ? resolveThemeSelectionTarget(selected.type, selected.id, previewState) : null;
-    return (_jsxs("div", { children: [_jsxs("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }, children: [_jsxs("div", { children: [_jsx("div", { style: { fontSize: 15, fontWeight: 700, color: '#111827', letterSpacing: '-0.01em' }, children: "Theme & Appearance" }), _jsxs("div", { style: { fontSize: 12, color: '#6B7280', marginTop: 2 }, children: ["Editing: ", _jsx("span", { style: { fontWeight: 500, color: '#374151' }, children: DEFAULT_PROCESS_THEME.name }), " \u2014 session only"] })] }), _jsx(ResetBtn, { onClick: resetAll })] }), _jsxs("div", { style: { display: 'flex', gap: 16, height: 480 }, children: [_jsxs("div", { style: {
+    return (_jsxs("div", { children: [_jsxs("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }, children: [_jsxs("div", { children: [_jsx("div", { style: { fontSize: 15, fontWeight: 700, color: '#111827', letterSpacing: '-0.01em' }, children: "Theme & Appearance" }), _jsxs("div", { style: { fontSize: 12, color: '#6B7280', marginTop: 2 }, children: ["Editing: ", _jsx("span", { style: { fontWeight: 500, color: '#374151' }, children: DEFAULT_PROCESS_THEME.name }), " \u2014 session only"] })] }), _jsx(ResetBtn, { onClick: resetAll })] }), _jsx(ThemeColorsPanel, { overrides: overrides, onChange: onChange }), _jsxs("div", { style: { display: 'flex', gap: 16, height: 480 }, children: [_jsxs("div", { style: {
                             flex: '1 1 55%', minWidth: 0, borderRadius: 10, border: '1px solid #E5E7EB',
                             background: '#fff', overflow: 'hidden', position: 'relative',
                         }, children: [_jsx("div", { style: {
