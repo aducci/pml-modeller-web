@@ -5,10 +5,18 @@ interface FieldProps {
     children: React.ReactNode;
 }
 export declare const Field: React.FC<FieldProps>;
-export declare const Section: React.FC<{
+interface SectionProps {
     title: string;
     children: React.ReactNode;
-}>;
+    /** DOM id + scroll-margin, so a section can be scrolled into view (e.g.
+     *  clicking an element in a live preview) without covering it behind a
+     *  sticky header. */
+    id?: string;
+    /** Brief highlight ring shown right after being scrolled to via a preview
+     *  click — cleared automatically, not a persistent "selected" state. */
+    highlighted?: boolean;
+}
+export declare const Section: React.FC<SectionProps>;
 interface NumProps {
     value: number;
     onChange: (v: number) => void;
