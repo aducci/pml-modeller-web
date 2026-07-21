@@ -4,14 +4,17 @@ import { useEffect, useRef, useState } from 'react';
 import { ProcessController } from '../../controllers/ProcessController';
 import { ProcessCanvasView } from '../ProcessCanvasView';
 import { THEME_PREVIEW_PML } from '../../core/styling/themePreviewModel';
-export const ThemePreviewCanvas = ({ overrides, onSelectElement }) => {
+export const ThemePreviewCanvas = ({ overrides, onSelectElement, onStateChange }) => {
     const controllerRef = useRef();
     if (!controllerRef.current) {
         controllerRef.current = new ProcessController(THEME_PREVIEW_PML);
     }
     const controller = controllerRef.current;
     const [state, setState] = useState(null);
-    useEffect(() => controller.subscribe(setState), [controller]);
+    useEffect(() => controller.subscribe((s) => {
+        setState(s);
+        onStateChange?.(s);
+    }), [controller, onStateChange]);
     // Push the admin panel's live overrides into this dedicated controller
     // every time they change — this is the only thing that ever changes here;
     // the underlying document (THEME_PREVIEW_PML) is fixed for the session.

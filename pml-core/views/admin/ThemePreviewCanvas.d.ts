@@ -1,5 +1,5 @@
 import React from 'react';
-import { SelectedElement } from '../../types';
+import { WorkspaceState, SelectedElement } from '../../types';
 /**
  * Live preview canvas for the admin Theme panel — a small, fixed sample
  * model (THEME_PREVIEW_PML) rendered through the same ProcessCanvasView the
@@ -15,6 +15,10 @@ export interface ThemePreviewCanvasProps {
     /** Fired when the user clicks a node/lane/edge in the preview, so the host
      *  panel can scroll/expand the matching form section. */
     onSelectElement?: (type: SelectedElement['type'], id: string) => void;
+    /** Fired on every state update — lets the host resolve a click into a
+     *  ThemeSelectionTarget (needs layoutResult/graphEdges to know a node's
+     *  type/direction, a lane's label, an edge's loop/cross-lane-ness). */
+    onStateChange?: (state: WorkspaceState) => void;
 }
 export declare const ThemePreviewCanvas: React.FC<ThemePreviewCanvasProps>;
 //# sourceMappingURL=ThemePreviewCanvas.d.ts.map

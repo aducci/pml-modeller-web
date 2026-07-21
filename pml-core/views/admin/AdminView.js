@@ -1,9 +1,10 @@
 'use client';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from 'react';
-import { ArrowLeft, BookOpen, Settings, Palette, GitBranch, Map, ExternalLink } from 'lucide-react';
+import { ArrowLeft, BookOpen, Settings, Palette, SlidersHorizontal, GitBranch, Map, ExternalLink } from 'lucide-react';
 import { LayoutRulesPanel } from './LayoutRulesPanel';
 import { ThemePanel } from './ThemePanel';
+import { AdvancedStylePanel } from './AdvancedStylePanel';
 import { PatternTablePanel } from './PatternTablePanel';
 import { RoutingTypesPanel } from './RoutingTypesPanel';
 import { RoutingRulesPanel } from './RoutingRulesPanel';
@@ -13,6 +14,7 @@ const TABS = [
     { id: 'patterns', label: 'Patterns', icon: _jsx(GitBranch, { size: 14 }), group: 'Routing' },
     { id: 'layout', label: 'Layout', icon: _jsx(Settings, { size: 14 }), group: 'Config' },
     { id: 'theme', label: 'Theme', icon: _jsx(Palette, { size: 14 }), group: 'Config' },
+    { id: 'advanced-style', label: 'Advanced Style', icon: _jsx(SlidersHorizontal, { size: 14 }), group: 'Config' },
 ];
 export const AdminView = ({ controller, patternTableController, routingRulesController, state, onBack }) => {
     const [activeTab, setActiveTab] = useState('theme');
@@ -28,7 +30,7 @@ export const AdminView = ({ controller, patternTableController, routingRulesCont
                                             color: activeTab === tab.id ? '#4338CA' : '#374151',
                                         }, onMouseEnter: e => { if (activeTab !== tab.id)
                                             e.currentTarget.style.background = '#F9FAFB'; }, onMouseLeave: e => { if (activeTab !== tab.id)
-                                            e.currentTarget.style.background = 'none'; }, children: [_jsx("span", { style: { color: activeTab === tab.id ? '#6366F1' : '#9CA3AF', flexShrink: 0 }, children: tab.icon }), tab.label] }, tab.id)))] }, group))), _jsxs("div", { style: { marginTop: 12, padding: '10px 12px', borderTop: '1px solid #F3F4F6' }, children: [_jsx("div", { style: { fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#D1D5DB', marginBottom: 6 }, children: "Session" }), _jsx(OverrideStat, { label: "Layout", count: Object.keys(state.layoutSettingsOverrides).length, onReset: () => controller.updateLayoutSettings({}) }), _jsx(OverrideStat, { label: "Theme", count: Object.keys(state.themeOverrides).length, onReset: () => controller.updateThemeOverrides({}) })] })] }), _jsxs("main", { style: { flex: 1, minWidth: 0, overflowY: 'auto', padding: '20px 28px' }, children: [activeTab === 'routing-types' && (_jsx(RoutingTypesPanel, { layoutResult: state.layoutResult })), activeTab === 'routing-rules' && (_jsx(RoutingRulesPanel, { controller: routingRulesController, rules: state.routingRules })), activeTab === 'patterns' && (_jsx(PatternTablePanel, { controller: patternTableController, table: state.patternTable })), activeTab === 'layout' && (_jsx(LayoutRulesPanel, { overrides: state.layoutSettingsOverrides, onChange: o => controller.updateLayoutSettings(o) })), activeTab === 'theme' && (_jsx(ThemePanel, { overrides: state.themeOverrides, onChange: o => controller.updateThemeOverrides(o) }))] })] })] }));
+                                            e.currentTarget.style.background = 'none'; }, children: [_jsx("span", { style: { color: activeTab === tab.id ? '#6366F1' : '#9CA3AF', flexShrink: 0 }, children: tab.icon }), tab.label] }, tab.id)))] }, group))), _jsxs("div", { style: { marginTop: 12, padding: '10px 12px', borderTop: '1px solid #F3F4F6' }, children: [_jsx("div", { style: { fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#D1D5DB', marginBottom: 6 }, children: "Session" }), _jsx(OverrideStat, { label: "Layout", count: Object.keys(state.layoutSettingsOverrides).length, onReset: () => controller.updateLayoutSettings({}) }), _jsx(OverrideStat, { label: "Theme", count: Object.keys(state.themeOverrides).length, onReset: () => controller.updateThemeOverrides({}) })] })] }), _jsxs("main", { style: { flex: 1, minWidth: 0, overflowY: 'auto', padding: '20px 28px' }, children: [activeTab === 'routing-types' && (_jsx(RoutingTypesPanel, { layoutResult: state.layoutResult })), activeTab === 'routing-rules' && (_jsx(RoutingRulesPanel, { controller: routingRulesController, rules: state.routingRules })), activeTab === 'patterns' && (_jsx(PatternTablePanel, { controller: patternTableController, table: state.patternTable })), activeTab === 'layout' && (_jsx(LayoutRulesPanel, { overrides: state.layoutSettingsOverrides, onChange: o => controller.updateLayoutSettings(o) })), activeTab === 'theme' && (_jsx(ThemePanel, { overrides: state.themeOverrides, onChange: o => controller.updateThemeOverrides(o) })), activeTab === 'advanced-style' && (_jsx(AdvancedStylePanel, { overrides: state.themeOverrides, onChange: o => controller.updateThemeOverrides(o) }))] })] })] }));
 };
 // Count total modified keys across nested overrides
 function flattenKeys(obj, prefix = '') {
