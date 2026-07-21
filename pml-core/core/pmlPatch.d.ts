@@ -10,10 +10,21 @@
  */
 import { NormalizedProcessGraph } from './normalizedGraph';
 import { CoreNodeKind } from './nodeKinds';
+import { Provenance } from './diagnostics';
 export type PatchNodeTargetType = CoreNodeKind | 'actor';
 export type PatchTargetType = PatchNodeTargetType | 'edge' | 'process';
 export type AddNodeTargetType = PatchNodeTargetType;
-export interface AddNodePatch {
+/**
+ * Shared by every patch op — where this op came from and how sure the
+ * proposer is of it. Optional and additive: existing callers that don't set
+ * it are unaffected; applySinglePatch ignores it (provenance is metadata for
+ * the caller/control-plane layer, not something the patch applicator itself
+ * acts on). See docs/FINAL/11_AI_Conversational_Layer_Discussion.md §3.3/§5.4.
+ */
+export interface PatchProvenance {
+    provenance?: Provenance;
+}
+export interface AddNodePatch extends PatchProvenance {
     op: 'add-node';
     node: {
         id: string;
@@ -35,17 +46,17 @@ export interface AddNodePatch {
     /** Insert after this node id (optional — if omitted, appends) */
     after?: string;
 }
-export interface UpdateNodePatch {
+export interface UpdateNodePatch extends PatchProvenance {
     op: 'update-node';
     nodeId: string;
     field: 'label' | 'actor' | 'scope' | 'taskType' | 'direction' | 'eventType' | 'metadata';
     value: any;
 }
-export interface RemoveNodePatch {
+export interface RemoveNodePatch extends PatchProvenance {
     op: 'remove-node';
     nodeId: string;
 }
-export interface AddEdgePatch {
+export interface AddEdgePatch extends PatchProvenance {
     op: 'add-edge';
     edge: {
         source: string;
@@ -58,13 +69,13 @@ export interface AddEdgePatch {
         semanticRole?: 'normalFlow' | 'messageFlow' | 'exceptionFlow' | 'compensationFlow' | 'eventEscalation' | 'boundaryInterrupt';
     };
 }
-export interface UpdateEdgePatch {
+export interface UpdateEdgePatch extends PatchProvenance {
     op: 'update-edge';
     edgeId: string;
     field: 'condition' | 'label' | 'keyFlow' | 'loop' | 'flowLayer' | 'semanticRole';
     value: any;
 }
-export interface RemoveEdgePatch {
+export interface RemoveEdgePatch extends PatchProvenance {
     op: 'remove-edge';
     /** Either edgeId, or (source + target + condition) to identify */
     edgeId?: string;
@@ -72,7 +83,7 @@ export interface RemoveEdgePatch {
     target?: string;
     condition?: string;
 }
-export interface UpdateProcessHeaderPatch {
+export interface UpdateProcessHeaderPatch extends PatchProvenance {
     op: 'update-process';
     field: 'name' | 'level' | 'parent' | 'version' | 'status';
     value: string;

@@ -23,6 +23,7 @@ const DEFAULT_VIEW_PANEL_STATE = {
     },
     viewAsActor: null,
     pinnedActor: null,
+    highlightNodeIds: null,
     flowVisibility: DEFAULT_FLOW_VISIBILITY,
     connectorStyle: 'flowTypes',
     breadcrumbTrail: [],
@@ -369,6 +370,25 @@ export class ProcessController {
     // The complex setters (setLaneViewMode, setModelSpacing) remain as dedicated methods
     // since they touch multiple state branches.
     updateViewPanel(patch) {
+        // No-op guard: a caller passing a new array/object reference with
+        // identical contents (e.g. highlightNodeIds recomputed fresh every
+        // render) used to still trigger emit() unconditionally, re-rendering
+        // every subscriber for a value that didn't actually change. Combined
+        // with an effect elsewhere that depends on that re-render, this created
+        // a real, live-reproduced re-render loop that froze the page on Apply
+        // (docs/FINAL/13_Phase_E_Findings_Drive_Canvas_Plan.md incident log).
+        // Shallow-equal each patched key against its current value, treating
+        // arrays as equal by contents rather than by reference.
+        const current = this.state.viewPanel;
+        const hasRealChange = Object.entries(patch).some(([key, value]) => {
+            const existing = current[key];
+            if (Array.isArray(value) && Array.isArray(existing)) {
+                return value.length !== existing.length || value.some((v, i) => v !== existing[i]);
+            }
+            return value !== existing;
+        });
+        if (!hasRealChange)
+            return;
         this.state = {
             ...this.state,
             viewPanel: { ...this.state.viewPanel, ...patch },

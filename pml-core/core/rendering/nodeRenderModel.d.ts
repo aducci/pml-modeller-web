@@ -222,6 +222,9 @@ export interface BuildNodeRenderModelsOptions {
     laneHeaderHeight: number;
     showLanes: boolean;
     viewAsActor?: string | null;
+    /** General-purpose node-set spotlight — see ViewPanelState.highlightNodeIds
+     *  (types/index.ts) and buildNodeRenderModels.ts's opacity logic. */
+    highlightNodeIds?: string[] | null;
     selectedElementId?: string | null;
     effectiveShowLanes: boolean;
     metaIconSize: number;

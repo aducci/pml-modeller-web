@@ -17,7 +17,7 @@ import { resolveThemeFromLayoutSettings } from './styling/styleAdapter';
 import { buildProcessLabelControllerResult } from './rendering/labelController';
 import { computeCurtainGeometry } from './rendering/curtainGeometry';
 import { buildNodeRenderModels } from './rendering/buildNodeRenderModels';
-export default function ProcessCanvas({ layoutResult, zoom, panX, panY, viewportWidth, viewportHeight, theme, interactionMode = 'select', onZoomRequest, onPanRequest, selectedElement, onElementSelect, onElementDoubleClick, showLanes = true, viewAsActor, flowVisibility, connectorStyle = 'flowTypes', curtainsOn = true, }) {
+export default function ProcessCanvas({ layoutResult, zoom, panX, panY, viewportWidth, viewportHeight, theme, interactionMode = 'select', onZoomRequest, onPanRequest, selectedElement, onElementSelect, onElementDoubleClick, showLanes = true, viewAsActor, highlightNodeIds, flowVisibility, connectorStyle = 'flowTypes', curtainsOn = true, }) {
     const svgRef = useRef(null);
     const activePointerIdRef = useRef(null);
     const lastPointerPositionRef = useRef(null);
@@ -153,6 +153,7 @@ export default function ProcessCanvas({ layoutResult, zoom, panX, panY, viewport
         laneHeaderHeight,
         showLanes,
         viewAsActor: viewAsActor ?? null,
+        highlightNodeIds: highlightNodeIds ?? null,
         selectedElementId: selectedElement?.id ?? null,
         effectiveShowLanes,
         metaIconSize: 14,
@@ -161,7 +162,7 @@ export default function ProcessCanvas({ layoutResult, zoom, panX, panY, viewport
         showMetaIcons: layoutResult.settings?.layout?.showMetaIcons ?? true,
     }, visibilityMode, revealGroups, selectedElement?.id, flowVisibility, curtains, inboundEventNodes, outboundEventNodes, connectorStyle), [
         layoutResult, labelScene, resolvedTheme, padding, laneHeaderHeight,
-        showLanes, viewAsActor, selectedElement?.id, effectiveShowLanes,
+        showLanes, viewAsActor, highlightNodeIds, selectedElement?.id, effectiveShowLanes,
         visibilityMode, revealGroups, flowVisibility, curtains,
         inboundEventNodes, outboundEventNodes, connectorStyle,
     ]);

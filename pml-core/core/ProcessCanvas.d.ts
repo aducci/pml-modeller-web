@@ -25,6 +25,8 @@ interface ProcessCanvasProps {
     onElementDoubleClick?: (type: 'node' | 'lane', id: string) => void;
     showLanes?: boolean;
     viewAsActor?: string | null;
+    /** General-purpose node-set spotlight — see ViewPanelState.highlightNodeIds. */
+    highlightNodeIds?: string[] | null;
     flowVisibility?: {
         main: boolean;
         alternate: boolean;
@@ -34,6 +36,6 @@ interface ProcessCanvasProps {
     connectorStyle?: ConnectorStyle;
     curtainsOn?: boolean;
 }
-export default function ProcessCanvas({ layoutResult, zoom, panX, panY, viewportWidth, viewportHeight, theme, interactionMode, onZoomRequest, onPanRequest, selectedElement, onElementSelect, onElementDoubleClick, showLanes, viewAsActor, flowVisibility, connectorStyle, curtainsOn, }: ProcessCanvasProps): React.JSX.Element;
+export default function ProcessCanvas({ layoutResult, zoom, panX, panY, viewportWidth, viewportHeight, theme, interactionMode, onZoomRequest, onPanRequest, selectedElement, onElementSelect, onElementDoubleClick, showLanes, viewAsActor, highlightNodeIds, flowVisibility, connectorStyle, curtainsOn, }: ProcessCanvasProps): React.JSX.Element;
 export {};
 //# sourceMappingURL=ProcessCanvas.d.ts.map

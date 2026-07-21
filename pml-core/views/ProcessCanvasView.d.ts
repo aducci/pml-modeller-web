@@ -13,6 +13,8 @@ export interface ProcessCanvasViewProps {
     onToggleLanes?: () => void;
     onToggleLaneMode?: () => void;
     viewAsActor?: string | null;
+    /** General-purpose node-set spotlight — see ViewPanelState.highlightNodeIds. */
+    highlightNodeIds?: string[] | null;
     flowVisibility?: {
         main: boolean;
         alternate: boolean;

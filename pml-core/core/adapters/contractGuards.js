@@ -253,6 +253,13 @@ export function validatePmlAndGraph(pmlModel, graph, mode = 'strict') {
 // an edge routed into it when asked to build a process from scratch — the
 // prompt taught the outbound-terminal rule but never its inbound sibling.
 // See §7.4 for further candidates and the selection reasoning for each batch.
+//
+// 2026-07-19 (12_AI_Layer_Reconciliation_and_Build_Plan.md, Phase A): each
+// suggestion now also carries `category` and `status: 'open'` — the first
+// step toward docs/FINAL/11_AI_Conversational_Layer_Discussion.md §5.1's
+// richer Finding shape, added to this existing type in place rather than as
+// a parallel Finding type. `suggestedActions` is deliberately not added yet
+// — it depends on the AIAction lifecycle (Phase C), not built here.
 // ---------------------------------------------------------------------------
 export function computeProcessSuggestions(graph) {
     const suggestions = [];
@@ -262,13 +269,28 @@ export function computeProcessSuggestions(graph) {
         outgoingCount.set(edge.source, (outgoingCount.get(edge.source) || 0) + 1);
         incomingCount.set(edge.target, (incomingCount.get(edge.target) || 0) + 1);
     }
+    // Grouped by source/target once, up front, so evidence can attach the
+    // actual offending edge ids without re-scanning graph.edges per node.
+    const edgesBySource = new Map();
+    const edgesByTarget = new Map();
+    for (const edge of graph.edges) {
+        if (!edgesBySource.has(edge.source))
+            edgesBySource.set(edge.source, []);
+        edgesBySource.get(edge.source).push(edge);
+        if (!edgesByTarget.has(edge.target))
+            edgesByTarget.set(edge.target, []);
+        edgesByTarget.get(edge.target).push(edge);
+    }
     for (const node of graph.nodes) {
         if (isOutboundEvent(node) && (outgoingCount.get(node.id) || 0) > 0) {
             suggestions.push({
                 code: 'OUTBOUND_HAS_OUTGOING',
                 message: `Outbound event "${node.id}" has an outgoing edge — outbound events are terminal and must not lead anywhere else. Model the downstream step as a task instead, or split into two parallel edges from the source task.`,
                 severity: 'suggestion',
+                category: 'structural',
+                status: 'open',
                 data: { nodeId: node.id },
+                evidence: { nodeIds: [node.id], edgeIds: (edgesBySource.get(node.id) ?? []).map((e) => e.id) },
             });
         }
         // Sibling of OUTBOUND_HAS_OUTGOING above — an inbound event is a process
@@ -278,7 +300,10 @@ export function computeProcessSuggestions(graph) {
                 code: 'INBOUND_HAS_INCOMING',
                 message: `Inbound event "${node.id}" has an incoming edge — inbound events are entry points and must not be led into by another step. Start the flow at this event instead of routing something into it.`,
                 severity: 'suggestion',
+                category: 'structural',
+                status: 'open',
                 data: { nodeId: node.id },
+                evidence: { nodeIds: [node.id], edgeIds: (edgesByTarget.get(node.id) ?? []).map((e) => e.id) },
             });
         }
         // A non-gateway node with 2+ outgoing edges is a modelling-convention
@@ -295,7 +320,10 @@ export function computeProcessSuggestions(graph) {
                 code: 'IMPLICIT_PARALLEL_FORK',
                 message: `"${node.id}" has ${outgoingCount.get(node.id)} outgoing edges but isn't a gateway. If these happen concurrently, model as an explicit "decision(AND)" gateway (branches render as equally-weighted main flow, not one main + alternates); if they're mutually exclusive, model as a "decision" with named outcomes.`,
                 severity: 'suggestion',
+                category: 'semantic',
+                status: 'open',
                 data: { nodeId: node.id },
+                evidence: { nodeIds: [node.id], edgeIds: (edgesBySource.get(node.id) ?? []).map((e) => e.id) },
             });
         }
         // A decision with exactly one outcome isn't structurally invalid (that's
@@ -307,7 +335,10 @@ export function computeProcessSuggestions(graph) {
                 code: 'DECISION_SINGLE_OUTCOME',
                 message: `Decision "${node.id}" has only one outcome ("${node.outcomes[0]}") — a decision with a single branch usually means the alternate or exception path hasn't been modelled yet.`,
                 severity: 'suggestion',
+                category: 'completeness',
+                status: 'open',
                 data: { nodeId: node.id },
+                evidence: { nodeIds: [node.id], edgeIds: (edgesBySource.get(node.id) ?? []).map((e) => e.id) },
             });
         }
         // Actor assignment is exactly the kind of gap PML_SYSTEM_PROMPT already
@@ -319,7 +350,10 @@ export function computeProcessSuggestions(graph) {
                 code: 'TASK_NO_ACTOR',
                 message: `Task "${node.id}" has no actor assigned.`,
                 severity: 'suggestion',
+                category: 'completeness',
+                status: 'open',
                 data: { nodeId: node.id },
+                evidence: { nodeIds: [node.id], edgeIds: [] },
             });
         }
         // A node with zero edges in either direction is disconnected from the
@@ -336,7 +370,10 @@ export function computeProcessSuggestions(graph) {
                 code: 'NODE_ORPHANED',
                 message: `${node.type[0].toUpperCase()}${node.type.slice(1)} "${node.id}" has no incoming or outgoing edges — it isn't connected to the rest of the process yet.`,
                 severity: 'suggestion',
+                category: 'structural',
+                status: 'open',
                 data: { nodeId: node.id },
+                evidence: { nodeIds: [node.id], edgeIds: [] },
             });
         }
     }

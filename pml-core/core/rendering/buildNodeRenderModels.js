@@ -136,10 +136,14 @@ function buildSingleNodeRenderModel(node, padding, options, theme, labelScene, s
     const visual = nodeStyle.appearance;
     const isSelected = selectedElementId === node.id;
     const isTentative = Boolean(node.metadata?.queried);
-    // Actor spotlight
-    const nodeOpacity = options.viewAsActor
-        ? (node.actor === options.viewAsActor ? 1 : 0.2)
-        : 1;
+    // Actor spotlight + general node-set spotlight (highlightNodeIds) —
+    // composable: a node must pass every active filter to render at full
+    // opacity. highlightNodeIds generalizes viewAsActor's dim-the-rest effect
+    // from "one actor's lane" to an arbitrary evidence set (e.g. an AI
+    // finding's affected nodes/edges — docs/FINAL/13_Phase_E_Findings_Drive_Canvas_Plan.md E.1).
+    const passesActorFilter = !options.viewAsActor || node.actor === options.viewAsActor;
+    const passesHighlightFilter = !options.highlightNodeIds || options.highlightNodeIds.includes(node.id);
+    const nodeOpacity = (passesActorFilter && passesHighlightFilter) ? 1 : 0.2;
     // Shape
     const shapeKind = (nodeStyle.shape === 'circle' || nodeStyle.shape === 'diamond')
         ? nodeStyle.shape

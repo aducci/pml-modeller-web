@@ -48,6 +48,16 @@ export interface ViewPanelState {
     overlay: OverlayState;
     viewAsActor: string | null;
     pinnedActor: string | null;
+    /**
+     * General-purpose node-set spotlight, generalizing viewAsActor's
+     * dim-everything-else-to-20% effect from "one actor's lane" to "an
+     * arbitrary set of node ids." Introduced so AI findings can highlight
+     * exactly their evidence (docs/FINAL/13_Phase_E_Findings_Drive_Canvas_Plan.md
+     * E.1) without being scoped to a whole actor swimlane. Composable with
+     * viewAsActor: when both are set, a node must pass both filters to be
+     * full-opacity (see buildNodeRenderModels.ts).
+     */
+    highlightNodeIds: string[] | null;
     flowVisibility: FlowTypeVisibility;
     connectorStyle: 'uniform' | 'keyFlow' | 'flowTypes';
     breadcrumbTrail: BreadcrumbItem[];
