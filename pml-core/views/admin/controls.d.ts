@@ -3,6 +3,14 @@ interface FieldProps {
     label: string;
     hint?: string;
     children: React.ReactNode;
+    /**
+     * Controls whether Field pins its content to the right edge (default) or
+     * lets it sit right after the label. ColorInput fields in the theme
+     * contextual panel (a narrow right-hand pane) use 'start' — right-aligned,
+     * the color swatch landed at the true edge of the browser window, which is
+     * what pushed the native color-picker popup off-screen.
+     */
+    align?: 'start' | 'end';
 }
 export declare const Field: React.FC<FieldProps>;
 interface SectionProps {
