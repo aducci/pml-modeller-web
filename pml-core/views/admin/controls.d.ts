@@ -5,12 +5,23 @@ interface FieldProps {
     children: React.ReactNode;
     /**
      * Controls whether Field pins its content to the right edge (default) or
-     * lets it sit right after the label. ColorInput fields in the theme
-     * contextual panel (a narrow right-hand pane) use 'start' — right-aligned,
-     * the color swatch landed at the true edge of the browser window, which is
-     * what pushed the native color-picker popup off-screen.
+     * lets it sit right after the label. Superseded for color fields by
+     * `reverseLayout` below, but still used as-is by Num/Select/Toggle fields.
      */
     align?: 'start' | 'end';
+    /**
+     * Puts the control column FIRST (left) and the label column SECOND
+     * (right) — the opposite of Field's normal [label][control] order. Used
+     * for every ColorInput field: a native <input type="color"> popup opens
+     * anchored near its trigger's on-screen position, and the contextual
+     * editor panel itself sits on one side of a split view — so simply
+     * left/right-aligning content *inside* the control column wasn't enough
+     * once the panel itself was near a screen edge. Reversing column order
+     * (combined with putting the editor panel on the left side of the split,
+     * see ThemePanel.tsx) keeps every swatch away from the true edge
+     * regardless of viewport width.
+     */
+    reverseLayout?: boolean;
 }
 export declare const Field: React.FC<FieldProps>;
 interface SectionProps {

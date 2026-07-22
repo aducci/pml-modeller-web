@@ -52,7 +52,7 @@ export const ThemeContextualPanel = ({ target, overrides, onChange }) => {
 // default (see resolveTheme.ts: only fields with NO explicit override still
 // track a role's color as it's changed later).
 // ---------------------------------------------------------------------------
-const RoleColorField = ({ label, hint, value, roles, onChange }) => (_jsx(Field, { label: label, hint: hint, align: "start", children: _jsxs("div", { style: { display: 'flex', flexDirection: 'column', gap: 4 }, children: [_jsx(ColorInput, { value: value, onChange: onChange }), _jsx("div", { style: { display: 'flex', gap: 4 }, children: ROLE_ORDER.map((key) => (_jsx("button", { onClick: () => onChange(roles[key]), title: `Use theme color: ${ROLE_LABEL[key]}`, style: {
+const RoleColorField = ({ label, hint, value, roles, onChange }) => (_jsx(Field, { label: label, hint: hint, reverseLayout: true, children: _jsxs("div", { style: { display: 'flex', flexDirection: 'column', gap: 4 }, children: [_jsx(ColorInput, { value: value, onChange: onChange }), _jsx("div", { style: { display: 'flex', gap: 4 }, children: ROLE_ORDER.map((key) => (_jsx("button", { onClick: () => onChange(roles[key]), title: `Use theme color: ${ROLE_LABEL[key]}`, style: {
                         width: 14, height: 14, borderRadius: '50%', padding: 0, cursor: 'pointer',
                         background: roles[key], border: value === roles[key] ? '2px solid #6366F1' : '1px solid #D1D5DB',
                         flexShrink: 0,
