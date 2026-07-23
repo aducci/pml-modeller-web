@@ -377,6 +377,38 @@ export function computeProcessSuggestions(graph) {
             });
         }
     }
+    // CROSS_ACTOR_EDGE_UNTAGGED: a soft nudge, not a hard rule — crossing
+    // actors doesn't automatically mean "message." Deliberately narrow: only
+    // fires when the edge is at 'normalFlow' — which pmlToNormalizedGraph.ts's
+    // `edge.semanticRole || 'normalFlow'` assigns to EVERY edge that never had
+    // an explicit semanticRole set (there is no separate "truly unset" state
+    // in the normalized graph; normalFlow IS the unset/default value — see
+    // pmlGenerator.ts's serializer, which likewise treats normalFlow as "omit
+    // from output text"). Anything other than normalFlow (messageFlow,
+    // exceptionFlow, etc.) is a deliberate author/AI choice and must not be
+    // flagged. See 01_PML_Language_Specification.md's messageFlow guidance and
+    // pml-modeller-web's PML_SYSTEM_PROMPT for the same distinction taught to
+    // the AI — this is the structured-fact counterpart of that prompt rule
+    // (docs/FINAL/09_Modelling_Conventions.md's "AI reasons over data, not
+    // prose" pattern).
+    const nodeById = new Map(graph.nodes.map((n) => [n.id, n]));
+    for (const edge of graph.edges) {
+        if (edge.semanticRole && edge.semanticRole !== 'normalFlow')
+            continue;
+        const sourceActor = nodeById.get(edge.source)?.actor;
+        const targetActor = nodeById.get(edge.target)?.actor;
+        if (!sourceActor || !targetActor || sourceActor === targetActor)
+            continue;
+        suggestions.push({
+            code: 'CROSS_ACTOR_EDGE_UNTAGGED',
+            message: `Edge "${edge.source} > ${edge.target}" crosses from ${sourceActor} to ${targetActor} with no semanticRole set. If this represents a message/handoff between actors, consider tagging it semanticRole=messageFlow; if it's just an ordinary next step, this can be left as-is.`,
+            severity: 'suggestion',
+            category: 'semantic',
+            status: 'open',
+            data: { edgeId: edge.id },
+            evidence: { nodeIds: [edge.source, edge.target], edgeIds: [edge.id] },
+        });
+    }
     return suggestions;
 }
 export function assertNoValidationErrors(result) {
