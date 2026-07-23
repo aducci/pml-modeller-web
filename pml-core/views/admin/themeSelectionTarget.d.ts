@@ -17,7 +17,7 @@ export type ThemeSelectionTarget = {
 } | {
     kind: 'edge';
     id: string;
-    variant: 'default' | 'crossLane' | 'loopback';
+    variant: 'default' | 'crossLane' | 'loopback' | 'message';
     label: string;
 } | {
     kind: 'curtain';

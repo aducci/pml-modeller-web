@@ -4,11 +4,12 @@
  * A tiny, fixed PML sample used only by the admin Theme panel's live
  * preview canvas — deliberately exercises every themeable surface
  * (task, gateway/decision, subprocess, event, two lanes, a cross-lane
- * edge, and a loopback edge) in one small screen, so every control in
- * ThemePanel.tsx has something visible to change.
+ * edge, a loopback edge, and a message-flow edge) in one small screen, so
+ * every control in ThemePanel.tsx/ThemeContextualPanel.tsx has something
+ * visible to change.
  *
  * Not a real process and never persisted — parsed fresh each time the
  * admin page loads, same as any other PML document.
  */
-export declare const THEME_PREVIEW_PML = "@process L3 \"Theme Preview\"\n\nevent inbound_start as \"Request Received\" inbound\nevent outbound_end as \"Response Sent\" outbound\n\nactor System\n    subprocess run_checks as \"Run Automated Checks\" process=checks-v1\n\nactor Reviewer\n    task review_item as \"Review Item\"\n\n    decision quality_check as \"Quality Check\":\n        pass* > outbound_end\n        fail  loop > review_item\n\nflow key\n    inbound_start > run_checks > review_item > quality_check\n";
+export declare const THEME_PREVIEW_PML = "@process L3 \"Theme Preview\"\n\nevent inbound_start as \"Request Received\" inbound\nevent outbound_end as \"Response Sent\" outbound\n\nactor System\n    subprocess run_checks as \"Run Automated Checks\" process=checks-v1\n    task notify_reviewer as \"Notify Reviewer\"\n\nactor Reviewer\n    task review_item as \"Review Item\"\n\n    decision quality_check as \"Quality Check\":\n        pass* > outbound_end\n        fail  loop > review_item\n\nflow key\n    inbound_start > run_checks > review_item > quality_check\n\nrun_checks > notify_reviewer\nedge notify_reviewer > review_item { semanticRole=messageFlow }\n";
 //# sourceMappingURL=themePreviewModel.d.ts.map

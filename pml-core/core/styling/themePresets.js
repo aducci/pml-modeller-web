@@ -171,12 +171,13 @@ export const PROCESS_THEME_PRESETS = [
                     default: { stroke: '#85B7EB', strokeWidth: 1.5 },
                     crossLane: { stroke: '#5F5E5A', strokeWidth: 1.5, strokeDasharray: '5 3' },
                     loopback: { stroke: '#EF9F27', strokeWidth: 2 },
+                    message: { stroke: '#B48EF0', strokeWidth: 1.5, strokeDasharray: '6 4' },
                     selected: { stroke: '#85B7EB', strokeWidth: 2.5 },
                     halo: {
                         default: { color: '#1a1f2e', width: 4 },
                         selected: { color: '#0C447C', width: 5 },
                     },
-                    marker: { fill: '#85B7EB' },
+                    marker: { fill: '#85B7EB', openStroke: '#B48EF0' },
                     label: {
                         fill: '#888780',
                         background: '#1a1f2e',

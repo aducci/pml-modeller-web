@@ -391,7 +391,11 @@ function buildActorPill(node, nodeX, nodeY, nodeWidth, nodeHeight, effectiveShow
 // ============================================================================
 // Edge model builder
 // ============================================================================
-function buildEdgeModels(edges, padding, theme, visibilityMode, revealGroups, selectedElementId, flowVisibility, labelScene, connectorStyle = 'flowTypes') {
+// Exported for direct unit testing of the visual/arrow-style selection
+// logic (semanticRole vs. geometry-driven loopback/cross-lane) without
+// needing to exercise the full LayoutEngine — everywhere else, this is
+// still only called internally as part of buildNodeRenderModels().
+export function buildEdgeModels(edges, padding, theme, visibilityMode, revealGroups, selectedElementId, flowVisibility, labelScene, connectorStyle = 'flowTypes') {
     const themeEdges = theme.edges;
     const result = [];
     for (const edge of edges) {
@@ -413,7 +417,17 @@ function buildEdgeModels(edges, padding, theme, visibilityMode, revealGroups, se
             : (edge.routing?.scenario || '');
         let visual;
         let dash;
-        if (scenario.includes('loopback') || scenario.includes('backward')) {
+        // semanticRole is genuine modelling intent (the author/AI tagged this
+        // edge as cross-actor communication), unlike loopback/cross-lane below
+        // which are inferred purely from routing geometry — intent wins over
+        // geometry, so a message flow that happens to also cross a lane or
+        // loop back still renders as a message flow, not a loopback/cross-lane.
+        const isMessageFlow = edge.semanticRole === 'messageFlow';
+        if (isMessageFlow) {
+            visual = themeEdges.message;
+            dash = alt.dash ?? themeEdges.message.strokeDasharray;
+        }
+        else if (scenario.includes('loopback') || scenario.includes('backward')) {
             visual = themeEdges.loopback;
             dash = alt.dash ?? '7 4';
         }
@@ -458,6 +472,7 @@ function buildEdgeModels(edges, padding, theme, visibilityMode, revealGroups, se
             haloColor,
             haloWidth,
             showArrow: true,
+            arrowStyle: isMessageFlow ? 'open' : 'solid',
             label,
         });
     }
@@ -509,12 +524,14 @@ function isEdgeVisibleByFlowType(edge, flowVisibility) {
     }
 }
 // Colored-mode palette: main/primary green, exception-family orange, back-edges purple,
-// plain alternate/message gray. Keyed off flow classification, not routing geometry —
-// distinct from theme.edges.loopback/crossLane, which are chosen by edge geometry instead.
+// message-flow accent, plain alternate gray. Keyed off flow classification, not routing
+// geometry — distinct from theme.edges.loopback/crossLane, which are chosen by edge
+// geometry instead.
 const FLOW_TYPE_COLORS = {
     main: '#16A34A',
     exception: '#EA580C',
     loop: '#7C3AED',
+    message: '#6B4FBB',
     alternate: '#6B7280',
 };
 function alternateEdgeStyle(edge, connectorStyle = 'flowTypes') {
@@ -532,6 +549,13 @@ function alternateEdgeStyle(edge, connectorStyle = 'flowTypes') {
     const layer = edge.flowLayer ?? 'main';
     const role = edge.semanticRole;
     const isExceptionFamily = role === 'exceptionFlow' || role === 'compensationFlow' || role === 'eventEscalation';
+    // Semantic intent (messageFlow) wins over both geometry (loop) and layer —
+    // mirrors the same priority order used for visual/dash selection above in
+    // buildEdgeModels(), so "colored" connector-style mode doesn't silently
+    // repaint a message-flow edge back to green/purple/gray.
+    if (role === 'messageFlow') {
+        return { opacity: 1, widthScale: 1, stroke: FLOW_TYPE_COLORS.message };
+    }
     // Back-edges get their own color regardless of layer — a loopback is visually distinct
     // from "just an alternate path" even when it's also the exception branch of a decision.
     if (edge.loop) {

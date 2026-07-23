@@ -31,6 +31,12 @@ export function deriveThemeFromRoles(roles) {
             default: { stroke: roles.border },
             crossLane: { stroke: roles.border },
             loopback: { stroke: roles.warning },
+            // message deliberately NOT derived from a role — it's a fixed accent
+            // (see defaultProcessTheme.ts) so a message-flow edge stays visually
+            // recognizable as "the cross-actor communication color" regardless of
+            // how a user tunes the 5 generic roles; still fully editable directly
+            // via ThemeContextualPanel's per-edge-kind fields if they want to
+            // change it.
             selected: { stroke: roles.primary },
             marker: { fill: roles.border },
             label: { fill: roles.text },

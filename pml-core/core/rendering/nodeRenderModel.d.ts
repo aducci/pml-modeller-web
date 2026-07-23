@@ -156,6 +156,13 @@ export interface EdgeRenderModel {
     haloWidth: number;
     /** Whether to show the arrow marker */
     showArrow: boolean;
+    /**
+     * Arrowhead shape — 'solid' (filled triangle, sequence flow) or 'open'
+     * (hollow triangle, semanticRole=messageFlow) per BPMN's convention for
+     * distinguishing message flow from sequence flow. Defaults to 'solid'
+     * everywhere this isn't explicitly set.
+     */
+    arrowStyle?: 'solid' | 'open';
     /** Edge label (if any) */
     label?: {
         text: string;

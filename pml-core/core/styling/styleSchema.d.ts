@@ -78,6 +78,14 @@ export interface EdgeVisual {
 export interface EdgeMarker {
     fill: string;
     stroke?: string;
+    /**
+     * Stroke/fill for the open (hollow-triangle) arrowhead used on
+     * semanticRole=messageFlow edges — BPMN convention distinguishes message
+     * flow with an unfilled arrowhead, distinct from sequence flow's solid
+     * filled one. Falls back to `stroke ?? fill` if unset (see
+     * defaultProcessTheme.ts), so this is optional rather than required.
+     */
+    openStroke?: string;
 }
 export interface HaloStyle {
     color: string;
@@ -87,6 +95,14 @@ export interface EdgeStyle {
     default: EdgeVisual;
     crossLane: EdgeVisual;
     loopback: EdgeVisual;
+    /**
+     * Visual for semanticRole=messageFlow edges — a genuine semantic edge
+     * kind (cross-actor communication), not a geometry-driven style like
+     * crossLane (chosen by whether the routed path happens to cross a lane
+     * boundary) or loopback (chosen by edge.loop). Rendered dashed with an
+     * open arrowhead by default, matching BPMN's message-flow convention.
+     */
+    message: EdgeVisual;
     selected: EdgeVisual;
     halo: {
         default: HaloStyle;

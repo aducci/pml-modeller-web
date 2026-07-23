@@ -93,6 +93,11 @@ export const DEFAULT_PROCESS_THEME = {
             stroke: '#BA7517',
             strokeWidth: 2,
         },
+        message: {
+            stroke: '#6B4FBB',
+            strokeWidth: 1.5,
+            strokeDasharray: '6 4',
+        },
         selected: {
             stroke: '#378ADD',
             strokeWidth: 2.5,
@@ -103,6 +108,7 @@ export const DEFAULT_PROCESS_THEME = {
         },
         marker: {
             fill: '#888780',
+            openStroke: '#6B4FBB',
         },
         label: {
             fill: '#5F5E5A',

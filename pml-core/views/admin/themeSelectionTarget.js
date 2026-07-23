@@ -25,11 +25,16 @@ export function resolveThemeSelectionTarget(type, id, state) {
         const nodesById = new Map((state.layoutResult?.nodes ?? []).map((n) => [n.id, n]));
         const sourceActor = nodesById.get(edge.source)?.actor;
         const targetActor = nodesById.get(edge.target)?.actor;
-        const variant = edge.loop
-            ? 'loopback'
-            : (sourceActor && targetActor && sourceActor !== targetActor)
-                ? 'crossLane'
-                : 'default';
+        // semanticRole is genuine modelling intent and takes priority over
+        // geometry-driven variants — mirrors the same priority order
+        // buildNodeRenderModels.ts uses when actually rendering the edge.
+        const variant = edge.semanticRole === 'messageFlow'
+            ? 'message'
+            : edge.loop
+                ? 'loopback'
+                : (sourceActor && targetActor && sourceActor !== targetActor)
+                    ? 'crossLane'
+                    : 'default';
         return { kind: 'edge', id, variant, label: edge.label ?? `${edge.source} → ${edge.target}` };
     }
     return null;
