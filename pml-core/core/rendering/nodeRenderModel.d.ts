@@ -43,6 +43,10 @@ export interface NodeLabelRenderModel {
      * this too. Independently themeable now via appearance.labelHalo.
      */
     haloFill: string;
+    /** CSS letter-spacing value (e.g. '0.2px') — was computed for the
+     *  secondary caption only; the primary label's own `text.tracking`
+     *  setting was silently dropped and never reached rendering. */
+    letterSpacing?: string;
     textAnchor: 'middle' | 'start' | 'end';
     dominantBaseline: 'middle' | 'auto' | 'hanging';
 }

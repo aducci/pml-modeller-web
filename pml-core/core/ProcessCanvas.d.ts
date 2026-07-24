@@ -17,10 +17,10 @@ interface ProcessCanvasProps {
     }) => void;
     onPanRequest?: (dx: number, dy: number) => void;
     selectedElement?: {
-        type: 'node' | 'edge' | 'lane';
+        type: 'node' | 'edge' | 'lane' | 'curtain';
         id: string;
     } | null;
-    onElementSelect?: (type: 'node' | 'edge' | 'lane', id: string) => void;
+    onElementSelect?: (type: 'node' | 'edge' | 'lane' | 'curtain', id: string) => void;
     /** Double-clicking a task/event/decision node or a lane (actor) header — used to jump straight into rename-with-propagation. */
     onElementDoubleClick?: (type: 'node' | 'lane', id: string) => void;
     showLanes?: boolean;

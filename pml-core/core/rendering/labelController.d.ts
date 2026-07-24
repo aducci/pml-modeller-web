@@ -9,6 +9,7 @@ interface ResolvedNodeLabel {
     fontWeight: number;
     fill: string;
     haloFill: string;
+    letterSpacing?: string;
     lineSpacing: number;
 }
 interface ResolvedSecondaryLabel {

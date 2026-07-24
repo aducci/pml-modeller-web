@@ -126,6 +126,10 @@ export function resolveNodeLabel(node, activeAnchors, theme, padding) {
         // Falls back to fill (today's implicit behavior) only if labelHalo was
         // never set — e.g. an older persisted theme override predating this field.
         haloFill: style.appearance.labelHalo ?? style.appearance.fill,
+        // Previously computed only for the secondary caption (resolveSecondaryLabel
+        // below) — the primary label's own text.tracking was read by formatLabel
+        // for uppercase but never turned into an actual letterSpacing value.
+        letterSpacing: toLetterSpacing(style.text.tracking),
         lineSpacing: fontSize + 1,
     };
 }

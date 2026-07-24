@@ -4,6 +4,16 @@ export function resolveThemeSelectionTarget(type, id, state) {
         const lane = state.layoutResult?.lanes?.find((l) => l.id === id);
         return { kind: 'lane', id, label: lane?.label ?? id };
     }
+    // Direct curtain click (ProcessCanvas.tsx's renderCurtain now has its own
+    // click handler) — id is 'inbound' | 'outbound' straight from the curtain
+    // model, no need to go via a node lookup the way the 'node' branch below
+    // still does for the case of clicking the boundary event node itself.
+    if (type === 'curtain') {
+        // Both curtains share one style (see CurtainFields in
+        // ThemeContextualPanel.tsx) — the label doesn't need to distinguish
+        // which side was actually clicked.
+        return { kind: 'curtain', side: id, label: 'Boundary' };
+    }
     if (type === 'node') {
         const node = state.layoutResult?.nodes?.find((n) => n.id === id);
         if (!node)

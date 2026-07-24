@@ -202,5 +202,6 @@ export const DEFAULT_PROCESS_THEME = {
     nodeEffects: {
         shadow: true,
         gradient: false,
+        labelHalo: true,
     },
 };

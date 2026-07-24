@@ -1,4 +1,12 @@
-export type ElementType = 'node' | 'edge' | 'lane';
+/**
+ * 'curtain' added so clicking the inbound/outbound boundary band on the
+ * canvas can select it directly — previously curtains had no click handling
+ * at all (see ProcessCanvas.tsx's renderCurtain), so the only way to reach
+ * curtain styling in the admin Theme panel was indirectly, by clicking an
+ * inbound/outbound EVENT node and having themeSelectionTarget.ts infer the
+ * curtain from its direction. id is 'inbound' | 'outbound' for this type.
+ */
+export type ElementType = 'node' | 'edge' | 'lane' | 'curtain';
 export interface SelectedElement {
     type: ElementType;
     id: string;

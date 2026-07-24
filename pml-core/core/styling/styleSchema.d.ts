@@ -186,6 +186,15 @@ export interface ProcessNodeEffects {
     shadow: boolean;
     /** Subtle top-to-bottom gradient (derived from each shape's own fill) instead of a flat fill. */
     gradient: boolean;
+    /**
+     * The text-stroke halo behind every node's primary label (see
+     * appearance.labelHalo and ProcessCanvas.tsx's paintOrder: 'stroke'
+     * rendering) — a global on/off, matching shadow/gradient above. Off means
+     * plain text with no legibility backing; mainly useful if a label's halo
+     * color ever looks wrong against a particular background rather than
+     * tuning every element type's labelHalo color individually.
+     */
+    labelHalo: boolean;
 }
 /**
  * `decision` and `route` node types both resolve to the `gateway` style token.
