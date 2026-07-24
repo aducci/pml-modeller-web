@@ -176,6 +176,7 @@ function buildSingleNodeRenderModel(node, padding, options, theme, labelScene, s
             fontSize: nodeLabel.fontSize,
             fontWeight: nodeLabel.fontWeight,
             fill: nodeLabel.fill,
+            haloFill: nodeLabel.haloFill,
             textAnchor: 'middle',
             dominantBaseline: 'middle',
         };

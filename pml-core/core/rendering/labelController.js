@@ -68,7 +68,9 @@ function buildActiveAnchorsByNode(edges) {
     }
     return map;
 }
-function resolveNodeLabel(node, activeAnchors, theme, padding) {
+// Exported for direct unit testing of haloFill resolution (previously
+// hardcoded by the caller to reuse the shape's own fill directly).
+export function resolveNodeLabel(node, activeAnchors, theme, padding) {
     const style = getElementStyle(theme, node.type);
     const centerX = padding + node.x;
     const centerY = padding + node.y;
@@ -121,6 +123,9 @@ function resolveNodeLabel(node, activeAnchors, theme, padding) {
         fontSize,
         fontWeight,
         fill: style.appearance.label,
+        // Falls back to fill (today's implicit behavior) only if labelHalo was
+        // never set — e.g. an older persisted theme override predating this field.
+        haloFill: style.appearance.labelHalo ?? style.appearance.fill,
         lineSpacing: fontSize + 1,
     };
 }

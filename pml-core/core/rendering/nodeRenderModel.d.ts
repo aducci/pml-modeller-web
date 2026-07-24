@@ -35,6 +35,14 @@ export interface NodeLabelRenderModel {
     fontSize: number;
     fontWeight: number;
     fill: string;
+    /**
+     * Color of the text-stroke halo painted behind the label (legibility aid
+     * for labels sitting outside/over the shape's edge — see ProcessCanvas.tsx's
+     * paintOrder: 'stroke' rendering). Previously the caller reused the
+     * shape's own fill directly, so changing a node's Fill silently changed
+     * this too. Independently themeable now via appearance.labelHalo.
+     */
+    haloFill: string;
     textAnchor: 'middle' | 'start' | 'end';
     dominantBaseline: 'middle' | 'auto' | 'hanging';
 }

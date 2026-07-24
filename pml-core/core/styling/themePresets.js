@@ -51,23 +51,23 @@ export const PROCESS_THEME_PRESETS = [
                     ...base.elementStyles,
                     event: {
                         ...base.elementStyles.event,
-                        appearance: { ...base.elementStyles.event.appearance, fill: '#BFD9F5', stroke: '#185FA5' },
+                        appearance: { ...base.elementStyles.event.appearance, fill: '#BFD9F5', stroke: '#185FA5', labelHalo: '#BFD9F5' },
                     },
                     task: {
                         ...base.elementStyles.task,
-                        appearance: { ...base.elementStyles.task.appearance, fill: '#E3E0D6', stroke: '#5F5E5A' },
+                        appearance: { ...base.elementStyles.task.appearance, fill: '#E3E0D6', stroke: '#5F5E5A', labelHalo: '#E3E0D6' },
                     },
                     gateway: {
                         ...base.elementStyles.gateway,
-                        appearance: { ...base.elementStyles.gateway.appearance, fill: '#C2C0B6', stroke: '#3E3D3A' },
+                        appearance: { ...base.elementStyles.gateway.appearance, fill: '#C2C0B6', stroke: '#3E3D3A', labelHalo: '#C2C0B6' },
                     },
                     decision: {
                         ...base.elementStyles.decision,
-                        appearance: { ...base.elementStyles.decision.appearance, fill: '#C2C0B6', stroke: '#3E3D3A' },
+                        appearance: { ...base.elementStyles.decision.appearance, fill: '#C2C0B6', stroke: '#3E3D3A', labelHalo: '#C2C0B6' },
                     },
                     subprocess: {
                         ...base.elementStyles.subprocess,
-                        appearance: { ...base.elementStyles.subprocess.appearance, fill: '#BFD9F5', stroke: '#185FA5' },
+                        appearance: { ...base.elementStyles.subprocess.appearance, fill: '#BFD9F5', stroke: '#185FA5', labelHalo: '#BFD9F5' },
                     },
                 },
                 edges: {
@@ -108,19 +108,19 @@ export const PROCESS_THEME_PRESETS = [
                     ...base.elementStyles,
                     event: {
                         ...base.elementStyles.event,
-                        appearance: { ...base.elementStyles.event.appearance, fill: '#0C447C', stroke: '#85B7EB', label: '#B5D4F4', strokeWidth: 1 },
+                        appearance: { ...base.elementStyles.event.appearance, fill: '#0C447C', stroke: '#85B7EB', label: '#B5D4F4', labelHalo: '#0C447C', strokeWidth: 1 },
                     },
                     task: {
                         ...base.elementStyles.task,
-                        appearance: { ...base.elementStyles.task.appearance, fill: '#2C2C2A', stroke: '#888780', label: '#D3D1C7', strokeWidth: 1 },
+                        appearance: { ...base.elementStyles.task.appearance, fill: '#2C2C2A', stroke: '#888780', label: '#D3D1C7', labelHalo: '#2C2C2A', strokeWidth: 1 },
                     },
                     gateway: {
                         ...base.elementStyles.gateway,
-                        appearance: { ...base.elementStyles.gateway.appearance, fill: '#444441', stroke: '#888780', label: '#B4B2A9', strokeWidth: 1 },
+                        appearance: { ...base.elementStyles.gateway.appearance, fill: '#444441', stroke: '#888780', label: '#B4B2A9', labelHalo: '#444441', strokeWidth: 1 },
                     },
                     decision: {
                         ...base.elementStyles.decision,
-                        appearance: { ...base.elementStyles.decision.appearance, fill: '#444441', stroke: '#888780', label: '#B4B2A9', strokeWidth: 1 },
+                        appearance: { ...base.elementStyles.decision.appearance, fill: '#444441', stroke: '#888780', label: '#B4B2A9', labelHalo: '#444441', strokeWidth: 1 },
                     },
                     subprocess: {
                         ...base.elementStyles.subprocess,
@@ -129,13 +129,14 @@ export const PROCESS_THEME_PRESETS = [
                             fill: '#0C447C',
                             stroke: '#85B7EB',
                             label: '#B5D4F4',
+                            labelHalo: '#0C447C',
                             strokeWidth: 1,
                             strokeDasharray: '5 3',
                         },
                     },
                     unknown: {
                         ...base.elementStyles.unknown,
-                        appearance: { ...base.elementStyles.unknown.appearance, fill: '#2C2C2A', stroke: '#5F5E5A', label: '#888780', strokeWidth: 1 },
+                        appearance: { ...base.elementStyles.unknown.appearance, fill: '#2C2C2A', stroke: '#5F5E5A', label: '#888780', labelHalo: '#2C2C2A', strokeWidth: 1 },
                     },
                 },
                 lanes: {

@@ -34,6 +34,17 @@ export interface ProcessElementAppearance {
      * Border never again silently affects text.
      */
     secondaryLabel?: string;
+    /**
+     * Color of the text-stroke halo painted behind the primary label (see
+     * ProcessCanvas.tsx's `paintOrder: 'stroke'` technique) — keeps a label
+     * legible when it sits outside/over the shape's own edge (common for
+     * decision/gateway labels, which can render outside the diamond).
+     * Previously hardcoded to reuse `fill` directly, so changing a node's
+     * Fill also silently changed this halo. Defaults to `fill`'s value when
+     * unset (see defaultProcessTheme.ts) so nothing changes visually until
+     * explicitly overridden — fully independent from Fill from then on.
+     */
+    labelHalo?: string;
     strokeWidth?: number;
     strokeDasharray?: string;
     cornerRadiusPx?: number;

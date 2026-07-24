@@ -8,6 +8,7 @@ interface ResolvedNodeLabel {
     fontSize: number;
     fontWeight: number;
     fill: string;
+    haloFill: string;
     lineSpacing: number;
 }
 interface ResolvedSecondaryLabel {
@@ -41,6 +42,7 @@ export interface LabelControllerResult {
     edgeLabels: Map<string, ResolvedEdgeLabel>;
 }
 export declare function buildProcessLabelControllerResult(nodes: LayoutNode[], edges: LayoutEdge[], theme: ProcessThemeSchema, padding: number): LabelControllerResult;
+export declare function resolveNodeLabel(node: LayoutNode, activeAnchors: Set<string>, theme: ProcessThemeSchema, padding: number): ResolvedNodeLabel | null;
 export declare function resolveSecondaryLabel(node: LayoutNode, theme: ProcessThemeSchema, padding: number): ResolvedSecondaryLabel | null;
 export {};
 //# sourceMappingURL=labelController.d.ts.map
