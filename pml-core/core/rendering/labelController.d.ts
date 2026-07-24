@@ -41,5 +41,6 @@ export interface LabelControllerResult {
     edgeLabels: Map<string, ResolvedEdgeLabel>;
 }
 export declare function buildProcessLabelControllerResult(nodes: LayoutNode[], edges: LayoutEdge[], theme: ProcessThemeSchema, padding: number): LabelControllerResult;
+export declare function resolveSecondaryLabel(node: LayoutNode, theme: ProcessThemeSchema, padding: number): ResolvedSecondaryLabel | null;
 export {};
 //# sourceMappingURL=labelController.d.ts.map

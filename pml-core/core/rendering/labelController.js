@@ -142,7 +142,9 @@ function fitTaskLabel(label, style, availableWidthPx) {
     const charWidthPx = TASK_LABEL_BASE_CHAR_WIDTH_PX * (TASK_LABEL_MIN_FONT_PX / TASK_LABEL_BASE_FONT_PX);
     return { lines: formatLabel(label, style, { availableWidthPx, charWidthPx }).lines, fontSize: TASK_LABEL_MIN_FONT_PX };
 }
-function resolveSecondaryLabel(node, theme, padding) {
+// Exported for direct unit testing of secondaryLabel color resolution
+// (previously hardcoded to appearance.stroke — see the fill: line below).
+export function resolveSecondaryLabel(node, theme, padding) {
     const style = getElementStyle(theme, node.type);
     if (style.infoPolicy.placement === 'hidden' ||
         isEventNodeKind(node.type) ||
@@ -170,7 +172,12 @@ function resolveSecondaryLabel(node, theme, padding) {
         y: padding + node.y + node.height / 2 - 4,
         fontSize: secondaryStyle.fontSizePx,
         fontWeight: secondaryStyle.weight,
-        fill: style.appearance.stroke,
+        // Previously hardcoded to style.appearance.stroke (the border color) —
+        // meant editing a node's Border visibly recolored this caption too.
+        // secondaryLabel is its own themeable field now (falls back to the
+        // primary label color if unset, e.g. an older persisted theme override
+        // from before this field existed).
+        fill: style.appearance.secondaryLabel ?? style.appearance.label,
         opacity: secondaryStyle.opacity ?? 0.75,
         letterSpacing: toLetterSpacing(secondaryStyle.tracking),
     };

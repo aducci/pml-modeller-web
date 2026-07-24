@@ -25,6 +25,15 @@ export interface ProcessElementAppearance {
     fill: string;
     stroke: string;
     label: string;
+    /**
+     * Color for the small secondary caption under a node's label (e.g. its
+     * type). Previously not themeable at all — labelController.ts hardcoded
+     * this to `stroke` (the border color), so editing Border visibly
+     * recolored this text too. Defaults to `label`'s value when unset (see
+     * defaultProcessTheme.ts) rather than reusing `stroke`, so changing
+     * Border never again silently affects text.
+     */
+    secondaryLabel?: string;
     strokeWidth?: number;
     strokeDasharray?: string;
     cornerRadiusPx?: number;

@@ -15,6 +15,20 @@ const ROLE_ORDER = ['primary', 'surface', 'border', 'text', 'warning'];
 const ROLE_LABEL = {
     primary: 'Primary', surface: 'Surface', border: 'Border', text: 'Text', warning: 'Warning',
 };
+const NODE_TYPE_LABEL = {
+    task: 'Task', event: 'Event', gateway: 'Gateway / Decision', subprocess: 'Subprocess', unknown: 'Unknown',
+};
+const WEIGHT_OPTIONS = [
+    { value: '400', label: 'Regular' },
+    { value: '500', label: 'Medium' },
+    { value: '600', label: 'Semibold' },
+    { value: '700', label: 'Bold' },
+];
+const TRACKING_OPTIONS = [
+    { value: 'normal', label: 'Normal' },
+    { value: 'wide', label: 'Wide' },
+    { value: 'wider', label: 'Wider' },
+];
 function setPath(obj, path, value) {
     if (path.length === 0)
         return value;
@@ -42,7 +56,9 @@ export const ThemeContextualPanel = ({ target, overrides, onChange }) => {
                 height: '100%', color: '#9CA3AF', textAlign: 'center', padding: 24, gap: 8,
             }, children: [_jsx(MousePointerClick, { size: 28, color: "#D1D5DB" }), _jsx("div", { style: { fontSize: 13, fontWeight: 500, color: '#6B7280' }, children: "Click an element to style it" }), _jsx("div", { style: { fontSize: 12, color: '#9CA3AF', maxWidth: 220 }, children: "Select any task, decision, lane, edge, or boundary event in the preview on the left." })] }));
     }
-    return (_jsxs("div", { style: { padding: '4px 4px 0' }, children: [_jsx("div", { style: { fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', marginBottom: 2 }, children: target.kind === 'node' ? 'Node' : target.kind === 'lane' ? 'Lane' : target.kind === 'edge' ? 'Edge' : 'Boundary' }), _jsx("div", { style: { fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 16 }, children: target.label }), target.kind === 'node' && _jsx(NodeFields, { elementStyleKey: target.elementStyleKey, theme: theme, roles: roles, set_: set_ }), target.kind === 'lane' && _jsx(LaneFields, { theme: theme, roles: roles, set_: set_ }), target.kind === 'edge' && _jsx(EdgeFields, { variant: target.variant, theme: theme, roles: roles, set_: set_ }), target.kind === 'curtain' && _jsx(CurtainFields, { side: target.side, theme: theme, roles: roles, set_: set_ })] }));
+    return (_jsxs("div", { style: { padding: '4px 4px 0' }, children: [_jsx("div", { style: { fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', marginBottom: 2 }, children: target.kind === 'node'
+                    ? `Node — ${NODE_TYPE_LABEL[target.elementStyleKey] ?? target.elementStyleKey}`
+                    : target.kind === 'lane' ? 'Lane' : target.kind === 'edge' ? 'Edge' : 'Boundary' }), _jsx("div", { style: { fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 16 }, children: target.label }), target.kind === 'node' && _jsx(NodeFields, { elementStyleKey: target.elementStyleKey, theme: theme, roles: roles, set_: set_ }), target.kind === 'lane' && _jsx(LaneFields, { theme: theme, roles: roles, set_: set_ }), target.kind === 'edge' && _jsx(EdgeFields, { variant: target.variant, theme: theme, roles: roles, set_: set_ }), target.kind === 'curtain' && _jsx(CurtainFields, { side: target.side, theme: theme, roles: roles, set_: set_ })] }));
 };
 // ---------------------------------------------------------------------------
 // RoleColorField — a ColorInput plus a row of 5 small theme-color swatches.
@@ -59,10 +75,14 @@ const RoleColorField = ({ label, hint, value, roles, onChange }) => (_jsx(Field,
                     } }, key))) })] }) }));
 // ---------------------------------------------------------------------------
 const NodeFields = ({ elementStyleKey, theme, roles, set_ }) => {
-    const appearance = theme.elementStyles[elementStyleKey]?.appearance ?? {};
-    const text = theme.elementStyles[elementStyleKey]?.text ?? {};
+    const elementStyle = theme.elementStyles[elementStyleKey] ?? {};
+    const appearance = elementStyle.appearance ?? {};
+    const text = elementStyle.text ?? {};
+    const infoPolicy = elementStyle.infoPolicy ?? {};
+    const secondaryStyle = infoPolicy.secondaryStyle ?? {};
+    const hasSecondaryLabel = infoPolicy.placement !== 'hidden' && (infoPolicy.secondaryFields?.length ?? 0) > 0;
     const path = (...tail) => ['elementStyles', elementStyleKey, ...tail];
-    return (_jsxs("div", { style: { display: 'grid', gap: 2 }, children: [_jsx(RoleColorField, { label: "Fill", value: appearance.fill ?? '#E6F1FB', roles: roles, onChange: v => set_(path('appearance', 'fill'), v) }), _jsx(RoleColorField, { label: "Border", value: appearance.stroke ?? '#94A3B8', roles: roles, onChange: v => set_(path('appearance', 'stroke'), v) }), _jsx(Field, { label: "Border width", children: _jsx(Num, { value: appearance.strokeWidth ?? 1, onChange: v => set_(path('appearance', 'strokeWidth'), v), min: 0, max: 6, step: 0.5, unit: "px", width: 56 }) }), _jsx(RoleColorField, { label: "Label color", value: appearance.label ?? '#111827', roles: roles, onChange: v => set_(path('appearance', 'label'), v) }), _jsx(Field, { label: "Font size", children: _jsx(Num, { value: text.fontSizePx ?? 11, onChange: v => set_(path('text', 'fontSizePx'), v), min: 6, max: 24, unit: "px", width: 56 }) }), _jsxs("div", { style: { marginTop: 14, paddingTop: 10, borderTop: '1px solid #F1F0ED' }, children: [_jsxs("div", { style: { fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9CA3AF', marginBottom: 4 }, children: ["All nodes (not just ", elementStyleKey, ")"] }), _jsx(Field, { label: "Drop shadow", children: _jsx(Toggle, { value: theme.nodeEffects?.shadow ?? true, onChange: v => set_(['nodeEffects', 'shadow'], v) }) }), _jsx(Field, { label: "Gradient shading", children: _jsx(Toggle, { value: theme.nodeEffects?.gradient ?? false, onChange: v => set_(['nodeEffects', 'gradient'], v) }) })] })] }));
+    return (_jsxs("div", { style: { display: 'grid', gap: 2 }, children: [_jsx("div", { style: { fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9CA3AF', marginBottom: 4 }, children: "Shape" }), _jsx(RoleColorField, { label: "Fill", value: appearance.fill ?? '#E6F1FB', roles: roles, onChange: v => set_(path('appearance', 'fill'), v) }), _jsx(RoleColorField, { label: "Border", value: appearance.stroke ?? '#94A3B8', roles: roles, onChange: v => set_(path('appearance', 'stroke'), v) }), _jsx(Field, { label: "Border width", children: _jsx(Num, { value: appearance.strokeWidth ?? 1, onChange: v => set_(path('appearance', 'strokeWidth'), v), min: 0, max: 6, step: 0.5, unit: "px", width: 56 }) }), _jsxs("div", { style: { marginTop: 14, paddingTop: 10, borderTop: '1px solid #F1F0ED' }, children: [_jsx("div", { style: { fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9CA3AF', marginBottom: 4 }, children: "Label text" }), _jsx("div", { style: { fontSize: 11, color: '#9CA3AF', marginBottom: 6 }, children: "The node's name \u2014 independent from Fill/Border above." }), _jsx(RoleColorField, { label: "Text color", value: appearance.label ?? '#111827', roles: roles, onChange: v => set_(path('appearance', 'label'), v) }), _jsx(Field, { label: "Font size", children: _jsx(Num, { value: text.fontSizePx ?? 11, onChange: v => set_(path('text', 'fontSizePx'), v), min: 6, max: 24, unit: "px", width: 56 }) }), _jsx(Field, { label: "Weight", children: _jsx(Select, { value: String(text.weight ?? 500), options: WEIGHT_OPTIONS, onChange: v => set_(path('text', 'weight'), Number(v)) }) }), _jsx(Field, { label: "Letter spacing", children: _jsx(Select, { value: text.tracking ?? 'normal', options: TRACKING_OPTIONS, onChange: v => set_(path('text', 'tracking'), v) }) }), _jsx(Field, { label: "Uppercase", children: _jsx(Toggle, { value: text.uppercase ?? false, onChange: v => set_(path('text', 'uppercase'), v) }) })] }), hasSecondaryLabel && (_jsxs("div", { style: { marginTop: 14, paddingTop: 10, borderTop: '1px solid #F1F0ED' }, children: [_jsx("div", { style: { fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9CA3AF', marginBottom: 4 }, children: "Secondary caption" }), _jsxs("div", { style: { fontSize: 11, color: '#9CA3AF', marginBottom: 6 }, children: ["The small caption under the label (shows ", infoPolicy.secondaryFields?.join(', '), ") \u2014 its own color, previously tied to Border above."] }), _jsx(RoleColorField, { label: "Text color", value: appearance.secondaryLabel ?? appearance.label ?? '#111827', roles: roles, onChange: v => set_(path('appearance', 'secondaryLabel'), v) }), _jsx(Field, { label: "Font size", children: _jsx(Num, { value: secondaryStyle.fontSizePx ?? 6, onChange: v => set_(path('infoPolicy', 'secondaryStyle', 'fontSizePx'), v), min: 5, max: 16, unit: "px", width: 56 }) }), _jsx(Field, { label: "Weight", children: _jsx(Select, { value: String(secondaryStyle.weight ?? 600), options: WEIGHT_OPTIONS, onChange: v => set_(path('infoPolicy', 'secondaryStyle', 'weight'), Number(v)) }) })] })), _jsxs("div", { style: { marginTop: 14, paddingTop: 10, borderTop: '1px solid #F1F0ED' }, children: [_jsxs("div", { style: { fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9CA3AF', marginBottom: 4 }, children: ["All nodes (not just ", NODE_TYPE_LABEL[elementStyleKey] ?? elementStyleKey, ")"] }), _jsx(Field, { label: "Drop shadow", children: _jsx(Toggle, { value: theme.nodeEffects?.shadow ?? true, onChange: v => set_(['nodeEffects', 'shadow'], v) }) }), _jsx(Field, { label: "Gradient shading", children: _jsx(Toggle, { value: theme.nodeEffects?.gradient ?? false, onChange: v => set_(['nodeEffects', 'gradient'], v) }) })] })] }));
 };
 const LaneFields = ({ theme, roles, set_ }) => {
     const lanes = theme.lanes;

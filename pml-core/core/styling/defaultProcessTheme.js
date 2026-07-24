@@ -15,7 +15,7 @@ export const DEFAULT_PROCESS_THEME = {
     elementStyles: {
         event: {
             shape: 'circle',
-            appearance: { fill: '#E6F1FB', stroke: '#378ADD', label: '#0C447C', strokeWidth: 1 },
+            appearance: { fill: '#E6F1FB', stroke: '#378ADD', label: '#0C447C', secondaryLabel: '#0C447C', strokeWidth: 1 },
             text: { fontSizePx: 10, weight: 500, maxLines: 3, wrap: 'clamp' },
             labelPlacement: 'auto',
             infoPolicy: { primaryField: 'label', placement: 'hidden' },
@@ -25,7 +25,7 @@ export const DEFAULT_PROCESS_THEME = {
         // these entries exist so spreads in presets still compile.
         decision: {
             shape: 'diamond',
-            appearance: { fill: '#D3D1C7', stroke: '#5F5E5A', label: '#2C2C2A', strokeWidth: 1 },
+            appearance: { fill: '#D3D1C7', stroke: '#5F5E5A', label: '#2C2C2A', secondaryLabel: '#2C2C2A', strokeWidth: 1 },
             text: { fontSizePx: 10, weight: 500, maxLines: 2, wrap: 'clamp' },
             labelPlacement: 'auto',
             infoPolicy: { primaryField: 'label', placement: 'hidden' },
@@ -35,7 +35,7 @@ export const DEFAULT_PROCESS_THEME = {
         // Canonical gateway token — decision + route both resolve here.
         gateway: {
             shape: 'diamond',
-            appearance: { fill: '#D3D1C7', stroke: '#5F5E5A', label: '#2C2C2A', strokeWidth: 1 },
+            appearance: { fill: '#D3D1C7', stroke: '#5F5E5A', label: '#2C2C2A', secondaryLabel: '#2C2C2A', strokeWidth: 1 },
             text: { fontSizePx: 10, weight: 500, maxLines: 2, wrap: 'clamp' },
             labelPlacement: 'auto',
             infoPolicy: { primaryField: 'label', placement: 'hidden' },
@@ -47,6 +47,7 @@ export const DEFAULT_PROCESS_THEME = {
                 fill: '#E6F1FB',
                 stroke: '#378ADD',
                 label: '#0C447C',
+                secondaryLabel: '#0C447C',
                 strokeWidth: 1,
                 strokeDasharray: '5 3',
                 cornerRadiusPx: 6,
@@ -61,7 +62,7 @@ export const DEFAULT_PROCESS_THEME = {
         },
         task: {
             shape: 'rounded-rect',
-            appearance: { fill: '#F1EFE8', stroke: '#888780', label: '#2C2C2A', strokeWidth: 1, cornerRadiusPx: 6 },
+            appearance: { fill: '#F1EFE8', stroke: '#888780', label: '#2C2C2A', secondaryLabel: '#2C2C2A', strokeWidth: 1, cornerRadiusPx: 6 },
             text: { fontSizePx: 10, weight: 500, maxLines: 3, wrap: 'clamp' },
             labelPlacement: 'inside',
             infoPolicy: {
@@ -72,7 +73,7 @@ export const DEFAULT_PROCESS_THEME = {
         },
         unknown: {
             shape: 'rounded-rect',
-            appearance: { fill: '#F1EFE8', stroke: '#D3D1C7', label: '#888780', strokeWidth: 1, cornerRadiusPx: 6 },
+            appearance: { fill: '#F1EFE8', stroke: '#D3D1C7', label: '#888780', secondaryLabel: '#888780', strokeWidth: 1, cornerRadiusPx: 6 },
             text: { fontSizePx: 11, weight: 500, maxLines: 2, wrap: 'clamp' },
             labelPlacement: 'inside',
             infoPolicy: { primaryField: 'label', placement: 'bottom-inside', secondaryFields: ['type'] },
