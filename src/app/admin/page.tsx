@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Settings2, Sparkles } from 'lucide-react';
 import {
   ProcessController,
   PatternTableController,
@@ -13,6 +14,17 @@ import {
   onSharedStateChange,
   type SharedState,
 } from 'pml-core';
+import { SkillsPanel } from '@/components/admin/SkillsPanel';
+
+// Outer tab: 'workspace' is everything AdminView already covers (Theme,
+// Layout, Patterns, Routing — client-side/localStorage config from
+// pml-core). 'skills' is new: real DB-backed, versioned AI prompt content,
+// which needs Next.js API routes + Prisma + the super-admin auth guard —
+// none of which pml-core (a portable library also used by a standalone dev
+// harness outside this web app) knows about. Kept as a sibling tab rather
+// than injected into AdminView's own tab bar, so pml-core stays unaware of
+// anything web-app-specific.
+type OuterTab = 'workspace' | 'skills';
 
 // Standalone controller set for the config screen. Layout/theme overrides,
 // pattern table, and routing rules are global (localStorage-backed via
@@ -20,6 +32,7 @@ import {
 // this mirrors PML_DSL's own dev shell (PML_DSL/src/App.tsx).
 export default function AdminPage() {
   const router = useRouter();
+  const [outerTab, setOuterTab] = useState<OuterTab>('workspace');
 
   const patternTableControllerRef = useRef<PatternTableController>();
   if (!patternTableControllerRef.current) {
@@ -101,14 +114,50 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="h-screen w-screen">
-      <AdminView
-        controller={controller}
-        patternTableController={patternTableController}
-        routingRulesController={routingRulesController}
-        state={state}
-        onBack={() => router.back()}
-      />
+    <div className="h-screen w-screen" style={{ display: 'flex', flexDirection: 'column' }}>
+      {/* Outer tab strip — 'workspace' (Theme/Layout/Patterns, from
+          pml-core's AdminView) vs. 'skills' (DB-backed AI prompt content,
+          this web app only). AdminView keeps its own header/Back button for
+          leaving admin entirely; this strip only switches between the two
+          top-level areas. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 16px 0', background: '#F9FAFB', flexShrink: 0 }}>
+        {([
+          { id: 'workspace' as const, label: 'Workspace Config', icon: Settings2 },
+          { id: 'skills' as const, label: 'AI Skills', icon: Sparkles },
+        ]).map((tab) => {
+          const Icon = tab.icon;
+          const active = outerTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setOuterTab(tab.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px',
+                borderRadius: '6px 6px 0 0', border: '1px solid #E5E7EB', borderBottom: active ? '1px solid #fff' : '1px solid #E5E7EB',
+                background: active ? '#fff' : 'transparent', color: active ? '#111827' : '#6B7280',
+                fontSize: 13, fontWeight: active ? 600 : 400, cursor: 'pointer', marginBottom: -1,
+              }}
+            >
+              <Icon size={14} />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ flex: 1, minHeight: 0 }}>
+        {outerTab === 'workspace' ? (
+          <AdminView
+            controller={controller}
+            patternTableController={patternTableController}
+            routingRulesController={routingRulesController}
+            state={state}
+            onBack={() => router.back()}
+          />
+        ) : (
+          <SkillsPanel />
+        )}
+      </div>
     </div>
   );
 }

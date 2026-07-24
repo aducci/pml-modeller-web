@@ -26,9 +26,13 @@
 import { NextRequest } from 'next/server';
 import { parsePml, extractGraphWindow, serializeWindow, computeProcessSuggestions } from 'pml-core';
 import { generatePatches, isAiAvailable, type ProcessSuggestion } from '@/lib/ai/client';
+import { requireAiSession } from '@/lib/ai/authGuard';
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await requireAiSession();
+    if (!session.ok) return session.response;
+
     if (!isAiAvailable()) {
       return new Response(
         JSON.stringify({ error: 'AI is not configured. Set ANTHROPIC_API_KEY.', patches: [] }),

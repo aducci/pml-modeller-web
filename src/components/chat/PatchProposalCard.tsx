@@ -68,15 +68,35 @@ export function PatchProposalCard({ proposal, onAccept, onReject }: Props) {
       : proposal.status === 'superseded' ? 'Superseded by a manual edit'
       : 'Rejected';
     const statusColor = proposal.status === 'applied' ? '#059669' : '#9CA3AF';
+    const hasConflicts = proposal.status === 'applied' && (proposal.conflicts?.length ?? 0) > 0;
     return (
       <div style={{
         marginTop: 8, padding: '8px 12px', borderRadius: 8,
         background: proposal.status === 'applied' ? '#ECFDF5' : '#F9FAFB',
         border: `1px solid ${proposal.status === 'applied' ? '#A7F3D0' : '#E5E7EB'}`,
-        fontSize: 12, color: statusColor, display: 'flex', alignItems: 'center', gap: 6,
+        fontSize: 12, color: statusColor,
       }}>
-        {proposal.status === 'applied' ? <Check size={14} /> : <X size={14} />}
-        {statusLabel}: {proposal.description}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {proposal.status === 'applied' ? <Check size={14} /> : <X size={14} />}
+          {statusLabel}: {proposal.description}
+        </div>
+        {hasConflicts && (
+          <div style={{
+            marginTop: 6, paddingTop: 6, borderTop: '1px solid #A7F3D0',
+            color: '#B45309', display: 'flex', alignItems: 'flex-start', gap: 6,
+          }}>
+            <AlertTriangle size={13} style={{ marginTop: 1, flexShrink: 0 }} />
+            <span>
+              Your own edits took priority on {proposal.conflicts!.length} field{proposal.conflicts!.length > 1 ? 's' : ''} that changed while this was pending:{' '}
+              {proposal.conflicts!.map((c, i) => (
+                <span key={i}>
+                  {i > 0 && ', '}
+                  <b>{c.nodeId}</b>.{c.field} (kept "{String(c.userValue)}")
+                </span>
+              ))}
+            </span>
+          </div>
+        )}
       </div>
     );
   }

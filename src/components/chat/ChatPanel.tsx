@@ -6,16 +6,25 @@ import { useConversation, type TurnMode } from './ConversationContext';
 import { ConversationMessage } from './ConversationMessage';
 import { emit } from '@/lib/ai/eventLog';
 
+interface AcceptResult {
+  success: boolean;
+  error?: string;
+  /** Conflicts the control plane resolved by dropping the AI's op in favor of
+   *  the user's direct edit (controlPlane.ts's reconcile()) — surfaced so the
+   *  user knows something was silently overridden, not just that Accept worked. */
+  conflicts?: Array<{ nodeId: string; field: string; aiValue: unknown; userValue: unknown }>;
+}
+
 interface Props {
   /** Current PML snippet to provide as context for AI queries */
   pmlSnippet?: string;
   /** Called when the user accepts a proposal — receives the proposal id, mode, patches, the turnId that produced it, and the PML the patches were generated against (for reconciliation); returns whether the commit actually succeeded */
-  onProposalAccept?: (proposalId: string, mode: TurnMode, patches: any[], turnId: string, originalPml: string) => { success: boolean; error?: string };
+  onProposalAccept?: (proposalId: string, mode: TurnMode, patches: any[], turnId: string, originalPml: string) => AcceptResult;
   style?: React.CSSProperties;
 }
 
 export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
-  const { state, sendMessage, acceptProposal, failProposal, rejectProposal, clearConversation, startInterview } = useConversation();
+  const { state, sendMessage, acceptProposal, failProposal, rejectProposal, cancelRequest, clearConversation, startInterview } = useConversation();
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -70,7 +79,7 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
 
     const result = onProposalAccept?.(proposalId, proposal.mode, proposal.patches, proposal.turnId, proposal.originalPml);
     if (!result || result.success) {
-      acceptProposal(proposalId);
+      acceptProposal(proposalId, result?.conflicts);
     } else {
       failProposal(proposalId, result.error || 'Failed to apply changes');
     }
@@ -221,6 +230,18 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#D1D5DB', animation: 'pulse 1.2s infinite 0.4s' }} />
             </div>
             Thinking...
+            <button
+              onClick={cancelRequest}
+              style={{
+                marginLeft: 4, padding: '2px 8px', borderRadius: 6,
+                border: '1px solid #E5E7EB', background: '#fff',
+                cursor: 'pointer', fontSize: 11, color: '#6B7280',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#FEF2F2'; e.currentTarget.style.color = '#DC2626'; e.currentTarget.style.borderColor = '#FECACA'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.color = '#6B7280'; e.currentTarget.style.borderColor = '#E5E7EB'; }}
+            >
+              Stop
+            </button>
           </div>
         )}
 

@@ -17,10 +17,10 @@
  * deliberately-deferred concern (conversation *content* persistence); this
  * is turn *event* history, and persisting it is future work, not this phase.
  *
- * Built to directly answer 11_...md §8's metrics questions (patch acceptance
- * rate per mode, inferred-value correction latency, tool/action failure
- * rate) rather than as a generic logging framework — see the query helpers
- * at the bottom.
+ * Bounded to the most recent MAX_EVENTS entries — this is in-memory and
+ * process-local (a serverless instance's log is not the global log anyway),
+ * so nothing reads it back for cross-request analytics today; the cap just
+ * keeps a long-lived instance from growing this array forever.
  */
 
 import type { TurnMode } from '@/components/chat/ConversationContext';
@@ -52,6 +52,7 @@ export interface TurnEvent {
   detail?: Record<string, unknown>;
 }
 
+const MAX_EVENTS = 2000;
 const events: TurnEvent[] = [];
 
 let turnCounter = 0;
@@ -62,37 +63,12 @@ export function newTurnId(): string {
 
 export function emit(event: TurnEvent): void {
   events.push(event);
+  if (events.length > MAX_EVENTS) {
+    events.splice(0, events.length - MAX_EVENTS);
+  }
 }
 
 /** Read-only snapshot of the full event log. */
 export function getEventLog(): ReadonlyArray<TurnEvent> {
   return events;
-}
-
-// ---------------------------------------------------------------------------
-// Query helpers — answer 11_...md §8's metrics questions directly, rather
-// than leaving every consumer to re-derive them from raw events.
-// ---------------------------------------------------------------------------
-
-/** Patch/action acceptance rate, overall or scoped to one mode. */
-export function acceptanceRate(mode?: TurnMode): number {
-  const relevant = events.filter(
-    (e) => (e.type === 'UserApproved' || e.type === 'UserRejected') && (!mode || e.mode === mode)
-  );
-  if (relevant.length === 0) return NaN;
-  const approved = relevant.filter((e) => e.type === 'UserApproved').length;
-  return approved / relevant.length;
-}
-
-/** Tool/action failure rate — TurnFailed events as a fraction of all turns started. */
-export function failureRate(): number {
-  const started = events.filter((e) => e.type === 'TurnStarted').length;
-  if (started === 0) return NaN;
-  const failed = events.filter((e) => e.type === 'TurnFailed').length;
-  return failed / started;
-}
-
-/** Number of PatchConflictDetected events — a live signal for Phase E's reconciliation protocol once it exists. */
-export function conflictCount(): number {
-  return events.filter((e) => e.type === 'PatchConflictDetected').length;
 }

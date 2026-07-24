@@ -25,15 +25,6 @@ const SUGGESTION_PRIORITY = [
 
 export type MessageRole = 'user' | 'assistant' | 'system';
 
-export interface ModelObservation {
-  severity: 'error' | 'warning' | 'info';
-  category?: string;
-  title: string;
-  description: string;
-  /** Index into the patches array (if this observation has a corresponding fix). */
-  patchRef?: number;
-}
-
 export interface PatchProposal {
   id: string;
   patches: PmlPatch[];
@@ -74,6 +65,11 @@ export interface PatchProposal {
    * conflicting node(s) rather than assuming the whole proposal is stale.
    */
   originalPml: string;
+  /** Set when the control plane's reconcile() dropped one or more of this
+   *  proposal's ops in favor of a conflicting direct user edit — surfaced on
+   *  the card so the user knows something was overridden, not just that
+   *  Accept succeeded (controlPlane.ts's CommitOutcome.conflicts). */
+  conflicts?: Array<{ nodeId: string; field: string; aiValue: unknown; userValue: unknown }>;
 }
 
 /**
@@ -96,7 +92,6 @@ export interface ConversationMessage {
   content: string;
   timestamp: number;
   patches?: PatchProposal[];
-  observations?: ModelObservation[];
   question?: ClarifyingQuestion;
 }
 
@@ -118,7 +113,7 @@ export type GraphFocusType = 'actor' | 'decision' | 'flow-path' | 'full';
 // construct an implicit intent today) — not new capability from zero.
 // ---------------------------------------------------------------------------
 
-export type TurnMode = 'explore' | 'interview' | 'review' | 'point-edit' | 'sign-off';
+export type TurnMode = 'explore' | 'interview' | 'review' | 'point-edit';
 
 export interface TurnScope {
   type: 'document' | 'subgraph' | 'node' | 'selection';
@@ -134,16 +129,15 @@ export interface TurnIntent {
 
 /**
  * Fixed per-mode permission table (11_...md §3.1) — autonomy is attached to
- * the mode, not decided dynamically by the model. `sign-off` isn't wired to
- * anything yet (Vision F, still not started) but is listed here so the
- * table is complete and doesn't need a second migration when it is.
+ * the mode, not decided dynamically by the model. A `sign-off` mode (Vision
+ * F) was reserved here previously with no caller anywhere in the app; add it
+ * back with a real entry when that feature is actually built.
  */
 const MODE_PERMISSIONS: Record<TurnMode, { canPropose: boolean; canCommit: 'never' | 'requires-approval' }> = {
   explore: { canPropose: false, canCommit: 'never' },
   interview: { canPropose: true, canCommit: 'requires-approval' },
   review: { canPropose: true, canCommit: 'requires-approval' },
   'point-edit': { canPropose: true, canCommit: 'requires-approval' },
-  'sign-off': { canPropose: true, canCommit: 'requires-approval' },
 };
 
 export function canModePropose(mode: TurnMode): boolean {
@@ -166,7 +160,7 @@ type ConversationAction =
   | { type: 'UPDATE_MESSAGE_CONTENT'; payload: { messageId: string; content: string } }
   | { type: 'SET_PROCESSING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
-  | { type: 'UPDATE_PROPOSAL'; payload: { proposalId: string; status: PatchProposal['status']; error?: string } }
+  | { type: 'UPDATE_PROPOSAL'; payload: { proposalId: string; status: PatchProposal['status']; error?: string; conflicts?: PatchProposal['conflicts'] } }
   | { type: 'ANSWER_QUESTION'; payload: { messageId: string; answer: string } }
   | { type: 'CLEAR_CONVERSATION' };
 
@@ -212,7 +206,7 @@ function conversationReducer(state: ConversationState, action: ConversationActio
             ...msg,
             patches: msg.patches.map((p) =>
               p.id === action.payload.proposalId
-                ? { ...p, status: action.payload.status, error: action.payload.error }
+                ? { ...p, status: action.payload.status, error: action.payload.error, conflicts: action.payload.conflicts ?? p.conflicts }
                 : p
             ),
           };
@@ -260,9 +254,12 @@ interface ConversationContextValue {
     focusId?: string;
     source?: TurnIntent['source'];
   }) => Promise<void>;
-  acceptProposal: (proposalId: string) => void;
+  acceptProposal: (proposalId: string, conflicts?: PatchProposal['conflicts']) => void;
   failProposal: (proposalId: string, error: string) => void;
   rejectProposal: (proposalId: string) => void;
+  /** Aborts the in-flight AI request, if any — wired to a Stop/cancel button
+   *  in ChatPanel so a hung or slow request isn't stuck forever. */
+  cancelRequest: () => void;
   /**
    * Records the chosen option on a clarifying question's message, then
    * re-sends it as the next sendMessage call with the same mode/scope
@@ -549,8 +546,13 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
-  const acceptProposal = useCallback((proposalId: string) => {
-    dispatch({ type: 'UPDATE_PROPOSAL', payload: { proposalId, status: 'applied' } });
+  const acceptProposal = useCallback((proposalId: string, conflicts?: PatchProposal['conflicts']) => {
+    dispatch({ type: 'UPDATE_PROPOSAL', payload: { proposalId, status: 'applied', conflicts } });
+  }, []);
+
+  const cancelRequest = useCallback(() => {
+    abortRef.current?.abort();
+    dispatch({ type: 'SET_PROCESSING', payload: false });
   }, []);
 
   const failProposal = useCallback((proposalId: string, error: string) => {
@@ -662,8 +664,11 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
           }
         }
       } catch (err: any) {
-        // Silently fail — the welcome message is enough
+        // The welcome message still stands, but the user asked to analyse
+        // the existing model and that silently didn't happen — say so
+        // instead of leaving it looking like the AI just didn't respond.
         emit({ type: 'TurnFailed', turnId, mode: 'interview', timestamp: Date.now(), detail: { reason: err?.message } });
+        dispatch({ type: 'SET_ERROR', payload: err?.message || 'Failed to analyse the existing model' });
       } finally {
         dispatch({ type: 'SET_PROCESSING', payload: false });
       }
@@ -671,7 +676,7 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   return (
-    <ConversationContext.Provider value={{ state, sendMessage, acceptProposal, failProposal, rejectProposal, answerQuestion, clearConversation, setFocus, startInterview, focusType, focusId, highlightedNodeIds, setHighlightedNodeIds, dismissedFindingKeys, dismissFinding }}>
+    <ConversationContext.Provider value={{ state, sendMessage, acceptProposal, failProposal, rejectProposal, cancelRequest, answerQuestion, clearConversation, setFocus, startInterview, focusType, focusId, highlightedNodeIds, setHighlightedNodeIds, dismissedFindingKeys, dismissFinding }}>
       {children}
     </ConversationContext.Provider>
   );
