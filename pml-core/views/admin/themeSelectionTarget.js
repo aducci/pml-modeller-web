@@ -1,4 +1,5 @@
 import { isGatewayNodeKind } from '../../core/nodeKinds';
+import { resolveEdgeCategory } from '../../core/rendering/buildNodeRenderModels';
 export function resolveThemeSelectionTarget(type, id, state) {
     if (type === 'lane') {
         const lane = state.layoutResult?.lanes?.find((l) => l.id === id);
@@ -33,18 +34,11 @@ export function resolveThemeSelectionTarget(type, id, state) {
         if (!edge)
             return null;
         const nodesById = new Map((state.layoutResult?.nodes ?? []).map((n) => [n.id, n]));
-        const sourceActor = nodesById.get(edge.source)?.actor;
-        const targetActor = nodesById.get(edge.target)?.actor;
-        // semanticRole is genuine modelling intent and takes priority over
-        // geometry-driven variants — mirrors the same priority order
-        // buildNodeRenderModels.ts uses when actually rendering the edge.
-        const variant = edge.semanticRole === 'messageFlow'
-            ? 'message'
-            : edge.loop
-                ? 'loopback'
-                : (sourceActor && targetActor && sourceActor !== targetActor)
-                    ? 'crossLane'
-                    : 'default';
+        // Same category resolver the renderer itself uses (buildNodeRenderModels.ts)
+        // — previously this had its own separate, slightly different copy of the
+        // same logic, risking the admin panel disagreeing with what's actually
+        // on screen.
+        const variant = resolveEdgeCategory(edge, nodesById);
         return { kind: 'edge', id, variant, label: edge.label ?? `${edge.source} → ${edge.target}` };
     }
     return null;

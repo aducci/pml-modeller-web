@@ -88,7 +88,7 @@ const LaneFields = ({ theme, roles, set_ }) => {
     const lanes = theme.lanes;
     return (_jsxs("div", { style: { display: 'grid', gap: 2 }, children: [_jsx(RoleColorField, { label: "Body fill", value: lanes.bodyFill, roles: roles, onChange: v => set_(['lanes', 'bodyFill'], v) }), _jsx(RoleColorField, { label: "Header fill", value: lanes.headerFill, roles: roles, onChange: v => set_(['lanes', 'headerFill'], v) }), _jsx(RoleColorField, { label: "Border color", value: lanes.borderColor, roles: roles, onChange: v => set_(['lanes', 'borderColor'], v) }), _jsx(Field, { label: "Border width", children: _jsx(Num, { value: lanes.borderWidth, onChange: v => set_(['lanes', 'borderWidth'], v), min: 0.5, max: 4, step: 0.5, unit: "px", width: 56 }) }), _jsx(RoleColorField, { label: "Label color", value: lanes.labelColor, roles: roles, onChange: v => set_(['lanes', 'labelColor'], v) }), _jsx(Field, { label: "Header font size", children: _jsx(Num, { value: theme.typography?.laneHeader?.fontSizePx ?? 11, onChange: v => set_(['typography', 'laneHeader', 'fontSizePx'], v), min: 6, max: 24, unit: "px", width: 56 }) })] }));
 };
-const VARIANT_LABEL = { default: 'Same-lane flow', crossLane: 'Cross-lane flow', loopback: 'Loopback / rework flow', message: 'Message flow (cross-actor communication)' };
+const VARIANT_LABEL = { default: 'Same-lane flow', crossLane: 'Cross-lane flow', loopback: 'Loopback / rework flow', message: 'Message flow (cross-actor communication)', exception: 'Exception / compensation / escalation flow' };
 const EdgeFields = ({ variant, theme, roles, set_ }) => {
     const edgeStyle = theme.edges[variant] ?? theme.edges.default;
     const label = theme.edges.label ?? {};

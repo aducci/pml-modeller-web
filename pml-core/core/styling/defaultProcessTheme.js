@@ -100,6 +100,11 @@ export const DEFAULT_PROCESS_THEME = {
             strokeWidth: 1.5,
             strokeDasharray: '6 4',
         },
+        exception: {
+            stroke: '#EA580C',
+            strokeWidth: 1.5,
+            strokeDasharray: '5 3',
+        },
         selected: {
             stroke: '#378ADD',
             strokeWidth: 2.5,

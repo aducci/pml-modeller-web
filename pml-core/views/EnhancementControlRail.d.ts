@@ -1,5 +1,5 @@
 import React from 'react';
-type ConnectorStyle = 'uniform' | 'keyFlow' | 'flowTypes';
+import type { ConnectorStyle } from '../core/rendering/buildNodeRenderModels';
 type Props = {
     laneViewMode: 'swimlane' | 'none' | 'by-app';
     modelSpacing: 'Natural' | 'Compact';

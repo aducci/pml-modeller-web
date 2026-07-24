@@ -123,6 +123,14 @@ export interface EdgeStyle {
      * open arrowhead by default, matching BPMN's message-flow convention.
      */
     message: EdgeVisual;
+    /**
+     * Visual for semanticRole=exceptionFlow/compensationFlow/eventEscalation
+     * edges — previously these categories only existed as a hardcoded color
+     * in alternateEdgeStyle()'s FLOW_TYPE_COLORS palette in "Colored"
+     * connector-style mode, invisible to and unreachable from this schema/the
+     * admin Theme panel. Now a themeable bucket like message/loopback.
+     */
+    exception: EdgeVisual;
     selected: EdgeVisual;
     halo: {
         default: HaloStyle;

@@ -91,7 +91,7 @@ curtainGeometry, inboundNodes, outboundNodes, connectorStyle = 'flowTypes') {
     // ── Lanes ──────────────────────────────────────────
     const laneModels = buildLaneModels(lanes, padding, options, theme);
     // ── Edges ──────────────────────────────────────────
-    const edgeModels = buildEdgeModels(edges, padding, theme, visibilityMode, revealGroups, selectedElementId, flowVisibility, labelScene, connectorStyle);
+    const edgeModels = buildEdgeModels(edges, padding, theme, visibilityMode, revealGroups, selectedElementId, flowVisibility, labelScene, connectorStyle, nodes);
     // ── Curtains ───────────────────────────────────────
     const curtainModels = buildCurtainModels(curtainGeometry, inboundNodes ?? [], outboundNodes ?? [], lanes, padding, bounds.height, options, theme);
     // ── Nodes ──────────────────────────────────────────
@@ -399,16 +399,37 @@ function buildActorPill(node, nodeX, nodeY, nodeWidth, nodeHeight, effectiveShow
         fill: themeLanes.labelColor,
     };
 }
-// ============================================================================
-// Edge model builder
-// ============================================================================
-// Exported for direct unit testing of the visual/arrow-style selection
-// logic (semanticRole vs. geometry-driven loopback/cross-lane) without
-// needing to exercise the full LayoutEngine — everywhere else, this is
-// still only called internally as part of buildNodeRenderModels().
-export function buildEdgeModels(edges, padding, theme, visibilityMode, revealGroups, selectedElementId, flowVisibility, labelScene, connectorStyle = 'flowTypes') {
+export function resolveEdgeCategory(edge, nodesById) {
+    // semanticRole is genuine modelling intent (the author/AI tagged this
+    // edge deliberately), unlike loopback/cross-lane below which are inferred
+    // purely from graph shape — intent wins over geometry, so e.g. a message
+    // flow that happens to also cross a lane or loop back still renders as a
+    // message flow, not a loopback/cross-lane edge.
+    if (edge.semanticRole === 'messageFlow')
+        return 'message';
+    if (edge.semanticRole === 'exceptionFlow' || edge.semanticRole === 'compensationFlow' || edge.semanticRole === 'eventEscalation') {
+        return 'exception';
+    }
+    // edge.loop is a reliable boolean field set by the parser/flow-classifier
+    // — used here instead of string-matching edge.routing.scenario, which is
+    // a free-text routing-engine description not guaranteed to contain any
+    // particular substring and was previously forced to '' in some connector
+    // modes, silently disabling this branch.
+    if (edge.loop)
+        return 'loopback';
+    const sourceActor = nodesById.get(edge.source)?.actor;
+    const targetActor = nodesById.get(edge.target)?.actor;
+    if (sourceActor && targetActor && sourceActor !== targetActor)
+        return 'crossLane';
+    return 'default';
+}
+// Exported for direct unit testing of the edge-category/visual-selection
+// logic without needing to exercise the full LayoutEngine — everywhere
+// else, this is still only called internally as part of buildNodeRenderModels().
+export function buildEdgeModels(edges, padding, theme, visibilityMode, revealGroups, selectedElementId, flowVisibility, labelScene, connectorStyle = 'flowTypes', nodes = []) {
     const themeEdges = theme.edges;
     const result = [];
+    const nodesById = new Map(nodes.map((n) => [n.id, n]));
     for (const edge of edges) {
         if (!edge.routing?.waypoints || edge.routing.waypoints.length < 2)
             continue;
@@ -420,38 +441,30 @@ export function buildEdgeModels(edges, padding, theme, visibilityMode, revealGro
             x: padding + p.x,
             y: padding + p.y,
         }));
+        const category = resolveEdgeCategory(edge, nodesById);
+        // De-emphasis only (opacity/widthScale for keyFlow mode) — no longer
+        // returns a color at all; color always comes from theme.edges[category]
+        // below, in every connector-style mode, so the admin Theme panel's edge
+        // colors are never silently overridden by a hidden hardcoded palette.
         const alt = alternateEdgeStyle(edge, connectorStyle);
-        // Colored mode is solid-only by design (color alone carries meaning) — like uniform,
-        // it must not pick up a routing-geometry dash (loopback/cross-lane) as a fallback.
-        const scenario = (connectorStyle === 'uniform' || connectorStyle === 'flowTypes')
-            ? ''
-            : (edge.routing?.scenario || '');
-        let visual;
-        let dash;
-        // semanticRole is genuine modelling intent (the author/AI tagged this
-        // edge as cross-actor communication), unlike loopback/cross-lane below
-        // which are inferred purely from routing geometry — intent wins over
-        // geometry, so a message flow that happens to also cross a lane or
-        // loop back still renders as a message flow, not a loopback/cross-lane.
-        const isMessageFlow = edge.semanticRole === 'messageFlow';
-        if (isMessageFlow) {
-            visual = themeEdges.message;
-            dash = alt.dash ?? themeEdges.message.strokeDasharray;
-        }
-        else if (scenario.includes('loopback') || scenario.includes('backward')) {
-            visual = themeEdges.loopback;
-            dash = alt.dash ?? '7 4';
-        }
-        else if (scenario.includes('cross-lane')) {
-            visual = themeEdges.crossLane;
-            dash = alt.dash ?? themeEdges.crossLane.strokeDasharray;
-        }
-        else {
-            visual = themeEdges.default;
-            dash = alt.dash;
-        }
+        const visual = category === 'message' ? themeEdges.message
+            : category === 'exception' ? themeEdges.exception
+                : category === 'loopback' ? themeEdges.loopback
+                    : category === 'crossLane' ? themeEdges.crossLane
+                        : themeEdges.default;
+        // 'uniform' mode is solid-only by design (no category dash pattern at
+        // all — every edge looks identical apart from selection). 'keyFlow' mode
+        // dashes every non-happy-path edge regardless of category, to visually
+        // separate the key flow from everything else — that takes priority over
+        // the category's own dash. Every other mode shows the category's own
+        // themed dash.
+        const dash = connectorStyle === 'uniform'
+            ? undefined
+            : (connectorStyle === 'keyFlow' && !edge.keyFlow)
+                ? '4 3'
+                : visual.strokeDasharray;
         const isSelected = selectedElementId === edge.id;
-        const strokeColor = isSelected ? themeEdges.selected.stroke : (alt.stroke ?? visual.stroke);
+        const strokeColor = isSelected ? themeEdges.selected.stroke : visual.stroke;
         const strokeWidth = isSelected ? themeEdges.selected.strokeWidth : visual.strokeWidth * alt.widthScale;
         const haloColor = isSelected ? themeEdges.halo.selected.color : themeEdges.halo.default.color;
         const haloWidth = isSelected ? themeEdges.halo.selected.width : themeEdges.halo.default.width;
@@ -483,7 +496,7 @@ export function buildEdgeModels(edges, padding, theme, visibilityMode, revealGro
             haloColor,
             haloWidth,
             showArrow: true,
-            arrowStyle: isMessageFlow ? 'open' : 'solid',
+            arrowStyle: category === 'message' ? 'open' : 'solid',
             label,
         });
     }
@@ -534,51 +547,22 @@ function isEdgeVisibleByFlowType(edge, flowVisibility) {
         default: return true;
     }
 }
-// Colored-mode palette: main/primary green, exception-family orange, back-edges purple,
-// message-flow accent, plain alternate gray. Keyed off flow classification, not routing
-// geometry — distinct from theme.edges.loopback/crossLane, which are chosen by edge
-// geometry instead.
-const FLOW_TYPE_COLORS = {
-    main: '#16A34A',
-    exception: '#EA580C',
-    loop: '#7C3AED',
-    message: '#6B4FBB',
-    alternate: '#6B7280',
-};
+/**
+ * De-emphasis only — opacity/widthScale for 'keyFlow' connector-style mode
+ * (dim/thin non-happy-path edges). Color no longer comes from here: it
+ * previously returned a `stroke` sourced from a hardcoded FLOW_TYPE_COLORS
+ * palette in 'flowTypes'/'colored' mode, invisible to and unreachable from
+ * the theme schema/admin Theme panel — resolveEdgeCategory + theme.edges[category]
+ * in buildEdgeModels() is now the single, only source of edge color, in
+ * every connector-style mode.
+ */
 function alternateEdgeStyle(edge, connectorStyle = 'flowTypes') {
-    if (connectorStyle === 'uniform') {
-        return { opacity: 1, widthScale: 1 };
-    }
     if (connectorStyle === 'keyFlow') {
         return edge.keyFlow
             ? { opacity: 1, widthScale: 1.3 }
-            : { dash: '4 3', opacity: 0.35, widthScale: 0.75 };
+            : { opacity: 0.35, widthScale: 0.75 };
     }
-    // Colored mode: color alone carries the category — deliberately no dash pattern here.
-    // (An earlier version dashed by category on top of color, which just added an unexplained
-    // second signal with no legend; solid everywhere, color-only, is what's actually legible.)
-    const layer = edge.flowLayer ?? 'main';
-    const role = edge.semanticRole;
-    const isExceptionFamily = role === 'exceptionFlow' || role === 'compensationFlow' || role === 'eventEscalation';
-    // Semantic intent (messageFlow) wins over both geometry (loop) and layer —
-    // mirrors the same priority order used for visual/dash selection above in
-    // buildEdgeModels(), so "colored" connector-style mode doesn't silently
-    // repaint a message-flow edge back to green/purple/gray.
-    if (role === 'messageFlow') {
-        return { opacity: 1, widthScale: 1, stroke: FLOW_TYPE_COLORS.message };
-    }
-    // Back-edges get their own color regardless of layer — a loopback is visually distinct
-    // from "just an alternate path" even when it's also the exception branch of a decision.
-    if (edge.loop) {
-        return { opacity: 1, widthScale: 1, stroke: FLOW_TYPE_COLORS.loop };
-    }
-    if (layer === 'main') {
-        return { opacity: 1, widthScale: 1, stroke: FLOW_TYPE_COLORS.main };
-    }
-    if (isExceptionFamily) {
-        return { opacity: 1, widthScale: 0.9, stroke: FLOW_TYPE_COLORS.exception };
-    }
-    return { opacity: 1, widthScale: 0.9, stroke: FLOW_TYPE_COLORS.alternate };
+    return { opacity: 1, widthScale: 1 };
 }
 // ============================================================================
 // Lane model builder

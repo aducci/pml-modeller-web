@@ -31,6 +31,9 @@ export function deriveThemeFromRoles(roles) {
             default: { stroke: roles.border },
             crossLane: { stroke: roles.border },
             loopback: { stroke: roles.warning },
+            // exception/compensation/escalation edges are the same "went off the
+            // happy path" signal as loopback — same role.
+            exception: { stroke: roles.warning },
             // message deliberately NOT derived from a role — it's a fixed accent
             // (see defaultProcessTheme.ts) so a message-flow edge stays visually
             // recognizable as "the cross-actor communication color" regardless of

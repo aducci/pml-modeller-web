@@ -1,4 +1,5 @@
 import { WorkspaceState, SelectedElement } from '../../types';
+import { type EdgeCategory } from '../../core/rendering/buildNodeRenderModels';
 /**
  * What kind of themeable thing is currently selected in the preview canvas,
  * and which theme sub-tree edits it. Resolved from the clicked element id +
@@ -17,7 +18,7 @@ export type ThemeSelectionTarget = {
 } | {
     kind: 'edge';
     id: string;
-    variant: 'default' | 'crossLane' | 'loopback' | 'message';
+    variant: EdgeCategory;
     label: string;
 } | {
     kind: 'curtain';
