@@ -28,6 +28,8 @@ model User {
   organizationMemberships OrganizationMember[]
   ownedOrganizations      Organization[]      @relation("OrganizationOwner")
   promptSkillVersionsAuthored PromptSkillVersion[]
+  findingCopyUpdates          FindingCopy[]
+  validationRuleUpdates       ValidationRule[]
 }
 
 model Account {
@@ -246,6 +248,44 @@ model PromptSkillVersion {
   createdByUser User?       @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
 
   @@index([skillId, createdAt])
+}
+
+// User-facing wording for a deterministic Finding (computeProcessSuggestions'
+// diagnostic `code`, e.g. TASK_NO_ACTOR) — kept separate from PromptSkill
+// since this is two short structured fields per code, not one prompt blob,
+// and there's no need for version history on a one-line label. One row per
+// code is the current value; missing rows fall back to the hardcoded
+// defaults in lib/ai/findingCopy.ts (same "seed from code, DB overrides"
+// shape PromptSkill uses). Keying on `code` rather than a synthetic id means
+// a future rules-framework addition (new diagnostic codes) gets an
+// admin-editable title/summary slot automatically, no migration needed.
+model FindingCopy {
+  code            String   @id
+  title           String
+  summary         String
+  updatedAt       DateTime @updatedAt
+  updatedByUserId String?
+  updatedByUser   User?    @relation(fields: [updatedByUserId], references: [id], onDelete: SetNull)
+}
+
+// Admin-editable override for one rule in pml-core's rule-shape framework
+// (contractGuards.ts's RuleConfig/DEFAULT_RULE_CONFIGS — see that file's
+// comment for the shape/predicate design). `params` stores the full
+// RuleConfig as JSON (not just `enabled`) so this table doesn't need a
+// second migration when the admin UI grows from "toggle a rule on/off"
+// (phase one) to editing individual parameters (threshold, predicate,
+// message template) later — the JSON blob's shape is already rich enough.
+// Missing rows fall back to DEFAULT_RULE_CONFIGS entirely (same "seed from
+// code, DB overrides" shape as FindingCopy/PromptSkill above). Keyed on
+// `code`, same reasoning as FindingCopy: a rule added to a shape the engine
+// already supports needs no schema change to become admin-editable.
+model ValidationRule {
+  code            String   @id
+  enabled         Boolean  @default(true)
+  params          Json?
+  updatedAt       DateTime @updatedAt
+  updatedByUserId String?
+  updatedByUser   User?    @relation(fields: [updatedByUserId], references: [id], onDelete: SetNull)
 }
 
 enum Plan {

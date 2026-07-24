@@ -1,12 +1,12 @@
 'use client';
 
-import React from 'react';
-import { AlertTriangle, Eye, MessageCircle, Wrench, X } from 'lucide-react';
-import type { ProcessDiagnostic } from 'pml-core';
+import React, { useState } from 'react';
+import { AlertTriangle, Eye, MessageCircle, Wrench, X, ChevronDown, ChevronUp } from 'lucide-react';
+import type { FindingWithCopy } from '@/lib/ai/findings';
 import { useConversation, findingKey } from './ConversationContext';
 
 interface Props {
-  finding: ProcessDiagnostic;
+  finding: FindingWithCopy;
 }
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -30,20 +30,43 @@ const CATEGORY_LABEL: Record<string, string> = {
  * transcript, not on this card.
  */
 export function FindingCard({ finding }: Props) {
-  const { setHighlightedNodeIds, sendMessage, dismissFinding } = useConversation();
+  const { highlightedNodeIds, setHighlightedNodeIds, sendMessage, dismissFinding } = useConversation();
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const key = findingKey(finding);
   const nodeIds = finding.evidence?.nodeIds ?? [];
   const edgeIds = finding.evidence?.edgeIds ?? [];
+  // Admin-editable copy (see lib/ai/findingCopy.ts) is preferred; falls back
+  // to the raw rule `message` when copy hasn't loaded or isn't defined for
+  // this code yet, so nothing regresses to a blank card.
+  const hasCopy = !!finding.title && !!finding.summary;
+
+  // "Show in model" is a toggle, not a one-way set: if this card's own
+  // evidence is already the active highlight, clicking again clears it
+  // rather than re-applying the same ids with no way back off.
+  const isShowing = nodeIds.length > 0
+    && highlightedNodeIds !== null
+    && highlightedNodeIds.length === nodeIds.length
+    && nodeIds.every((id) => highlightedNodeIds.includes(id));
+
+  const showEvidence = () => {
+    setHighlightedNodeIds(nodeIds.length > 0 ? nodeIds : null);
+  };
 
   const handleShowInModel = () => {
-    setHighlightedNodeIds(nodeIds.length > 0 ? nodeIds : null);
+    if (isShowing) {
+      setHighlightedNodeIds(null);
+      return;
+    }
+    showEvidence();
   };
 
   // Both Explain and Suggest fixes reuse the same sendMessage/mode:'review'
   // path and scope the turn to this finding's evidence — the same wiring
   // E.1 already built for canvas highlighting, not a second focus mechanism.
+  // These always ensure evidence is showing (never toggle it off) — only the
+  // "Show in model" button itself toggles.
   const handleExplain = () => {
-    handleShowInModel();
+    showEvidence();
     sendMessage(
       `Explain this finding in more detail: ${finding.message}`,
       undefined,
@@ -52,7 +75,7 @@ export function FindingCard({ finding }: Props) {
   };
 
   const handleSuggestFixes = () => {
-    handleShowInModel();
+    showEvidence();
     sendMessage(
       `Suggest one or more concrete fixes for this finding: ${finding.message}`,
       undefined,
@@ -76,7 +99,7 @@ export function FindingCard({ finding }: Props) {
         fontSize: 11, color: '#92400E',
       }}>
         <AlertTriangle size={13} />
-        <span style={{ fontWeight: 700 }}>Confirmed issue</span>
+        <span style={{ fontWeight: 700 }}>{hasCopy ? finding.title : 'Confirmed issue'}</span>
         {finding.category && (
           <span style={{
             marginLeft: 4, padding: '1px 6px', borderRadius: 4,
@@ -85,12 +108,33 @@ export function FindingCard({ finding }: Props) {
             {CATEGORY_LABEL[finding.category] ?? finding.category}
           </span>
         )}
-        <span style={{ marginLeft: 'auto', fontSize: 10, color: '#B45309' }}>{finding.code}</span>
       </div>
 
-      {/* Message */}
+      {/* Summary (plain-language) with technical details on demand */}
       <div style={{ padding: '10px 12px', fontSize: 13, color: '#78350F', lineHeight: 1.5 }}>
-        {finding.message}
+        {hasCopy ? finding.summary : finding.message}
+        {hasCopy && (
+          <button
+            onClick={() => setDetailsOpen((v) => !v)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 3,
+              marginTop: 6, padding: 0, border: 'none', background: 'none',
+              cursor: 'pointer', fontSize: 11, fontWeight: 600, color: '#B45309',
+            }}
+          >
+            {detailsOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            {detailsOpen ? 'Hide details' : 'Details'}
+          </button>
+        )}
+        {hasCopy && detailsOpen && (
+          <div style={{
+            marginTop: 6, padding: '8px 10px', borderRadius: 6,
+            background: '#FEF3C7', fontSize: 12, color: '#78350F', lineHeight: 1.5,
+          }}>
+            {finding.message}
+            <div style={{ marginTop: 4, fontSize: 10, color: '#B45309' }}>{finding.code}</div>
+          </div>
+        )}
       </div>
 
       {/* Actions */}
@@ -101,9 +145,12 @@ export function FindingCard({ finding }: Props) {
         <button
           onClick={handleShowInModel}
           disabled={nodeIds.length === 0 && edgeIds.length === 0}
-          style={actionButtonStyle('#4338CA', '#EEF2FF', '#C7D2FE')}
+          title={isShowing ? 'Click to clear this highlight' : 'Highlight this finding\'s nodes on the canvas'}
+          style={isShowing
+            ? actionButtonStyle('#fff', '#4338CA', '#4338CA')
+            : actionButtonStyle('#4338CA', '#EEF2FF', '#C7D2FE')}
         >
-          <Eye size={12} /> Show in model
+          <Eye size={12} /> {isShowing ? 'Showing in model' : 'Show in model'}
         </button>
         <button onClick={handleExplain} style={actionButtonStyle('#374151', '#fff', '#E5E7EB')}>
           <MessageCircle size={12} /> Explain

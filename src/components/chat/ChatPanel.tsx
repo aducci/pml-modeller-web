@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Bot, Send, Trash2, AlertCircle, Compass } from 'lucide-react';
+import { Bot, Send, Trash2, AlertCircle, Compass, Mic, Volume2, VolumeX } from 'lucide-react';
 import { useConversation, type TurnMode } from './ConversationContext';
 import { ConversationMessage } from './ConversationMessage';
 import { emit } from '@/lib/ai/eventLog';
+import { useVoice } from '@/lib/voice/useVoice';
 
 interface AcceptResult {
   success: boolean;
@@ -29,11 +30,18 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  // Distinguishes "you've scrolled up, here's a passive way back down" from
+  // "a response arrived/updated while you were scrolled away" — the latter
+  // gets a stronger visual treatment so it isn't missed below the fold.
+  const [hasUnseenContent, setHasUnseenContent] = useState(false);
   // Explicit mode toggle (11_...md §3.1/§3.2) — Explore is opt-in per turn
   // rather than a separate persistent screen, since a user typically wants
   // to switch back to editing mid-conversation. Point-and-edit remains the
   // default for free-text input, unchanged from today's behavior.
   const [exploreMode, setExploreMode] = useState(false);
+  const [autoSpeak, setAutoSpeak] = useState(false);
+  const voice = useVoice();
+  const spokenMessageIdsRef = useRef<Set<string>>(new Set());
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -42,6 +50,12 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
     const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
     if (isNearBottom) {
       el.scrollTop = el.scrollHeight;
+    } else {
+      // New/updated content landed while the user was scrolled away (this
+      // effect re-fires on every streamed chunk, not just full messages) —
+      // flag it so the scroll-back button stands out instead of a passive
+      // "↓ New messages" label that's easy to miss below the fold.
+      setHasUnseenContent(true);
     }
   }, [state.messages]);
 
@@ -50,6 +64,7 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
     const el = scrollRef.current;
     const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
     setShowScrollBtn(!isNearBottom);
+    if (isNearBottom) setHasUnseenContent(false);
   }, []);
 
   const handleSend = useCallback(() => {
@@ -58,6 +73,29 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
     sendMessage(input.trim(), pmlSnippet, { mode });
     setInput('');
   }, [input, state.isProcessing, sendMessage, pmlSnippet, exploreMode]);
+
+  const handleMicToggle = useCallback(() => {
+    if (voice.isListening) {
+      voice.stop();
+      return;
+    }
+    voice.start((text) => {
+      const mode: TurnMode = exploreMode ? 'explore' : 'point-edit';
+      sendMessage(text, pmlSnippet, { mode });
+    });
+  }, [voice, exploreMode, sendMessage, pmlSnippet]);
+
+  // Auto-speak: fires once per assistant message, only after streaming has
+  // finished (isProcessing false) so TTS reads the final text rather than
+  // restarting mid-sentence on every UPDATE_MESSAGE_CONTENT chunk.
+  useEffect(() => {
+    if (!autoSpeak || state.isProcessing) return;
+    const lastMsg = state.messages[state.messages.length - 1];
+    if (!lastMsg || lastMsg.role !== 'assistant' || !lastMsg.content.trim()) return;
+    if (spokenMessageIdsRef.current.has(lastMsg.id)) return;
+    spokenMessageIdsRef.current.add(lastMsg.id);
+    voice.speak(lastMsg.content);
+  }, [autoSpeak, state.isProcessing, state.messages, voice]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -70,6 +108,7 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
+    setHasUnseenContent(false);
   }, []);
 
   const handleAccept = useCallback((proposalId: string) => {
@@ -134,6 +173,27 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
         <span style={{ fontSize: 14, fontWeight: 700, color: '#111827', flex: 1 }}>
           AI Assistant
         </span>
+
+        {/* Auto-speak toggle */}
+        {voice.ttsSupported && (
+          <button
+            onClick={() => {
+              setAutoSpeak((v) => !v);
+              if (autoSpeak) voice.cancelSpeech();
+            }}
+            title={autoSpeak ? 'Voice replies on: click to mute' : 'Click to have replies read aloud'}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 28, height: 28, borderRadius: 6,
+              border: '1px solid', borderColor: autoSpeak ? '#6366F1' : '#E5E7EB',
+              background: autoSpeak ? '#EEF2FF' : '#fff',
+              color: autoSpeak ? '#4338CA' : '#9CA3AF',
+              cursor: 'pointer', flexShrink: 0,
+            }}
+          >
+            {autoSpeak ? <Volume2 size={14} /> : <VolumeX size={14} />}
+          </button>
+        )}
 
         {/* Clear */}
         {hasMessages && (
@@ -265,13 +325,22 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
           onClick={scrollToBottom}
           style={{
             position: 'absolute', bottom: 64, left: '50%', transform: 'translateX(-50%)',
-            padding: '4px 12px', borderRadius: 12,
-            background: '#fff', border: '1px solid #E5E7EB',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
-            cursor: 'pointer', fontSize: 11, color: '#6B7280', zIndex: 10,
+            padding: hasUnseenContent ? '6px 16px' : '4px 12px',
+            borderRadius: 12,
+            background: hasUnseenContent ? '#6366F1' : '#fff',
+            border: hasUnseenContent ? 'none' : '1px solid #E5E7EB',
+            boxShadow: hasUnseenContent
+              ? '0 4px 12px rgba(99,102,241,0.4)'
+              : '0 2px 6px rgba(0,0,0,0.08)',
+            cursor: 'pointer',
+            fontSize: hasUnseenContent ? 12 : 11,
+            fontWeight: hasUnseenContent ? 700 : 400,
+            color: hasUnseenContent ? '#fff' : '#6B7280',
+            zIndex: 10,
+            animation: hasUnseenContent ? 'pulse 1.2s infinite' : undefined,
           }}
         >
-          ↓ New messages
+          {hasUnseenContent ? '↓ New response ready' : '↓ New messages'}
         </button>
       )}
 
@@ -298,14 +367,36 @@ export function ChatPanel({ pmlSnippet, onProposalAccept, style }: Props) {
         >
           <Compass size={15} />
         </button>
+        {voice.sttSupported && (
+          <button
+            onClick={handleMicToggle}
+            disabled={state.isProcessing}
+            title={voice.isListening ? 'Listening... click to stop' : 'Click to speak'}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 36, height: 36, borderRadius: 8,
+              border: '1px solid', borderColor: voice.isListening ? '#DC2626' : '#E5E7EB',
+              background: voice.isListening ? '#FEF2F2' : '#fff',
+              color: voice.isListening ? '#DC2626' : '#9CA3AF',
+              cursor: state.isProcessing ? 'not-allowed' : 'pointer', flexShrink: 0,
+              animation: voice.isListening ? 'pulse 1.2s infinite' : undefined,
+            }}
+          >
+            <Mic size={15} />
+          </button>
+        )}
         <input
           ref={inputRef}
           type="text"
-          value={input}
+          value={voice.isListening ? voice.transcript : input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={exploreMode ? 'Ask a question (read-only)...' : 'Ask about your process model...'}
-          disabled={state.isProcessing}
+          placeholder={
+            voice.isListening
+              ? 'Listening...'
+              : exploreMode ? 'Ask a question (read-only)...' : 'Ask about your process model...'
+          }
+          disabled={state.isProcessing || voice.isListening}
           style={{
             flex: 1, padding: '8px 12px', borderRadius: 8,
             border: '1px solid #E5E7EB', fontSize: 13,

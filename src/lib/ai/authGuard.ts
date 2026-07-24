@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { getActiveUser } from '@/lib/activeUser';
 import { checkRateLimit } from '@/lib/ai/rateLimit';
 
 /**
@@ -6,13 +6,22 @@ import { checkRateLimit } from '@/lib/ai/rateLimit';
  * a per-user rate limit. Previously these routes had no auth check at all —
  * only the site-wide SITE_PASSWORD cookie gated access, so any visitor with
  * that shared secret could drive unbounded Anthropic API spend.
+ *
+ * Uses getActiveUser() rather than calling auth() directly — auth() only
+ * resolves a real NextAuth session, which requires OAuth provider secrets
+ * (Google/GitHub) to be configured. Every other authenticated page in the
+ * app (dashboard, settings) already goes through getActiveUser(), which
+ * also accepts the pml-dev-magic-auth cookie set by the magic-link flow —
+ * that's how local development works without OAuth secrets set. This guard
+ * previously didn't follow that fallback, so AI chat/propose 401'd locally
+ * even when every other page recognized the same magic-link session.
  */
 export async function requireAiSession(): Promise<
   | { ok: true; userId: string }
   | { ok: false; response: Response }
 > {
-  const session = await auth();
-  const userId = session?.user?.id;
+  const user = await getActiveUser();
+  const userId = user?.id;
 
   if (!userId) {
     return {

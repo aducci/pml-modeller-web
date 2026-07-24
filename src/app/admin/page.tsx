@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Settings2, Sparkles } from 'lucide-react';
+import { Settings2, Sparkles, AlertTriangle, ListChecks } from 'lucide-react';
 import {
   ProcessController,
   PatternTableController,
@@ -15,16 +15,18 @@ import {
   type SharedState,
 } from 'pml-core';
 import { SkillsPanel } from '@/components/admin/SkillsPanel';
+import { FindingCopyPanel } from '@/components/admin/FindingCopyPanel';
+import { ValidationRulesPanel } from '@/components/admin/ValidationRulesPanel';
 
 // Outer tab: 'workspace' is everything AdminView already covers (Theme,
 // Layout, Patterns, Routing — client-side/localStorage config from
-// pml-core). 'skills' is new: real DB-backed, versioned AI prompt content,
-// which needs Next.js API routes + Prisma + the super-admin auth guard —
-// none of which pml-core (a portable library also used by a standalone dev
-// harness outside this web app) knows about. Kept as a sibling tab rather
-// than injected into AdminView's own tab bar, so pml-core stays unaware of
-// anything web-app-specific.
-type OuterTab = 'workspace' | 'skills';
+// pml-core). 'skills', 'findingCopy', and 'validationRules' are all new: real
+// DB-backed content needing Next.js API routes + Prisma + the super-admin
+// auth guard — none of which pml-core (a portable library also used by a
+// standalone dev harness outside this web app) knows about. Kept as sibling
+// tabs rather than injected into AdminView's own tab bar, so pml-core stays
+// unaware of anything web-app-specific.
+type OuterTab = 'workspace' | 'skills' | 'findingCopy' | 'validationRules';
 
 // Standalone controller set for the config screen. Layout/theme overrides,
 // pattern table, and routing rules are global (localStorage-backed via
@@ -124,6 +126,8 @@ export default function AdminPage() {
         {([
           { id: 'workspace' as const, label: 'Workspace Config', icon: Settings2 },
           { id: 'skills' as const, label: 'AI Skills', icon: Sparkles },
+          { id: 'findingCopy' as const, label: 'Finding Copy', icon: AlertTriangle },
+          { id: 'validationRules' as const, label: 'Validation Rules', icon: ListChecks },
         ]).map((tab) => {
           const Icon = tab.icon;
           const active = outerTab === tab.id;
@@ -154,8 +158,12 @@ export default function AdminPage() {
             state={state}
             onBack={() => router.back()}
           />
-        ) : (
+        ) : outerTab === 'skills' ? (
           <SkillsPanel />
+        ) : outerTab === 'findingCopy' ? (
+          <FindingCopyPanel />
+        ) : (
+          <ValidationRulesPanel />
         )}
       </div>
     </div>

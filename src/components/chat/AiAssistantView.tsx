@@ -3,14 +3,15 @@
 import React, { useState, useCallback } from 'react';
 import {
   Bot, PanelRightClose, PanelRightOpen,
-  MessageSquare, Lightbulb, FileCode, X,
+  MessageSquare, Lightbulb, FileCode, X, FilterX,
 } from 'lucide-react';
 import type { ProcessController, WorkspaceState } from 'pml-core';
 import { ChatPanel } from './ChatPanel';
 import { ConversationProvider, useConversation, findingKey, type TurnMode } from './ConversationContext';
 import { FindingCard } from './FindingCard';
 import { commit as controlPlaneCommit } from '@/lib/ai/controlPlane';
-import { findUnresolvedIssues } from '@/lib/ai/findings';
+import { findUnresolvedIssues, withFindingCopy, withRuleOverrides } from '@/lib/ai/findings';
+import type { RuleConfig } from 'pml-core';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -26,9 +27,39 @@ interface Props {
 // ---------------------------------------------------------------------------
 
 function AiAssistantContent({ controller, state }: Props) {
-  const { sendMessage, focusType, focusId, highlightedNodeIds, dismissedFindingKeys } = useConversation();
+  const { sendMessage, focusType, focusId, highlightedNodeIds, setHighlightedNodeIds, dismissedFindingKeys } = useConversation();
   const [showPmlSource, setShowPmlSource] = useState(false);
   const [showObservations, setShowObservations] = useState(true);
+  const [findingCopy, setFindingCopy] = useState<Record<string, { title: string; summary: string }> | null>(null);
+  const [ruleOverrides, setRuleOverrides] = useState<Record<string, { enabled: boolean; params?: Partial<RuleConfig> }> | null>(null);
+
+  // Fetched once per mount — this is presentational copy, not per-document
+  // state, so it doesn't need to re-fetch on every PML change. Silently
+  // leaves findingCopy null on failure; withFindingCopy() falls back to
+  // undefined title/summary per finding (FindingCard falls back further to
+  // the raw `message`), so a fetch failure degrades gracefully rather than
+  // blocking the findings panel from rendering.
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch('/api/finding-copy')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (!cancelled && data?.copy) setFindingCopy(data.copy); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  // Same "fetch once, fail soft" shape as findingCopy above — leaving
+  // ruleOverrides null means withRuleOverrides() returns pml-core's
+  // DEFAULT_RULE_CONFIGS unchanged, so a fetch failure here degrades to
+  // today's hardcoded rule set rather than blocking findings entirely.
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch('/api/validation-rules')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { if (!cancelled && data?.rules) setRuleOverrides(data.rules); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   // Keep the canvas visually scoped to whatever the AI conversation is
   // currently focused on. `viewAsActor` is a transient rendering convenience
@@ -95,8 +126,10 @@ function AiAssistantContent({ controller, state }: Props) {
   // See docs/FINAL/13_Phase_E_Findings_Drive_Canvas_Plan.md E.2, step 4.
   const findings = React.useMemo(() => {
     if (!hasModel) return [];
-    return findUnresolvedIssues(pmlSnippet).filter((f) => !dismissedFindingKeys.has(findingKey(f)));
-  }, [pmlSnippet, hasModel, dismissedFindingKeys]);
+    const configs = withRuleOverrides(ruleOverrides);
+    const raw = findUnresolvedIssues(pmlSnippet, configs).filter((f) => !dismissedFindingKeys.has(findingKey(f)));
+    return withFindingCopy(raw, findingCopy);
+  }, [pmlSnippet, hasModel, dismissedFindingKeys, findingCopy, ruleOverrides]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', overflow: 'hidden' }}>
@@ -127,6 +160,28 @@ function AiAssistantContent({ controller, state }: Props) {
           <FileCode size={13} />
           PML
         </button>
+
+        {/* Reset canvas filters — clears any active Finding-driven highlight.
+            A temporary, single-purpose control ahead of user-driven saved
+            views (planned follow-up); this only clears highlightedNodeIds,
+            not zoom/pan (that's controller.resetView(), a separate concept). */}
+        {highlightedNodeIds !== null && (
+          <button
+            onClick={() => setHighlightedNodeIds(null)}
+            title="Clear the current highlight filter"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 4,
+              padding: '4px 8px', borderRadius: 5,
+              border: '1px solid #FECACA',
+              background: '#FEF2F2',
+              cursor: 'pointer', fontSize: 11,
+              color: '#DC2626',
+            }}
+          >
+            <FilterX size={13} />
+            Reset view
+          </button>
+        )}
 
         {/* Toggle observations */}
         <button
