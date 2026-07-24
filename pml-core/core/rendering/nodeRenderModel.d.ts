@@ -146,7 +146,12 @@ export interface NodeRenderModel {
     taskTypeMarker?: TaskTypeMarkerDescriptor;
     /** Gateway kind marker — center of diamond */
     gatewayMarker?: TaskTypeMarkerDescriptor;
-    /** Connection ports — shown when this node's edge is selected */
+    /**
+     * Connection port anchor points — computed but not currently rendered
+     * anywhere (ProcessCanvas.tsx used to gate this behind a permanently-false
+     * condition; that dead branch was removed, this data is unused pending a
+     * real "show ports on hover/selection" feature).
+     */
     ports: PortDescriptor[];
     /** Actor pill — shown only when swimlanes are off */
     actorPill?: ActorPillDescriptor | null;
