@@ -191,6 +191,7 @@ function buildSingleNodeRenderModel(node, padding, options, theme, labelScene, s
             fontSize: secLabel.fontSize,
             fontWeight: secLabel.fontWeight,
             fill: secLabel.fill,
+            haloFill: secLabel.haloFill,
             opacity: secLabel.opacity,
             letterSpacing: secLabel.letterSpacing,
         };
@@ -198,14 +199,14 @@ function buildSingleNodeRenderModel(node, padding, options, theme, labelScene, s
     // Metadata icons
     const metaIcons = buildMetaIcons(node, nodeX, nodeY, options);
     // Status dot
-    const statusIndicator = buildStatusIndicator(node, nodeX, nodeY, node.width);
+    const statusIndicator = buildStatusIndicator(node, nodeX, nodeY, node.width, theme);
     // Task-type marker
-    const taskTypeMarker = buildTaskTypeMarker(node, nodeX, nodeY);
+    const taskTypeMarker = buildTaskTypeMarker(node, nodeX, nodeY, theme);
     const gatewayMarker = buildGatewayKindMarker(node, cx, cy, theme);
     // Ports
     const ports = buildPorts(node, nodeX, nodeY, node.width, node.height, labelScene, node.id);
     // Actor pill
-    const actorPill = buildActorPill(node, nodeX, nodeY, node.width, node.height, options.effectiveShowLanes);
+    const actorPill = buildActorPill(node, nodeX, nodeY, node.width, node.height, options.effectiveShowLanes, theme);
     return {
         id: node.id,
         type: node.type,
@@ -308,16 +309,18 @@ function buildGatewayKindMarker(node, cx, cy, theme) {
 // ============================================================================
 // Status indicator
 // ============================================================================
-function buildStatusIndicator(node, nodeX, nodeY, nodeWidth) {
+function buildStatusIndicator(node, nodeX, nodeY, nodeWidth, theme) {
     const status = node.metadata?.status;
     if (!status)
         return undefined;
+    // Previously hardcoded literals with no schema field/UI at all.
+    const indicators = theme.statusIndicators;
     const fillMap = {
-        approved: '#10B981',
-        pending: '#F59E0B',
-        rejected: '#EF4444',
+        approved: indicators.approved,
+        pending: indicators.pending,
+        rejected: indicators.rejected,
     };
-    const fill = fillMap[status] ?? '#94A3B8';
+    const fill = fillMap[status] ?? indicators.default;
     return {
         cx: nodeX + nodeWidth - 4,
         cy: nodeY + 4,
@@ -329,7 +332,7 @@ function buildStatusIndicator(node, nodeX, nodeY, nodeWidth) {
 // ============================================================================
 // Task type marker
 // ============================================================================
-function buildTaskTypeMarker(node, nodeX, nodeY) {
+function buildTaskTypeMarker(node, nodeX, nodeY, theme) {
     if (node.type !== 'task' || !node.metadata?.taskType)
         return undefined;
     const taskType = node.metadata.taskType;
@@ -338,7 +341,8 @@ function buildTaskTypeMarker(node, nodeX, nodeY) {
         x: nodeX + 4,
         y: nodeY + 10,
         fontSize: 8,
-        fill: '#6B7280',
+        // Previously hardcoded — no schema field, no admin UI control.
+        fill: theme.taskTypeMarkerColor,
     };
 }
 // ============================================================================
@@ -371,9 +375,14 @@ function buildPorts(node, nodeX, nodeY, nodeWidth, nodeHeight, labelScene, nodeI
 // ============================================================================
 // Actor pill
 // ============================================================================
-function buildActorPill(node, nodeX, nodeY, nodeWidth, nodeHeight, effectiveShowLanes) {
+function buildActorPill(node, nodeX, nodeY, nodeWidth, nodeHeight, effectiveShowLanes, theme) {
     if (!node.actor || effectiveShowLanes)
         return null;
+    // Previously fully hardcoded (#F1F5F9/#CBD5E1/#475569), ignoring
+    // theme.lanes entirely — this pill is the lane-identity surrogate shown
+    // when swimlanes are toggled off, so it should track the same lane
+    // theming a user would otherwise see on the swimlane header/body.
+    const themeLanes = theme.lanes;
     return {
         label: node.actor,
         x: nodeX + nodeWidth / 2 - 26,
@@ -381,13 +390,13 @@ function buildActorPill(node, nodeX, nodeY, nodeWidth, nodeHeight, effectiveShow
         width: 52,
         height: 14,
         rx: 7,
-        bg: '#F1F5F9',
-        stroke: '#CBD5E1',
+        bg: themeLanes.headerFill,
+        stroke: themeLanes.borderColor,
         textX: nodeX + nodeWidth / 2,
         textY: nodeY + nodeHeight / 2 + 17,
         fontSize: 9,
         fontWeight: 500,
-        fill: '#475569',
+        fill: themeLanes.labelColor,
     };
 }
 // ============================================================================

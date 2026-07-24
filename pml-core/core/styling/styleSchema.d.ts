@@ -227,6 +227,23 @@ export interface ProcessThemeSchema {
         inbound: CurtainStyle;
         outbound: CurtainStyle;
     };
+    /**
+     * Small per-node status dot (node.metadata.status: approved/pending/
+     * rejected) and the task-type marker glyph color — previously both
+     * hardcoded literals with no schema field and no admin UI control at all.
+     * Not per-element-type (a status dot can appear on any node kind), so
+     * these live here rather than in elementStyles — edited in the Advanced
+     * Style tab alongside other non-per-element settings.
+     */
+    statusIndicators: {
+        approved: string;
+        pending: string;
+        rejected: string;
+        /** Fallback for any other/unknown status value. */
+        default: string;
+    };
+    /** Color of the small task-type marker glyph (e.g. the service/user/script icon). */
+    taskTypeMarkerColor: string;
 }
 /**
  * Resolves the style for a node type.

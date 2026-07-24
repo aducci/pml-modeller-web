@@ -47,5 +47,15 @@ export function deriveThemeFromRoles(roles) {
             selectedBorderColor: roles.primary,
             headerSelectedColor: roles.primary,
         },
+        // Previously untouched by roles at all — changing Border/Text had no
+        // effect on the inbound/outbound boundary bands, breaking the "roles
+        // recolor everything at default" premise. Fill is left as each side's
+        // own default (a deliberately muted, mostly-neutral background) since
+        // it's a large translucent area, not a stroke/label accent — only the
+        // stroke/label match the generic Border/Text roles the same way lanes do.
+        curtains: {
+            inbound: { stroke: roles.border, labelColor: roles.text },
+            outbound: { stroke: roles.border, labelColor: roles.text },
+        },
     };
 }

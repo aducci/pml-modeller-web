@@ -187,6 +187,10 @@ export function resolveSecondaryLabel(node, theme, padding) {
         // primary label color if unset, e.g. an older persisted theme override
         // from before this field existed).
         fill: style.appearance.secondaryLabel ?? style.appearance.label,
+        // Previously hardcoded by the caller (ProcessCanvas.tsx) to the shape's
+        // own fill directly — the exact bug already fixed for the primary
+        // label's halo. Same fallback chain as the primary label's haloFill.
+        haloFill: style.appearance.labelHalo ?? style.appearance.fill,
         opacity: secondaryStyle.opacity ?? 0.75,
         letterSpacing: toLetterSpacing(secondaryStyle.tracking),
     };

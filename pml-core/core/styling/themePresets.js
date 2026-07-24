@@ -69,6 +69,14 @@ export const PROCESS_THEME_PRESETS = [
                         ...base.elementStyles.subprocess,
                         appearance: { ...base.elementStyles.subprocess.appearance, fill: '#BFD9F5', stroke: '#185FA5', labelHalo: '#BFD9F5' },
                     },
+                    // Previously missing entirely (unlike the Midnight preset, which
+                    // does override this) — an 'unknown'-type node stayed at the
+                    // default theme's muted colors, inconsistent with every other
+                    // element type in this preset.
+                    unknown: {
+                        ...base.elementStyles.unknown,
+                        appearance: { ...base.elementStyles.unknown.appearance, fill: '#E3E0D6', stroke: '#5F5E5A', labelHalo: '#E3E0D6' },
+                    },
                 },
                 edges: {
                     ...base.edges,

@@ -20,6 +20,7 @@ interface ResolvedSecondaryLabel {
     fontSize: number;
     fontWeight: number;
     fill: string;
+    haloFill: string;
     opacity: number;
     letterSpacing?: string;
 }

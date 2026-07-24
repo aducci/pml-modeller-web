@@ -57,6 +57,10 @@ export interface SecondaryLabelRenderModel {
     fontSize: number;
     fontWeight: number;
     fill: string;
+    /** Same purpose as NodeLabelRenderModel.haloFill — previously the caller
+     *  (ProcessCanvas.tsx) hardcoded this to the shape's own fill directly,
+     *  the exact bug already fixed for the primary label. */
+    haloFill: string;
     opacity: number;
     letterSpacing?: string;
 }

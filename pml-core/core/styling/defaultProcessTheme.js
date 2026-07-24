@@ -204,4 +204,11 @@ export const DEFAULT_PROCESS_THEME = {
         gradient: false,
         labelHalo: true,
     },
+    statusIndicators: {
+        approved: '#10B981',
+        pending: '#F59E0B',
+        rejected: '#EF4444',
+        default: '#94A3B8',
+    },
+    taskTypeMarkerColor: '#6B7280',
 };
