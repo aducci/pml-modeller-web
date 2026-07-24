@@ -8,11 +8,14 @@ export interface PmlEditorViewProps {
     onChange: (content: string) => void;
     diagnostics?: ProcessDiagnostic[];
     /**
-     * When provided, the folder dropdown renders this flat list instead of
-     * fetching /processes/index.json (a static-file API that doesn't exist in
-     * the hosted app — see 09_AI_Chat_Architecture_Findings.md-adjacent audit).
-     * Leave undefined to keep the legacy /processes/* file-browser behavior
-     * used by the standalone dev harness (src/App.tsx).
+     * When provided, the folder dropdown shows this flat list of project
+     * files (DB-backed — see pml-modeller-web's ProjectFile model). The real
+     * hosted app always passes this. If omitted (e.g. the standalone dev
+     * harness, src/App.tsx, which has no DB), the folder button simply
+     * doesn't render — there used to be a fallback that browsed static files
+     * under public/processes/*, but that folder and its dev-only save
+     * endpoint were removed (the files it served are now imported into a
+     * real project instead).
      */
     files?: {
         id: string;
